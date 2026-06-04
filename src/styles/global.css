@@ -1,0 +1,196 @@
+/* Fonts: Clash Display (display) + Satoshi (body) – Fontshare, licencja darmowa */
+@import url("https://api.fontshare.com/v2/css?f[]=clash-display@600,700&f[]=satoshi@300,400,500,700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --mocna-orange: #f39200;
+    --mocna-red: #de3c42;
+    --mocna-yellow: #ffde00;
+    --mocna-blue: #2c5ea9;
+    --mocna-green: #00955e;
+    --mocna-pink: #e8afcd;
+    --mocna-graphite: #333333;
+    --mocna-page-bg: #fff8f0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-white text-graphite font-sans leading-relaxed;
+    font-weight: 400;
+    overflow-x: hidden;
+  }
+
+  /* Strona główna — ciepłe tło kremowe */
+  .home-page {
+    background-color: var(--mocna-page-bg);
+  }
+
+  ::selection {
+    background: var(--mocna-orange);
+    color: #fff;
+  }
+
+  /* Subtelny, „organiczny” pasek przewijania */
+  ::-webkit-scrollbar {
+    width: 11px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--mocna-orange);
+    border-radius: 999px;
+    border: 3px solid #fff;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tightest text-graphite;
+    font-weight: 700;
+  }
+
+  /* Focus widoczny i zgodny z marką (dostępność) */
+  :focus-visible {
+    outline: 3px solid var(--mocna-blue);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+}
+
+@layer components {
+  /* Wrapper o szerokości „agencyjnej” z asymetrycznym oddechem */
+  .shell {
+    @apply mx-auto w-full max-w-[1320px] px-6 sm:px-8 lg:px-12;
+  }
+
+  /* Pigułka / tag */
+  .pill {
+    @apply inline-flex items-center gap-2 rounded-full border border-graphite-200 bg-white/70 px-4 py-1.5 text-fluid-sm font-medium text-graphite-soft backdrop-blur;
+  }
+
+  /* Bazowy przycisk CTA – „custom made”, nie biblioteczny */
+  .btn {
+    @apply relative inline-flex items-center justify-center gap-2.5 rounded-none px-6 py-3.5 text-fluid-sm font-semibold tracking-[-0.01em]
+           transition-all duration-300 ease-organic will-change-transform;
+  }
+  .btn:hover {
+    transform: translateY(-2px);
+  }
+  .btn-orange {
+    @apply btn bg-blue text-white;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 2px 6px -2px rgba(44,94,169,0.3);
+  }
+  .btn-orange:hover {
+    background-color: #244d8f;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 28px -8px rgba(44,94,169,0.45);
+  }
+  .btn-outline {
+    @apply btn border border-graphite-200 bg-white text-graphite;
+  }
+  .btn-outline:hover {
+    @apply border-blue/50 text-blue;
+    background: rgba(44,94,169,0.05);
+  }
+  .btn-ink {
+    @apply btn bg-graphite text-white;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+  }
+  .btn-ink:hover {
+    @apply bg-graphite-soft;
+  }
+
+  /* Karta szkła */
+  .glass {
+    @apply rounded-[28px] border border-white/60 bg-white/55 shadow-glass backdrop-blur-xl;
+  }
+
+  /* Tekstowy „kicker” nad nagłówkami */
+  .kicker {
+    @apply mb-4 inline-flex items-center gap-2 text-fluid-sm font-medium uppercase tracking-[0.22em] text-orange;
+  }
+
+  /* Maska „skrzydła” dla fotografii (clip-path oparty na logo) */
+  .clip-wing {
+    clip-path: path(
+      "M0.10,0.02 C0.42,-0.04 0.78,0.02 0.92,0.18 C1.04,0.32 1.0,0.62 0.9,0.8 C0.78,0.99 0.5,1.02 0.28,0.96 C0.06,0.9 -0.03,0.66 0.01,0.42 C0.04,0.24 0.0,0.08 0.10,0.02 Z"
+    );
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* Gradient marki przez tekst */
+  .text-brand-gradient {
+    background-image: linear-gradient(
+      105deg,
+      var(--mocna-orange) 0%,
+      var(--mocna-red) 45%,
+      var(--mocna-blue) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* „Maluje” podkreślenie pod słowem niczym pociągnięcie pędzla */
+  .brush-underline {
+    background-image: linear-gradient(transparent 62%, rgba(255, 222, 0, 0.85) 62%);
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    padding: 0 0.12em;
+  }
+
+  .organic-mask {
+    border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@keyframes rise-in {
+  0% {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ----------- Astro View Transitions: nazwane, premium ----------- */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.55s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

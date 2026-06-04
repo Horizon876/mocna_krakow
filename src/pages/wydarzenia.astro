@@ -1,0 +1,50 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import PageHero from "@components/PageHero.astro";
+import EventsTiles from "@components/EventsTiles.astro";
+import SectionHeading from "@components/SectionHeading.astro";
+import { COLORS } from "@data/site";
+
+const upcoming = [
+  { date: "12 cze", day: "czw", title: "Wieczór z muzyką na żywo: Trio Krakowskie", kind: "Koncert", color: "orange", time: "19:00", price: "35 zł" },
+  { date: "15 cze", day: "ndz", title: "Warsztat latte art dla początkujących", kind: "Warsztat", color: "red", time: "11:00", price: "120 zł" },
+  { date: "20 cze", day: "pt", title: "Grupa wsparcia: rozmowy przy kawie", kind: "Wsparcie", color: "yellow", time: "17:30", price: "wstęp wolny" },
+  { date: "27 cze", day: "pt", title: "Spotkanie autorskie: literatura i kawa", kind: "Spotkanie", color: "green", time: "18:00", price: "25 zł" },
+  { date: "5 lip", day: "sob", title: "Szkolenie barista — poziom I", kind: "Szkolenie", color: "blue", time: "10:00", price: "390 zł" },
+] as const;
+---
+<BaseLayout title="Wydarzenia — MOCna!">
+  <PageHero
+    kicker="Wydarzenia"
+    title="Tu zawsze coś <span class='text-orange'>się dzieje</span>"
+    lead="Koncerty, warsztaty, spotkania i grupy wsparcia. Wybierz coś dla siebie i dołącz do społeczności MOCnej."
+  />
+
+  <EventsTiles />
+
+  <section class="py-12 sm:py-16">
+    <div class="shell">
+      <SectionHeading kicker="Najbliższe terminy" title="Kalendarz <span class='text-orange'>wydarzeń</span>" />
+      <ul class="mt-8 grid gap-3">
+        {upcoming.map((e) => (
+          <li>
+            <a href="/rezerwacja" class="group grid grid-cols-[auto_1fr_auto] items-center gap-5 rounded-[24px] border border-graphite-200 bg-white p-5 transition-all duration-500 hover:-translate-y-1 hover:shadow-soft sm:gap-8">
+              <div class="grid h-16 w-16 place-items-center rounded-2xl text-center leading-none" style={`background:${COLORS[e.color]}1a`}>
+                <span class="font-display text-fluid-lg font-bold tracking-tightest" style={`color:${COLORS[e.color]}`}>{e.date}</span>
+                <span class="mt-1 block text-[10px] uppercase text-graphite-muted">{e.day}</span>
+              </div>
+              <div>
+                <span class="text-xs font-medium uppercase tracking-[0.14em]" style={`color:${COLORS[e.color]}`}>{e.kind} · {e.time}</span>
+                <h3 class="mt-1 text-fluid-lg font-display font-bold leading-tight tracking-tightest text-graphite">{e.title}</h3>
+              </div>
+              <div class="text-right">
+                <span class="block font-display font-bold tracking-tightest text-graphite">{e.price}</span>
+                <span class="mt-1 inline-flex items-center gap-1 text-fluid-sm font-medium text-orange">Bilet <span class="transition-transform group-hover:translate-x-1">→</span></span>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+</BaseLayout>

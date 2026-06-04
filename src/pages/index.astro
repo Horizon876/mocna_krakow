@@ -1,0 +1,26 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import HeroSection from "@components/HeroSection.astro";
+import BentoMission from "@components/BentoMission.astro";
+import EventsTiles from "@components/EventsTiles.astro";
+import ShopPreview from "@components/ShopPreview.astro";
+import StoriesSection from "@components/StoriesSection.astro";
+import MediaWall from "@components/MediaWall.astro";
+import CafeGallery from "@components/CafeGallery.astro";
+import SupportCards from "@components/SupportCards.astro";
+import OrganicDivider from "@components/OrganicDivider.astro";
+---
+<BaseLayout>
+  <div class="home-page">
+    <HeroSection />
+    <BentoMission />
+    <EventsTiles />
+    <ShopPreview />
+    <OrganicDivider fill="#333333" />
+    <StoriesSection />
+    <OrganicDivider fill="#fff8f0" flip />
+    <MediaWall />
+    <CafeGallery />
+    <SupportCards />
+  </div>
+</BaseLayout>

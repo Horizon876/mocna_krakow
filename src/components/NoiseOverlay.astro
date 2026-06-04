@@ -1,0 +1,38 @@
+---
+// Globalna nakładka szumu (grain) – przełamuje cyfrową sterylność.
+// SVG feTurbulence renderowany raz, jako fixed warstwa na ~3% krycia.
+---
+<div class="noise-overlay" aria-hidden="true">
+  <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <filter id="mocna-grain">
+      <feTurbulence
+        type="fractalNoise"
+        baseFrequency="0.82"
+        numOctaves="2"
+        stitchTiles="stitch"
+      />
+      <feColorMatrix type="saturate" values="0" />
+    </filter>
+    <rect width="100%" height="100%" filter="url(#mocna-grain)"></rect>
+  </svg>
+</div>
+
+<style>
+  .noise-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.035;
+    mix-blend-mode: multiply;
+  }
+  .noise-overlay svg {
+    width: 100%;
+    height: 100%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .noise-overlay {
+      opacity: 0.025;
+    }
+  }
+</style>

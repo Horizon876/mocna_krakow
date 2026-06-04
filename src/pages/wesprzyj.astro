@@ -1,0 +1,64 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import PageHero from "@components/PageHero.astro";
+import SupportCards from "@components/SupportCards.astro";
+import SectionHeading from "@components/SectionHeading.astro";
+import { STATS } from "@data/site";
+
+const amounts = ["20 zł", "50 zł", "100 zł", "250 zł"];
+---
+<BaseLayout title="Wesprzyj MOCną! — darowizna, Patronite, kawa zawieszona">
+  <PageHero
+    kicker="Wesprzyj MOCną!"
+    title="Pomagasz <span class='text-orange'>tworzyć miejsca pracy</span>"
+    lead="Nie prosimy o litość. Prosimy o partnerstwo. Każda forma wsparcia realnie zmienia czyjeś życie."
+    variant="warm"
+  />
+
+  <SupportCards />
+
+  <section id="darowizna" class="py-12 sm:py-16">
+    <div class="shell grid gap-8 lg:grid-cols-2">
+      <div class="glass p-8 sm:p-10">
+        <h2 class="text-fluid-xl font-display font-bold tracking-tightest">💛 Przekaż darowiznę</h2>
+        <p class="mt-3 text-fluid-sm text-graphite-soft">Wybierz kwotę — lub wpisz własną. Wspierasz jednorazowo lub co miesiąc.</p>
+        <div class="mt-6 flex flex-wrap gap-2">
+          {amounts.map((a, i) => (
+            <button class:list={["rounded-full border px-5 py-2.5 font-display font-bold tracking-tightest transition-colors", i === 1 ? "border-orange bg-orange text-white" : "border-graphite-200 text-graphite hover:border-orange"]}>{a}</button>
+          ))}
+        </div>
+        <a href="#" class="btn-orange mt-6 w-full justify-center animate-glow py-4">Wspieram MOCną!</a>
+      </div>
+
+      <div id="zawieszona" class="animate-glow flex flex-col justify-center rounded-[28px] border border-orange/40 bg-yellow-cream p-8 sm:p-10">
+        <span class="text-5xl">☕</span>
+        <h2 class="mt-4 text-fluid-xl font-display font-bold tracking-tightest">Kawa zawieszona</h2>
+        <p class="mt-3 text-fluid-sm text-graphite-soft">Kupujesz kawę dla kogoś, kogo akurat nie stać. My ją wydamy — z uśmiechem i bez pytań. Najprostszy sposób, by zrobić komuś dzień.</p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a href="#" class="btn-orange">Zawieś 1 kawę · 12 zł</a>
+          <a href="#" class="btn-outline">Zawieś 5 kaw · 55 zł</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="patronite" class="pb-20">
+    <div class="shell rounded-[32px] bg-graphite p-8 text-white sm:p-12">
+      <div class="grid items-center gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+        <div>
+          <SectionHeading kicker="Patronite" title="Zostań <span class='text-orange'>stałym patronem</span>" />
+          <p class="mt-4 max-w-xl text-fluid-sm text-white/75">Comiesięczne wsparcie daje nam stabilność, dzięki której możemy planować, rozwijać zespół i organizować więcej wydarzeń. W zamian — relacje, podziękowania i poczucie realnego wpływu.</p>
+          <a href="https://patronite.pl" target="_blank" rel="noopener" class="btn-orange mt-7">Wesprzyj na Patronite ⭐</a>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          {STATS.slice(0, 4).map((s) => (
+            <div class="rounded-2xl bg-white/10 p-5">
+              <div class="font-display text-3xl font-bold tracking-tightest" style={`color:${s.color}`}>{s.value.toLocaleString("pl-PL")}{s.suffix ?? ""}</div>
+              <p class="mt-1 text-xs text-white/70">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

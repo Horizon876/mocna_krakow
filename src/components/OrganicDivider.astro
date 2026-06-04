@@ -1,0 +1,22 @@
+---
+// Płynne, „beziera” przejście między sekcjami zamiast prostej linii.
+interface Props {
+  fill?: string; // kolor sekcji NASTĘPNEJ (dolnej)
+  flip?: boolean;
+  class?: string;
+}
+const { fill = "#ffffff", flip = false, class: className = "" } = Astro.props;
+---
+<div class:list={["relative leading-[0]", className]} aria-hidden="true">
+  <svg
+    class:list={["block w-full", flip && "rotate-180"]}
+    viewBox="0 0 1440 120"
+    preserveAspectRatio="none"
+    height="80"
+  >
+    <path
+      d="M0,64 C220,16 380,108 620,84 C840,62 980,8 1180,28 C1300,40 1380,72 1440,56 L1440,120 L0,120 Z"
+      fill={fill}
+    ></path>
+  </svg>
+</div>

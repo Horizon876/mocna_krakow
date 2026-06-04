@@ -1,0 +1,87 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import PageHero from "@components/PageHero.astro";
+import { BRAND } from "@data/site";
+---
+<BaseLayout title="Kontakt — MOCna!">
+  <PageHero
+    kicker="Kontakt"
+    title="Napisz, zadzwoń albo <span class='text-orange'>wpadnij na kawę</span>"
+    lead="Najszybciej złapiesz nas osobiście — przy barze. Ale mailem i telefonicznie też odpowiadamy z MOCą."
+    variant="cool"
+  />
+
+  <section class="pb-20">
+    <div class="shell grid gap-8 lg:grid-cols-[1fr_1fr]">
+      <form class="glass grid gap-5 p-8 sm:p-10" data-contact>
+        <div class="grid gap-5 sm:grid-cols-2">
+          <label class="grid gap-2">
+            <span class="text-fluid-sm font-medium text-graphite">Imię</span>
+            <input required class="rounded-2xl border border-graphite-200 bg-white px-4 py-3 text-fluid-sm focus:border-orange focus:outline-none" placeholder="Jak masz na imię?" />
+          </label>
+          <label class="grid gap-2">
+            <span class="text-fluid-sm font-medium text-graphite">E-mail</span>
+            <input required type="email" class="rounded-2xl border border-graphite-200 bg-white px-4 py-3 text-fluid-sm focus:border-orange focus:outline-none" placeholder="twój@email.pl" />
+          </label>
+        </div>
+        <label class="grid gap-2">
+          <span class="text-fluid-sm font-medium text-graphite">Temat</span>
+          <select class="rounded-2xl border border-graphite-200 bg-white px-4 py-3 text-fluid-sm focus:border-orange focus:outline-none">
+            <option>Pytanie ogólne</option>
+            <option>Catering</option>
+            <option>Szkolenia</option>
+            <option>Współpraca / media</option>
+            <option>Wolontariat</option>
+          </select>
+        </label>
+        <label class="grid gap-2">
+          <span class="text-fluid-sm font-medium text-graphite">Wiadomość</span>
+          <textarea required rows="5" class="rounded-2xl border border-graphite-200 bg-white px-4 py-3 text-fluid-sm focus:border-orange focus:outline-none" placeholder="Pisz śmiało — czytamy wszystko ☕"></textarea>
+        </label>
+        <button type="submit" class="btn-orange justify-center py-4">Wyślij wiadomość →</button>
+        <p class="hidden rounded-2xl bg-green/10 p-4 text-center text-fluid-sm font-medium text-green" data-ok>Dzięki! Odpiszemy najszybciej, jak ekspres pozwoli ☕</p>
+      </form>
+
+      <div class="grid content-start gap-4">
+        <div class="rounded-[28px] bg-yellow-cream p-7">
+          <h3 class="text-fluid-lg font-display font-bold tracking-tightest">Dane kontaktowe</h3>
+          <ul class="mt-4 space-y-3 text-fluid-sm text-graphite-soft">
+            <li>📍 {BRAND.address}</li>
+            <li>📞 <a href={`tel:${BRAND.phone.replace(/\s/g, "")}`} class="text-orange hover:underline">{BRAND.phone}</a></li>
+            <li>✉️ <a href={`mailto:${BRAND.email}`} class="text-orange hover:underline">{BRAND.email}</a></li>
+          </ul>
+          <ul class="mt-5 flex flex-wrap gap-2">
+            {BRAND.socials.map((s) => (
+              <li><a href={s.href} target="_blank" rel="noopener" class="rounded-full border border-graphite-200 px-3 py-1.5 text-xs font-medium text-graphite-soft transition-colors hover:border-orange hover:text-orange">{s.label}</a></li>
+            ))}
+          </ul>
+        </div>
+        <div class="rounded-[28px] bg-white p-7 border border-graphite-200">
+          <h3 class="text-fluid-lg font-display font-bold tracking-tightest">Godziny otwarcia</h3>
+          <ul class="mt-4 space-y-2 text-fluid-sm text-graphite-soft">
+            {BRAND.hours.map((h) => (
+              <li class="flex justify-between border-b border-graphite-200 pb-2"><span>{h.d}</span><span class="font-medium text-graphite">{h.h}</span></li>
+            ))}
+          </ul>
+        </div>
+        <div class="overflow-hidden rounded-[28px] border border-graphite-200">
+          <iframe title="Mapa — MOCna!" src={BRAND.mapEmbed} width="100%" height="240" loading="lazy" style="border:0; filter:grayscale(0.25);" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  function initContact() {
+    document.querySelectorAll("[data-contact]").forEach((form) => {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        form.querySelector("[data-ok]")?.classList.remove("hidden");
+        form.querySelector("button")?.setAttribute("disabled", "true");
+      });
+    });
+  }
+  initContact();
+  document.addEventListener("astro:after-swap", initContact);
+</script>

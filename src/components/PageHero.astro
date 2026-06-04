@@ -1,0 +1,19 @@
+---
+import BrandBlobs from "@components/BrandBlobs.astro";
+interface Props {
+  kicker: string;
+  title: string;
+  lead?: string;
+  variant?: "hero" | "soft" | "warm" | "cool";
+}
+const { kicker, title, lead, variant = "soft" } = Astro.props;
+---
+<section class="relative overflow-hidden pt-32 pb-12 sm:pt-40 sm:pb-16">
+  <BrandBlobs variant={variant} />
+  <div class="shell relative max-w-3xl">
+    <span class="kicker">{kicker}</span>
+    <h1 class="text-fluid-2xl font-display font-bold leading-tighter tracking-tightest text-balance" set:html={title} />
+    {lead && <p class="mt-6 text-fluid-lg font-light leading-relaxed text-graphite-soft text-pretty">{lead}</p>}
+    <slot />
+  </div>
+</section>

@@ -1,0 +1,55 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import PageHero from "@components/PageHero.astro";
+import SectionHeading from "@components/SectionHeading.astro";
+import Photo from "@components/Photo.astro";
+import { BRAND, COLORS } from "@data/site";
+
+const packages = [
+  { emoji: "☕", title: "Kawowy kącik", desc: "Mobilny bar barista na Twoje wydarzenie — espresso, flat white, slow coffee.", color: "orange", from: "od 900 zł" },
+  { emoji: "🍰", title: "Słodki stół", desc: "Domowe ciasta i desery z cukierni Klaudii. Również wersje bezglutenowe i wegańskie.", color: "pink", from: "od 600 zł" },
+  { emoji: "🥪", title: "Lunch box & przekąski", desc: "Lekkie, świeże propozycje na spotkania firmowe i konferencje.", color: "green", from: "od 35 zł / os." },
+] as const;
+---
+<BaseLayout title="Catering — MOCna!">
+  <PageHero
+    kicker="Catering"
+    title="Przywozimy MOC <span class='text-orange'>do Was</span>"
+    lead="Konferencja, ślub, event firmowy? Obsłużymy Was kawą specialty i domowymi wypiekami — z misją w cenie."
+    variant="warm"
+  />
+
+  <section class="py-12 sm:py-16">
+    <div class="shell grid gap-4 lg:grid-cols-3">
+      {packages.map((p) => (
+        <article class="flex flex-col rounded-[28px] border border-graphite-200 bg-white p-8 transition-transform duration-500 hover:-translate-y-1" style={`border-top:5px solid ${COLORS[p.color]}`}>
+          <span class="text-5xl">{p.emoji}</span>
+          <h3 class="mt-5 text-fluid-lg font-display font-bold tracking-tightest">{p.title}</h3>
+          <p class="mt-2 flex-1 text-fluid-sm text-graphite-soft">{p.desc}</p>
+          <p class="mt-6 font-display text-fluid-lg font-bold tracking-tightest" style={`color:${COLORS[p.color]}`}>{p.from}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="py-12">
+    <div class="shell grid items-center gap-10 lg:grid-cols-2">
+      <Photo alt="Mobilny bar kawowy MOCnej" emoji="🚐☕" color="#f39200" mask="rounded" ratio="4/3" class="shadow-soft" />
+      <div>
+        <SectionHeading kicker="Jak to działa" title="Trzy kroki do <span class='text-orange'>pełnej MOCy</span>" />
+        <ol class="mt-6 space-y-5">
+          {[["Opowiedz nam o wydarzeniu", "Termin, miejsce, liczba gości — resztę doradzimy."], ["Dostajesz wycenę", "Przejrzystą, bez gwiazdek i haczyków."], ["Zjawiamy się z MOCą", "Sprzęt, kawa, ludzie i dobra energia w komplecie."]].map(([t, d], i) => (
+            <li class="flex gap-4">
+              <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-orange font-display font-bold text-white">{i + 1}</span>
+              <div>
+                <h3 class="text-fluid-lg font-display font-bold tracking-tightest">{t}</h3>
+                <p class="text-fluid-sm text-graphite-soft">{d}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <a href={`mailto:${BRAND.email}?subject=Zapytanie%20o%20catering`} class="btn-orange mt-8">Zapytaj o catering →</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

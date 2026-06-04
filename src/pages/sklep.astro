@@ -1,0 +1,50 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import PageHero from "@components/PageHero.astro";
+import { PRODUCTS, COLORS } from "@data/site";
+
+const categories = ["Wszystko", "Kawa", "Vouchery", "Rękodzieło", "Cukiernia"];
+---
+<BaseLayout title="Sklep MOCnej — kawa specialty i rękodzieło">
+  <PageHero
+    kicker="Sklep MOCnej"
+    title="Kupujesz produkt — <span class='text-orange'>fundujesz pracę</span>"
+    lead="Czysto, minimalistycznie i z sercem. Kawa z naszego wypału, rękodzieło uczestników i prezenty pełne MOCy."
+    variant="cool"
+  />
+
+  <section class="pb-20">
+    <div class="shell">
+      <div class="flex flex-wrap gap-2">
+        {categories.map((c, i) => (
+          <button class:list={["rounded-full border px-5 py-2 text-fluid-sm font-medium transition-colors", i === 0 ? "border-orange bg-orange text-white" : "border-graphite-200 text-graphite-soft hover:border-orange hover:text-orange"]}>
+            {c}
+          </button>
+        ))}
+      </div>
+
+      <div class="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
+        {PRODUCTS.map((p) => (
+          <article class="group flex flex-col overflow-hidden rounded-[26px] border border-graphite-200 bg-white transition-all duration-500 hover:-translate-y-1 hover:shadow-soft">
+            <div class="relative grid aspect-[4/3] place-items-center text-6xl" style={`background:${COLORS[p.color]}1a`}>
+              <span class="transition-transform duration-500 group-hover:scale-110">{p.emoji}</span>
+              <span class="absolute left-4 top-4 rounded-full bg-white/80 px-3 py-1 text-xs font-medium backdrop-blur" style={`color:${COLORS[p.color]}`}>{p.tag}</span>
+            </div>
+            <div class="flex flex-1 flex-col p-5">
+              <h3 class="text-fluid-sm font-semibold leading-snug text-graphite">{p.name}</h3>
+              <div class="mt-auto flex items-center justify-between pt-4">
+                <span class="font-display text-fluid-lg font-bold tracking-tightest text-graphite">{p.price}</span>
+                <button class="btn-orange px-4 py-2 text-xs">Do koszyka</button>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div class="mt-12 rounded-[32px] bg-yellow-cream p-8 text-center sm:p-12">
+        <p class="text-fluid-xl font-display font-bold tracking-tightest">100% zysku wraca do <span class="text-orange">ludzi i miejsca</span></p>
+        <p class="mx-auto mt-3 max-w-xl text-fluid-sm text-graphite-soft">Nie mamy inwestorów do spłacenia. Mamy zespół do wspierania. Dlatego każdy zakup ma dla nas ogromne znaczenie.</p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

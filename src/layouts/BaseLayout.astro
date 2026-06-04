@@ -1,0 +1,63 @@
+---
+import "../styles/global.css";
+import { ViewTransitions } from "astro:transitions";
+import NoiseOverlay from "@components/NoiseOverlay.astro";
+import FlyingNav from "@components/FlyingNav.astro";
+import Footer from "@components/Footer.astro";
+import { BRAND } from "@data/site";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const {
+  title = `${BRAND.name} — ${BRAND.tagline}`,
+  description = "Społeczna kawiarnia specialty MOCna!. Tworzymy miejsca pracy dla osób z niepełnosprawnościami, organizujemy wydarzenia, szkolenia i budujemy społeczność.",
+} = Astro.props;
+---
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/brand/logo-kolor.svg" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#f39200" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <title>{title}</title>
+    <ViewTransitions />
+  </head>
+  <body class="relative min-h-screen">
+    <!-- Subtelny watermark patternu marki na całej witrynie -->
+    <div
+      class="pointer-events-none fixed inset-0 -z-50 bg-repeat opacity-[0.04]"
+      style="background-image:url('/brand/pattern.png'); background-size:340px;"
+      aria-hidden="true"
+    ></div>
+
+    <NoiseOverlay />
+
+    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-full focus:bg-graphite focus:px-5 focus:py-3 focus:text-white">
+      Przejdź do treści
+    </a>
+
+    <FlyingNav />
+    <!-- Spacer: odpycha treść dokładnie o wysokość navbaru (który jest fixed) -->
+    <div id="nav-spacer" aria-hidden="true" class="h-16 sm:h-[4.5rem]"></div>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <Footer />
+  </body>
+</html>
+
+<style is:global>
+  /* Delikatne wejście treści przy zmianie podstrony (View Transitions) */
+  main {
+    animation: rise-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+</style>
