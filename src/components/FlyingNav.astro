@@ -2,12 +2,23 @@
 import { BRAND } from "@data/site";
 
 const path = Astro.url.pathname;
-const isActive = (href: string) =>
-  href === "/" ? path === "/" : path.startsWith(href);
+
+/** Aktywny link: na stronie głównej rozróżnia wierzchołek (/) od sekcji z kotwicą. */
+const isActive = (href: string) => {
+  const [hrefPath, hrefHash] = href.split("#");
+  const base = hrefPath || "/";
+
+  if (base === "/") {
+    if (path !== "/") return false;
+    return !hrefHash;
+  }
+
+  return path === base || path.startsWith(`${base}/`);
+};
 
 const oNas = [
-  { label: "O MOCnej!", href: "/o-mocnej" },
-  { label: "W mediach", href: "/w-mediach" },
+  { label: "O MOCnej!", href: "/#poznaj-mocna" },
+  { label: "W mediach", href: "/#mocna-w-mediach" },
   { label: "Wolontariat", href: "/wolontariat" },
   { label: "Projekty", href: "/projekty" },
 ];
@@ -524,41 +535,92 @@ const mobileTileSmClass = (active: boolean) =>
 </style>
 
 <script>
+  import { HOME_SECTION_SCROLL } from "@data/site";
+
+  const HOME_SECTIONS = Object.values(HOME_SECTION_SCROLL);
+  const NAV_OFFSET_PX = 72;
+
+  let activeHomeSection: string | null = null;
+
   function normalizePath(pathname: string): string {
     const path = pathname.split("?")[0].split("#")[0];
     if (path !== "/" && path.endsWith("/")) return path.slice(0, -1);
     return path || "/";
   }
 
-  function pathIsActive(href: string, path: string): boolean {
-    const h = normalizePath(href);
-    const p = normalizePath(path);
-    if (h === "/") return p === "/";
-    return p === h || p.startsWith(h + "/");
+  function parseNavHref(href: string): { path: string; hash: string } {
+    const raw = href.split("?")[0];
+    const [pathPart, hashPart] = raw.split("#");
+    return {
+      path: normalizePath(pathPart || "/"),
+      hash: hashPart ? `#${hashPart}` : "",
+    };
+  }
+
+  function updateHomeSectionFromScroll() {
+    const pagePath = normalizePath(window.location.pathname);
+    if (pagePath !== "/") {
+      activeHomeSection = null;
+      return;
+    }
+
+    let active: string | null = null;
+
+    for (const { id, extraOffset } of HOME_SECTIONS) {
+      const section = document.getElementById(id);
+      if (!section) continue;
+
+      if (section.getBoundingClientRect().top <= NAV_OFFSET_PX - extraOffset + 48) {
+        active = id;
+      }
+    }
+
+    activeHomeSection = active;
+  }
+
+  function navLinkIsActive(href: string, pathname: string): boolean {
+    const { path: linkPath, hash: linkHash } = parseNavHref(href);
+    const pagePath = normalizePath(pathname);
+
+    if (linkPath !== pagePath) {
+      if (linkPath === "/") return false;
+      return pagePath === linkPath || pagePath.startsWith(`${linkPath}/`);
+    }
+
+    if (pagePath === "/") {
+      if (linkHash) return activeHomeSection === linkHash.slice(1);
+      return activeHomeSection === null;
+    }
+
+    return !linkHash || window.location.hash === linkHash;
+  }
+
+  function setNavItemActive(el: HTMLElement, active: boolean) {
+    el.classList.toggle("is-nav-active", active);
+    if (el instanceof HTMLAnchorElement) {
+      if (active) el.setAttribute("aria-current", "page");
+      else el.removeAttribute("aria-current");
+    }
+    const underline = el.querySelector(".nav-underline");
+    if (underline) {
+      underline.classList.toggle("opacity-100", active);
+      underline.classList.toggle("opacity-0", !active);
+    }
   }
 
   /** Odświeża podkreślenie i kolory po nawigacji (navbar ma transition:persist). */
   function updateNavActive() {
+    updateHomeSectionFromScroll();
     const path = normalizePath(window.location.pathname);
 
     document.querySelectorAll<HTMLElement>("[data-nav-href]").forEach((el) => {
       const href = el.getAttribute("data-nav-href")!;
-      const active = pathIsActive(href, path);
-      el.classList.toggle("is-nav-active", active);
-      if (el instanceof HTMLAnchorElement) {
-        if (active) el.setAttribute("aria-current", "page");
-        else el.removeAttribute("aria-current");
-      }
-      const underline = el.querySelector(".nav-underline");
-      if (underline) {
-        underline.classList.toggle("opacity-100", active);
-        underline.classList.toggle("opacity-0", !active);
-      }
+      setNavItemActive(el, navLinkIsActive(href, path));
     });
 
     document.querySelectorAll<HTMLElement>("[data-nav-group]").forEach((group) => {
       const paths = (group.getAttribute("data-nav-paths") || "").split(",").filter(Boolean);
-      const active = paths.some((h) => pathIsActive(h, path));
+      const active = paths.some((h) => navLinkIsActive(h, path));
       const btn = group.querySelector<HTMLElement>(".nav-group-trigger");
       if (!btn) return;
       btn.classList.toggle("is-nav-active", active);
@@ -627,13 +689,21 @@ const mobileTileSmClass = (active: boolean) =>
       });
     });
 
-    const onScroll = () =>
+    const onScroll = () => {
       header?.classList.toggle("scrolled", window.scrollY > 8);
+      updateNavActive();
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("hashchange", updateNavActive);
   }
 
   initNav();
   document.addEventListener("astro:after-swap", updateNavActive);
-  document.addEventListener("astro:page-load", updateNavActive);
+  document.addEventListener("astro:page-load", () => {
+    requestAnimationFrame(() => {
+      updateNavActive();
+      requestAnimationFrame(updateNavActive);
+    });
+  });
 </script>

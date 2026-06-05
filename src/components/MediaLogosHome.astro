@@ -1,0 +1,31 @@
+---
+import SectionHeading from "@components/SectionHeading.astro";
+import { MEDIA_LOGOS_HOME } from "@data/site";
+---
+<section id="mocna-w-mediach" class="relative scroll-mt-16 py-20 sm:scroll-mt-[4.5rem] sm:py-28">
+  <div class="shell">
+    <SectionHeading
+      align="center"
+      title="<span class='text-blue'>M</span><span class='text-red'>O</span><span class='text-yellow'>C</span><span class='text-green'>n</span><span class='text-pink'>a</span> <span class='text-orange'>w me</span><span class='text-green'>diach</span>"
+    />
+
+    <ul class="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 lg:gap-6" role="list">
+      {MEDIA_LOGOS_HOME.map((item) => (
+        <li>
+          <a
+            href={item.href ?? "/#mocna-w-mediach"}
+            class="media-logo-tile group grid aspect-square w-full place-items-center border border-graphite-200 bg-white px-5 transition-colors duration-300 hover:border-graphite-300"
+            aria-label={item.name}
+          >
+            <img
+              src={item.logo}
+              alt={item.name}
+              class="max-h-14 w-full max-w-[11rem] object-contain sm:max-h-16 lg:max-h-[4.5rem]"
+              loading="lazy"
+            />
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>

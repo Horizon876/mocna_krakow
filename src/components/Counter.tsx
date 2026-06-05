@@ -1,15 +1,51 @@
 import { useEffect, useRef, useState } from "react";
+import type { StatAccent, StatTileSize } from "@data/site";
+
+const tileAccent = {
+  orange: {
+    btn: "border-orange bg-orange",
+    value: "text-white",
+    label: "text-white",
+  },
+  yellow: {
+    btn: "border-yellow bg-yellow",
+    value: "text-graphite",
+    label: "text-graphite",
+  },
+  red: {
+    btn: "border-red bg-red",
+    value: "text-white",
+    label: "text-white",
+  },
+  green: {
+    btn: "border-green bg-green",
+    value: "text-white",
+    label: "text-white",
+  },
+  blue: {
+    btn: "border-blue bg-blue",
+    value: "text-white",
+    label: "text-white",
+  },
+} as const;
 
 type Props = {
   value: number;
   suffix?: string;
   label: string;
-  color?: string;
+  accent?: StatAccent;
+  tileSize?: StatTileSize;
+  variant?: "card" | "tile";
 };
 
-// Animowany licznik – wyspa Astro. JS ładuje się tylko dla tego komponentu
-// (client:visible), uruchamia się gdy wjedzie w viewport.
-export default function Counter({ value, suffix = "", label, color = "#f39200" }: Props) {
+export default function Counter({
+  value,
+  suffix = "",
+  label,
+  accent = "orange",
+  tileSize = "wide",
+  variant = "card",
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [display, setDisplay] = useState(0);
   const [started, setStarted] = useState(false);
@@ -31,7 +67,7 @@ export default function Counter({ value, suffix = "", label, color = "#f39200" }
           io.disconnect();
         }
       },
-      { threshold: 0.4 }
+      { threshold: 0.35 }
     );
     io.observe(el);
     return () => io.disconnect();
@@ -39,12 +75,12 @@ export default function Counter({ value, suffix = "", label, color = "#f39200" }
 
   useEffect(() => {
     if (!started) return;
-    const duration = 1600;
+    const duration = 1800;
     const start = performance.now();
     let raf = 0;
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      const eased = 1 - Math.pow(1 - t, 3);
       setDisplay(Math.round(eased * value));
       if (t < 1) raf = requestAnimationFrame(tick);
     };
@@ -53,20 +89,50 @@ export default function Counter({ value, suffix = "", label, color = "#f39200" }
   }, [started, value]);
 
   const formatted = display.toLocaleString("pl-PL");
+  const tone = tileAccent[accent];
+
+  if (variant === "tile") {
+    const compact = tileSize === "compact";
+    const valueSize = value >= 1000
+      ? "text-[clamp(1.1rem,2.2vw,1.65rem)]"
+      : compact
+        ? "text-[clamp(1.45rem,2.8vw,1.9rem)]"
+        : "text-[clamp(1.65rem,3.8vw,2.35rem)]";
+
+    return (
+      <div
+        ref={ref}
+        className={`flex flex-col items-center justify-center border text-center ${
+          compact
+            ? "w-[calc(50%-0.25rem)] gap-1.5 px-2 py-3.5 sm:w-auto sm:flex-[0.78] sm:gap-2 sm:px-2 sm:py-4"
+            : "w-[calc(50%-0.25rem)] gap-2 px-2.5 py-4 sm:w-auto sm:flex-[1.35] sm:py-4.5"
+        } ${tone.btn}`}
+      >
+        <div
+          className={`font-display font-bold leading-none tracking-tightest ${valueSize} ${tone.value}`}
+        >
+          {formatted}
+          {suffix && <span className="text-[0.85em]">{suffix}</span>}
+        </div>
+        <p
+          className={`font-semibold leading-snug ${
+            compact
+              ? "max-w-[11rem] text-[12.5px] sm:max-w-[10rem] sm:text-[13.5px]"
+              : "text-[14px] sm:text-[15px]"
+          } ${tone.label}`}
+        >
+          {label}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div
       ref={ref}
       className="group relative rounded-[26px] border border-graphite-200 bg-white p-6 transition-all duration-500 hover:-translate-y-1 hover:shadow-soft"
     >
-      <span
-        className="absolute left-6 top-6 h-2.5 w-2.5 rounded-full transition-transform duration-500 group-hover:scale-150"
-        style={{ background: color }}
-      />
-      <div
-        className="font-display text-5xl font-bold leading-none tracking-tightest sm:text-6xl"
-        style={{ color }}
-      >
+      <div className="font-display text-5xl font-bold leading-none tracking-tightest sm:text-6xl">
         {formatted}
         <span>{suffix}</span>
       </div>

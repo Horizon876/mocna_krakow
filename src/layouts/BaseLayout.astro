@@ -52,6 +52,12 @@ const {
     </main>
 
     <Footer />
+
+    <script>
+      import { initSectionScroll } from "../scripts/scroll-to-section";
+      initSectionScroll();
+      document.addEventListener("astro:page-load", initSectionScroll);
+    </script>
   </body>
 </html>
 

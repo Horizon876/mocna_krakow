@@ -1,47 +1,121 @@
 ---
-import Photo from "@components/Photo.astro";
 import Counter from "@components/Counter.tsx";
 import { STATS } from "@data/site";
 ---
-<section class="relative py-20 sm:py-28">
-  <div class="shell">
-    <div class="grid gap-6 lg:grid-cols-12 lg:gap-7">
-      <!-- Duży kafel: zdjęcie założycielki z zespołem -->
-      <div class="relative lg:col-span-7">
-        <Photo
-          alt="Założycielka MOCnej z zespołem"
-          label="Założycielka z zespołem — początek wszystkiego"
-          icon={`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>`}
-          color="#2c5ea9"
-          mask="rounded"
-          ratio="16/11"
-          class="h-full shadow-soft"
-        />
-      </div>
 
-      <!-- Kafel z misją -->
-      <div class="flex flex-col justify-between rounded-[32px] bg-yellow-cream p-8 lg:col-span-5 sm:p-10">
-        <div>
-          <span class="kicker">Poznaj MOCną!</span>
-          <p class="text-fluid-xl font-display font-bold leading-tighter tracking-tightest text-balance">
-            Nie zaczynamy od stanowiska pracy.
-            <span class="text-orange">Zaczynamy od człowieka.</span>
-          </p>
-          <p class="mt-5 text-fluid-sm leading-relaxed text-graphite-soft">
-            Wierzymy, że praca to coś więcej niż obowiązek — to godność, rytm
-            dnia i poczucie sprawczości. Budujemy zespół, w którym każdy ma
-            swoje miejsce przy barze i w tej historii.
-          </p>
+<section id="poznaj-mocna" class="relative">
+
+  <!-- ── Editorial: zdjęcie + tekst ── -->
+  <div class="shell pt-20 pb-[54px] sm:pt-28 sm:pb-[62px]">
+    <div class="grid gap-10 lg:grid-cols-[1.18fr_0.92fr] lg:gap-12 xl:grid-cols-[1.3fr_0.88fr] xl:gap-14">
+
+      <!-- Zdjęcie: nieregularna maska organiczna -->
+      <div class="bento-photo-col relative z-10 min-h-[340px] sm:min-h-[440px] lg:min-h-[580px] lg:-ml-[30px] lg:w-[calc(100%+60px)]">
+        <svg class="bento-mask-defs" aria-hidden="true" focusable="false">
+          <defs>
+            <filter id="bento-mask-feather" filterUnits="objectBoundingBox" x="-0.12" y="-0.12" width="1.24" height="1.24">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="0.014" />
+            </filter>
+            <!-- Góra/dół faliste + boki z łagodnymi falami; środek zostaje szeroki dla czytelności -->
+            <mask id="bento-photo-organic-mask" maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox">
+              <path
+                fill="white"
+                filter="url(#bento-mask-feather)"
+                d="M 0.11 0.06 C 0.24 0.02 0.40 0.10 0.54 0.05 C 0.68 0.01 0.82 0.08 0.91 0.06 C 0.96 0.16 0.94 0.26 0.96 0.36 C 0.93 0.44 0.96 0.52 0.94 0.60 C 0.96 0.68 0.93 0.76 0.95 0.84 C 0.91 0.92 0.96 0.96 0.88 0.94 C 0.74 0.98 0.60 0.94 0.46 0.97 C 0.32 0.94 0.18 0.98 0.10 0.94 C 0.05 0.86 0.07 0.76 0.05 0.66 C 0.07 0.56 0.05 0.46 0.07 0.36 C 0.05 0.26 0.07 0.16 0.11 0.06 Z"
+              />
+            </mask>
+            <mask id="bento-photo-organic-mask-lg" maskUnits="objectBoundingBox" maskContentUnits="objectBoundingBox">
+              <path
+                fill="white"
+                filter="url(#bento-mask-feather)"
+                d="M 0.10 0.05 C 0.26 0.01 0.42 0.09 0.56 0.04 C 0.70 0.00 0.84 0.07 0.92 0.05 C 0.97 0.15 0.95 0.25 0.97 0.35 C 0.94 0.43 0.97 0.51 0.95 0.59 C 0.97 0.67 0.94 0.75 0.96 0.83 C 0.92 0.91 0.97 0.95 0.89 0.93 C 0.75 0.97 0.61 0.93 0.47 0.96 C 0.33 0.93 0.19 0.97 0.09 0.93 C 0.04 0.85 0.06 0.75 0.04 0.65 C 0.06 0.55 0.04 0.45 0.06 0.35 C 0.04 0.25 0.06 0.15 0.10 0.05 Z"
+              />
+            </mask>
+          </defs>
+        </svg>
+        <div class="bento-photo absolute inset-0">
+          <div class="bento-photo-masked absolute inset-0">
+            <img
+              src="/photos/poznaj_mocna.jpeg"
+              alt="Zespół kawiarni MOCna! przy pracy"
+              class="bento-photo-img absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
+            />
+            <div
+              class="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-graphite/75 to-transparent"
+              aria-hidden="true"
+            ></div>
+          </div>
         </div>
-        <a href="/o-mocnej" class="btn-orange mt-8 self-start">Poznaj naszą historię →</a>
       </div>
 
-      <!-- Liczniki – wyspy Astro -->
+      <!-- Tekst editorial -->
+      <div class="flex flex-col justify-center">
+
+        <h2 class="font-display text-fluid-2xl font-bold leading-tighter tracking-tightest text-graphite">
+          <span class="text-blue" aria-hidden="true">„</span>
+          <span class="text-red">Nie zaczynamy</span><br />
+          <span class="text-blue">od</span> <span class="text-orange">stanowiska&nbsp;pracy</span>.<br />
+          <span class="text-blue">Zaczynamy</span> <span class="text-green">od człowieka.</span>
+          <span class="text-blue" aria-hidden="true">”</span>
+        </h2>
+
+        <a href="/ludziemocnej" class="btn-orange mt-8 self-start">Poznaj ludzi MOCnej →</a>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Liczniki: jak 4 przyciski w hero ── -->
+  <div class="shell pb-20 pt-0 sm:pb-28">
+    <div class="flex flex-wrap gap-2 sm:flex-nowrap sm:gap-2.5">
       {STATS.map((s) => (
-        <div class="lg:col-span-3">
-          <Counter client:visible value={s.value} suffix={s.suffix} label={s.label} color={s.color} />
-        </div>
+        <Counter
+          client:visible
+          variant="tile"
+          accent={s.accent}
+          tileSize={s.tileSize}
+          value={s.value}
+          suffix={s.suffix}
+          label={s.label}
+        />
       ))}
     </div>
   </div>
+
 </section>
+
+<style>
+  .bento-photo-col {
+    overflow: visible;
+  }
+
+  .bento-mask-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  .bento-photo {
+    overflow: visible;
+  }
+
+  .bento-photo-masked {
+    transform: scale(1.03);
+    transform-origin: center;
+    -webkit-mask: url(#bento-photo-organic-mask);
+    mask: url(#bento-photo-organic-mask);
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+  }
+
+  @media (min-width: 1024px) {
+    .bento-photo-masked {
+      -webkit-mask: url(#bento-photo-organic-mask-lg);
+      mask: url(#bento-photo-organic-mask-lg);
+    }
+  }
+</style>

@@ -35,32 +35,60 @@ export const COLORS = {
   graphite: "#333333",
 } as const;
 
+/** Sekcje strony głównej linkowane z menu — własne przewinięcie zamiast domyślnej kotwicy. */
+export const HOME_SECTION_SCROLL = {
+  poznajMocna: {
+    id: "poznaj-mocna",
+    /** px w dół od górnej krawędzi sekcji (ukrywa hero, wyląduj na treści „O MOCnej”). */
+    extraOffset: 38,
+  },
+  mocnaWMediach: {
+    id: "mocna-w-mediach",
+    extraOffset: 0,
+  },
+  wesprzyjNas: {
+    id: "wesprzyj-nas",
+    extraOffset: 0,
+  },
+} as const;
+
 export type NavItem = { label: string; href: string };
 
 // Dokładnie 12 podstron menu głównego
 export const NAV: NavItem[] = [
   { label: "Start", href: "/" },
-  { label: "O MOCnej", href: "/o-mocnej" },
+  { label: "O MOCnej", href: "/#poznaj-mocna" },
   { label: "Kawiarnia", href: "/kawiarnia" },
   { label: "Rezerwacja", href: "/rezerwacja" },
   { label: "Wydarzenia", href: "/wydarzenia" },
   { label: "Sklep", href: "/sklep" },
   { label: "Catering", href: "/catering" },
   { label: "Szkolenia", href: "/szkolenia" },
-  { label: "W mediach", href: "/w-mediach" },
+  { label: "W mediach", href: "/#mocna-w-mediach" },
   { label: "Wolontariat", href: "/wolontariat" },
   { label: "Projekty", href: "/projekty" },
-  { label: "Wesprzyj", href: "/wesprzyj" },
+  { label: "Wesprzyj", href: "/#wesprzyj-nas" },
   { label: "Kontakt", href: "/kontakt" },
 ];
 
-export type Stat = { value: number; suffix?: string; label: string; color: string };
+export type StatAccent = "orange" | "yellow" | "red" | "green" | "blue";
+
+export type StatTileSize = "wide" | "compact";
+
+export type Stat = {
+  value: number;
+  suffix?: string;
+  label: string;
+  color: string;
+  accent: StatAccent;
+  tileSize: StatTileSize;
+};
 
 export const STATS: Stat[] = [
-  { value: 7, label: "osób z niepełnosprawnościami zatrudnionych", color: COLORS.orange },
-  { value: 50, suffix: "+", label: "zorganizowanych wydarzeń", color: COLORS.red },
-  { value: 800, suffix: "+", label: "uczestników warsztatów", color: COLORS.green },
-  { value: 24000, suffix: "+", label: "filiżanek kawy pełnych MOCy", color: COLORS.blue },
+  { value: 7, label: "osób z niepełnosprawnościami zatrudnionych", color: COLORS.orange, accent: "orange", tileSize: "wide" },
+  { value: 50, suffix: "+", label: "zorganizowanych wydarzeń", color: COLORS.red, accent: "red", tileSize: "compact" },
+  { value: 800, suffix: "+", label: "uczestników warsztatów", color: COLORS.green, accent: "green", tileSize: "compact" },
+  { value: 24000, suffix: "+", label: "filiżanek kawy pełnych MOCy", color: COLORS.yellow, accent: "yellow", tileSize: "compact" },
 ];
 
 export type EventCard = {
@@ -144,6 +172,16 @@ export const STORIES: Story[] = [
     quote: "Dzień dobry mówię tak, żeby ktoś poczuł się lepiej.",
     body: "Szymon otwiera kawiarnię i wita pierwszych gości. Jego pogoda ducha nadaje ton całemu dniu. W MOCnej odnalazł rytm, relacje i miejsce, w którym jest sobą.",
   },
+];
+
+export type MediaLogo = { name: string; logo: string; href?: string };
+
+export const MEDIA_LOGOS_HOME: MediaLogo[] = [
+  { name: "TVP Kraków", logo: "/photos/logo_tvp.jpg", href: "/#mocna-w-mediach" },
+  { name: "Integracja", logo: "/photos/integracja.png", href: "/#mocna-w-mediach" },
+  { name: "Radio", logo: "/media/logos/radio.svg", href: "/#mocna-w-mediach" },
+  { name: "portale miejskie", logo: "/media/logos/portale-miejskie.svg", href: "/#mocna-w-mediach" },
+  { name: "artykuły prasowe", logo: "/media/logos/artykuly-prasowe.svg", href: "/#mocna-w-mediach" },
 ];
 
 export type MediaItem = { outlet: string; title: string; href: string; accent: keyof typeof COLORS };
