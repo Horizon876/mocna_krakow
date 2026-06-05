@@ -1,18 +1,12 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
-import PageHero from "@components/PageHero.astro";
-import StoriesSection from "@components/StoriesSection.astro";
+import PeopleGrid from "@components/PeopleGrid.astro";
 ---
 <BaseLayout
   title="Ludzie MOCnej — poznaj zespół"
   description="Poznaj ludzi MOCnej — zespół społecznej kawiarni specialty, który tworzy miejsce pracy i wspólnotę przy każdej filiżance."
 >
-  <PageHero
-    kicker="Ludzie MOCnej"
-    title="Poznaj ludzi, którzy <span class='text-orange'>tworzą</span> to miejsce"
-    lead="Za barem, przy wydarzeniach i na zapleczu — każda osoba w MOCnej ma swoją historię, tempo i miejsce w zespole."
-    variant="warm"
-  />
-
-  <StoriesSection />
+  <div class="home-page">
+    <PeopleGrid />
+  </div>
 </BaseLayout>

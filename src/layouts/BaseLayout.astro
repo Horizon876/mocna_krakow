@@ -3,6 +3,7 @@ import "../styles/global.css";
 import { ViewTransitions } from "astro:transitions";
 import NoiseOverlay from "@components/NoiseOverlay.astro";
 import FlyingNav from "@components/FlyingNav.astro";
+import CartDrawer from "@components/CartDrawer.astro";
 import Footer from "@components/Footer.astro";
 import { BRAND } from "@data/site";
 
@@ -29,7 +30,7 @@ const {
     <title>{title}</title>
     <ViewTransitions />
   </head>
-  <body class="relative min-h-screen">
+  <body class="relative flex min-h-screen flex-col">
     <!-- Subtelny watermark patternu marki na całej witrynie -->
     <div
       class="pointer-events-none fixed inset-0 -z-50 bg-repeat opacity-[0.04]"
@@ -44,10 +45,11 @@ const {
     </a>
 
     <FlyingNav />
+    <CartDrawer />
     <!-- Spacer: odpycha treść dokładnie o wysokość navbaru (który jest fixed) -->
     <div id="nav-spacer" aria-hidden="true" class="h-16 sm:h-[4.5rem]"></div>
 
-    <main id="main">
+    <main id="main" class="flex flex-1 flex-col">
       <slot />
     </main>
 

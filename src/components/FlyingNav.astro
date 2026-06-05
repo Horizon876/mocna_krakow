@@ -2,6 +2,8 @@
 import { BRAND } from "@data/site";
 
 const path = Astro.url.pathname;
+const isSklepPage = path === "/sklep" || path.startsWith("/sklep/");
+const shopCtaLabel = isSklepPage ? "Koszyk" : "Sklep";
 
 /** Aktywny link: na stronie głównej rozróżnia wierzchołek (/) od sekcji z kotwicą. */
 const isActive = (href: string) => {
@@ -219,11 +221,34 @@ const mobileTileSmClass = (active: boolean) =>
                 : "border-yellow bg-yellow text-graphite hover:border-[#e6c800] hover:bg-[#f5d500]",
             ]}
           >
-            <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M3.5 5h9l-1.25 7.5h-6.5L3.5 5z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/>
-              <path d="M6 5c0-1.1.9-2 2-2s2 .9 2 2" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+            <svg
+              data-shop-icon-bag
+              class:list={["h-3.5 w-3.5 shrink-0", isSklepPage && "hidden"]}
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true"
+            >
+              <path d="M3.5 5h9l-1.25 7.5h-6.5L3.5 5z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"></path>
+              <path d="M6 5c0-1.1.9-2 2-2s2 .9 2 2" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"></path>
             </svg>
-            Sklep
+            <svg
+              data-shop-icon-cart
+              class:list={["h-3.5 w-3.5 shrink-0", !isSklepPage && "hidden"]}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M6 6h15l-1.5 9h-12z"></path>
+              <path d="M6 6l-1.2-3H2"></path>
+              <circle cx="9" cy="20" r="1"></circle>
+              <circle cx="18" cy="20" r="1"></circle>
+            </svg>
+            <span data-shop-cta-label>{shopCtaLabel}</span>
+            <span data-cart-count class:list={["nav-cart-count", !isSklepPage && "hidden"]}>0</span>
           </a>
 
           <!-- Zarezerwuj stolik: solid z ikoną kalendarza -->
@@ -319,13 +344,40 @@ const mobileTileSmClass = (active: boolean) =>
         data-nav-href="/sklep"
         data-nav-cta="sklep"
         class:list={[
-          "nav-mobile-link flex items-center justify-center rounded-[16px] border-2 py-3.5 text-[14px] font-bold transition-colors",
+          "nav-mobile-link flex items-center justify-center gap-1.5 rounded-[16px] border-2 py-3.5 text-[14px] font-bold transition-colors",
           isActive("/sklep")
             ? "is-nav-active border-[#e6c800] bg-yellow text-graphite"
             : "border-yellow bg-yellow text-graphite hover:bg-[#f5d500]",
         ]}
       >
-        Sklep
+        <svg
+          data-shop-icon-bag
+          class:list={["h-4 w-4 shrink-0", isSklepPage && "hidden"]}
+          viewBox="0 0 16 16"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path d="M3.5 5h9l-1.25 7.5h-6.5L3.5 5z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"></path>
+          <path d="M6 5c0-1.1.9-2 2-2s2 .9 2 2" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"></path>
+        </svg>
+        <svg
+          data-shop-icon-cart
+          class:list={["h-4 w-4 shrink-0", !isSklepPage && "hidden"]}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M6 6h15l-1.5 9h-12z"></path>
+          <path d="M6 6l-1.2-3H2"></path>
+          <circle cx="9" cy="20" r="1"></circle>
+          <circle cx="18" cy="20" r="1"></circle>
+        </svg>
+        <span data-shop-cta-label>{shopCtaLabel}</span>
+        <span data-cart-count class:list={["nav-cart-count", !isSklepPage && "hidden"]}>0</span>
       </a>
       <a
         href="/rezerwacja"
@@ -476,6 +528,100 @@ const mobileTileSmClass = (active: boolean) =>
     padding-inline: 0.625rem;
   }
 
+  #site-header [data-nav-cta="sklep"].is-cart-added {
+    transition: none !important;
+    animation: nav-cart-added 2.2s cubic-bezier(0.22, 0.55, 0.1, 1);
+  }
+
+  @keyframes nav-cart-added {
+    0%, 100% {
+      transform: scale(1) translateY(0);
+      background-color: #ffde00;
+      border-color: #ffde00;
+      box-shadow: none;
+    }
+    18% {
+      transform: scale(1.08) translateY(-2px);
+      background-color: #d4f0e0;
+      border-color: #9dd4b8;
+      box-shadow:
+        0 0 0 2px rgba(0, 149, 94, 0.28),
+        0 6px 18px -5px rgba(0, 149, 94, 0.28);
+    }
+    36% {
+      transform: scale(1.04) translateY(-1px);
+      background-color: #dff5e9;
+      border-color: #b5dcc5;
+      box-shadow:
+        0 0 0 1.5px rgba(0, 149, 94, 0.18),
+        0 3px 12px -6px rgba(0, 149, 94, 0.15);
+    }
+    52% {
+      transform: scale(1.025) translateY(0);
+      background-color: #eaf7f0;
+      border-color: #c8e6d4;
+      box-shadow: 0 0 0 1px rgba(0, 149, 94, 0.1);
+    }
+    66% {
+      transform: scale(1.012) translateY(0);
+      background-color: #f3f0c4;
+      border-color: #ede070;
+      box-shadow: none;
+    }
+    78% {
+      transform: scale(1.006) translateY(0);
+      background-color: #f8ef8e;
+      border-color: #f5e860;
+      box-shadow: none;
+    }
+    88% {
+      transform: scale(1.002) translateY(0);
+      background-color: #fce88a;
+      border-color: #ffde00;
+      box-shadow: none;
+    }
+    96% {
+      transform: scale(1) translateY(0);
+      background-color: #ffde00;
+      border-color: #ffde00;
+      box-shadow: none;
+    }
+  }
+
+  .nav-cart-count.hidden {
+    display: none;
+  }
+
+  .nav-cart-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.2rem;
+    height: 1.2rem;
+    padding: 0 0.3rem;
+    margin-left: 0.15rem;
+    border-radius: 999px;
+    background: #2c5ea9;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .nav-cart-count.is-bumped {
+    animation: nav-cart-count-bump 0.75s ease-out;
+  }
+
+  @keyframes nav-cart-count-bump {
+    0%, 100% { transform: scale(1); }
+    30% { transform: scale(1.3); }
+    55% { transform: scale(1.05); }
+    75% { transform: scale(1.12); }
+    88% { transform: scale(0.98); }
+    96% { transform: scale(1); }
+  }
+
   /* ── Po scroll: frosted glass (bez animacji) ── */
   #site-header.scrolled #nav-inner {
     background: rgba(255, 255, 255, 0.96);
@@ -536,11 +682,17 @@ const mobileTileSmClass = (active: boolean) =>
 
 <script>
   import { HOME_SECTION_SCROLL } from "@data/site";
+  import { readCart } from "../scripts/cart";
 
   const HOME_SECTIONS = Object.values(HOME_SECTION_SCROLL);
   const NAV_OFFSET_PX = 72;
 
   let activeHomeSection: string | null = null;
+
+  function isSklepPath(pathname?: string) {
+    const path = pathname ?? window.location.pathname;
+    return path === "/sklep" || path.startsWith("/sklep/");
+  }
 
   function normalizePath(pathname: string): string {
     const path = pathname.split("?")[0].split("#")[0];
@@ -608,9 +760,26 @@ const mobileTileSmClass = (active: boolean) =>
     }
   }
 
+  function updateShopCtaLabel() {
+    const isSklep = isSklepPath();
+
+    document.querySelectorAll('[data-nav-cta="sklep"]').forEach((el) => {
+      const label = el.querySelector("[data-shop-cta-label]");
+      const bagIcon = el.querySelector("[data-shop-icon-bag]");
+      const cartIcon = el.querySelector("[data-shop-icon-cart]");
+      const countEl = el.querySelector("[data-cart-count]");
+
+      if (label) label.textContent = isSklep ? "Koszyk" : "Sklep";
+      bagIcon?.classList.toggle("hidden", isSklep);
+      cartIcon?.classList.toggle("hidden", !isSklep);
+      countEl?.classList.toggle("hidden", !isSklep);
+    });
+  }
+
   /** Odświeża podkreślenie i kolory po nawigacji (navbar ma transition:persist). */
   function updateNavActive() {
     updateHomeSectionFromScroll();
+    updateShopCtaLabel();
     const path = normalizePath(window.location.pathname);
 
     document.querySelectorAll<HTMLElement>("[data-nav-href]").forEach((el) => {
@@ -634,10 +803,55 @@ const mobileTileSmClass = (active: boolean) =>
     });
   }
 
+  function cartItemCount() {
+    return readCart().reduce((sum, item) => sum + item.qty, 0);
+  }
+
+  function updateCartCount() {
+    if (!isSklepPath()) return;
+    const count = cartItemCount();
+    document.querySelectorAll<HTMLElement>("[data-cart-count]").forEach((el) => {
+      el.textContent = String(count);
+    });
+  }
+
+  function bumpCartCount() {
+    document.querySelectorAll<HTMLElement>("[data-cart-count]").forEach((el) => {
+      el.classList.remove("is-bumped");
+      void el.offsetWidth;
+      el.classList.add("is-bumped");
+      const onEnd = () => {
+        el.classList.remove("is-bumped");
+        el.removeEventListener("animationend", onEnd);
+      };
+      el.addEventListener("animationend", onEnd);
+    });
+  }
+
+  function animateShopCta() {
+    updateCartCount();
+
+    document.querySelectorAll<HTMLElement>('[data-nav-cta="sklep"]').forEach((el) => {
+      el.classList.remove("is-cart-added");
+      void el.offsetWidth;
+      el.classList.add("is-cart-added");
+
+      const onEnd = () => {
+        el.classList.remove("is-cart-added");
+        el.removeEventListener("animationend", onEnd);
+      };
+      el.addEventListener("animationend", onEnd);
+    });
+
+    bumpCartCount();
+  }
+
   let navInteractionsBound = false;
+  let cartAnimBound = false;
 
   function initNav() {
     updateNavActive();
+    updateCartCount();
     if (navInteractionsBound) return;
     navInteractionsBound = true;
 
@@ -663,7 +877,16 @@ const mobileTileSmClass = (active: boolean) =>
       drawer.classList.contains("is-open") ? closeDrawer() : openDrawer()
     );
     drawer.querySelectorAll("[data-close], a").forEach((el) =>
-      el.addEventListener("click", closeDrawer)
+      el.addEventListener("click", (e) => {
+        const shopCta = (e.currentTarget as HTMLElement).closest('[data-nav-cta="sklep"]');
+        if (shopCta && isSklepPath(window.location.pathname)) {
+          e.preventDefault();
+          closeDrawer();
+          window.dispatchEvent(new CustomEvent("mocna:open-cart"));
+          return;
+        }
+        closeDrawer();
+      })
     );
     document.addEventListener("keydown", (e) => e.key === "Escape" && closeDrawer());
 
@@ -696,13 +919,36 @@ const mobileTileSmClass = (active: boolean) =>
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("hashchange", updateNavActive);
+
+    document.querySelectorAll('[data-nav-cta="sklep"]').forEach((el) => {
+      if (el.getAttribute("data-cart-open-bound") === "true") return;
+      el.setAttribute("data-cart-open-bound", "true");
+      el.addEventListener("click", (e) => {
+        if (!isSklepPath(window.location.pathname)) return;
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("mocna:open-cart"));
+      });
+    });
+  }
+
+  if (!cartAnimBound) {
+    cartAnimBound = true;
+    window.addEventListener("mocna:cart-added", animateShopCta);
+    window.addEventListener("mocna:cart-updated", updateCartCount);
+    window.addEventListener("storage", (e) => {
+      if (e.key === "mocna-cart") updateCartCount();
+    });
   }
 
   initNav();
-  document.addEventListener("astro:after-swap", updateNavActive);
+  document.addEventListener("astro:after-swap", () => {
+    updateNavActive();
+    updateCartCount();
+  });
   document.addEventListener("astro:page-load", () => {
     requestAnimationFrame(() => {
       updateNavActive();
+      updateCartCount();
       requestAnimationFrame(updateNavActive);
     });
   });

@@ -1,0 +1,78 @@
+---
+import SectionHeading from "@components/SectionHeading.astro";
+import { TEAM, COLORS } from "@data/site";
+
+const TILE_ACCENTS = ["blue", "red", "green", "orange"] as const;
+---
+<section class="relative scroll-mt-16 pt-10 pb-20 sm:scroll-mt-[4.5rem] sm:pt-12 sm:pb-28">
+  <div class="shell">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+      <SectionHeading
+        class="min-w-0"
+        title="<span class='text-blue'>Poznaj</span> <span class='text-orange'>ludzi</span> <span class='text-blue'>M</span><span class='text-red'>O</span><span class='text-yellow'>C</span><span class='text-green'>n</span><span class='text-pink'>e</span><span class='text-orange'>j</span>"
+      />
+      <a
+        href="/#wesprzyj-nas"
+        class="btn shrink-0 border-red bg-red text-white hover:border-[#c42f35] hover:bg-[#c42f35]"
+      >
+        <svg
+          class="h-5 w-5 shrink-0"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"></path>
+        </svg>
+        Wesprzyj nas
+      </a>
+    </div>
+
+    <ul class="mt-12 grid list-none gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        TEAM.map((person, index) => {
+          const accentKey = TILE_ACCENTS[index % TILE_ACCENTS.length];
+          const accent = COLORS[accentKey];
+          return (
+            <li>
+              <article class="flex h-full flex-col overflow-hidden border border-graphite-200 bg-white">
+                <div class="relative aspect-square overflow-hidden bg-graphite-100">
+                  {person.photo ? (
+                    <img
+                      src={person.photo}
+                      alt={person.name}
+                      class="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div
+                      class="flex h-full w-full flex-col items-center justify-center gap-2"
+                      style={`background: linear-gradient(145deg, ${accent}18, ${accent}08)`}
+                    >
+                      <span
+                        class="font-display text-5xl font-bold leading-none"
+                        style={`color: ${accent}`}
+                      >
+                        {person.name.charAt(0)}
+                      </span>
+                      <span class="text-xs font-medium uppercase tracking-widest text-graphite-400">
+                        Zdjęcie wkrótce
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div class="flex flex-1 flex-col p-5 sm:p-6">
+                  <h3 class="text-fluid-xl font-bold" style={`color: ${accent}`}>{person.name}</h3>
+                  <p class="mt-3 flex-1 text-sm leading-relaxed text-graphite-600">{person.desc}</p>
+                </div>
+              </article>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </div>
+</section>

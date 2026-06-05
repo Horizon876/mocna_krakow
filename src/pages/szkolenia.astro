@@ -1,52 +1,13 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
-import PageHero from "@components/PageHero.astro";
 import SectionHeading from "@components/SectionHeading.astro";
-import { COLORS } from "@data/site";
-
-const courses = [
-  { title: "Barista I — podstawy", level: "Początkujący", color: "orange", hours: "6h", price: "390 zł", points: ["Espresso i spienianie mleka", "Kalibracja młynka", "Higiena i obsługa ekspresu"] },
-  { title: "Barista II — latte art", level: "Średniozaawansowany", color: "red", hours: "6h", price: "450 zł", points: ["Serduszko, rozeta, tulipan", "Tekstura mleka", "Praca pod presją czasu"] },
-  { title: "Slow coffee & alternatywy", level: "Każdy poziom", color: "blue", hours: "4h", price: "320 zł", points: ["V60, Aeropress, Chemex", "Profil sensoryczny", "Dobór ziarna i mielenia"] },
-  { title: "Kawa od podstaw dla firm", level: "Zespoły", color: "green", hours: "3h", price: "wycena", points: ["Team building przy kawie", "Degustacja specialty", "Dla 6–20 osób"] },
-] as const;
 ---
-<BaseLayout title="Szkolenia kawowe — MOCna!">
-  <PageHero
-    kicker="Szkolenia"
-    title="Naucz się robić <span class='text-orange'>świetną kawę</span>"
-    lead="Prowadzą nasi baryści — w tym osoby z naszego zespołu. Małe grupy, dużo praktyki i jeszcze więcej dobrej energii."
-    variant="cool"
-  />
-
-  <section class="pb-20">
-    <div class="shell grid gap-5 sm:grid-cols-2">
-      {courses.map((c) => (
-        <article class="flex flex-col rounded-[28px] border border-graphite-200 bg-white p-8 transition-transform duration-500 hover:-translate-y-1">
-          <div class="flex items-center justify-between">
-            <span class="rounded-full px-3 py-1 text-xs font-medium text-white" style={`background:${COLORS[c.color]}`}>{c.level}</span>
-            <span class="text-fluid-sm text-graphite-muted">⏱ {c.hours}</span>
-          </div>
-          <h3 class="mt-5 text-fluid-xl font-display font-bold tracking-tightest">{c.title}</h3>
-          <ul class="mt-4 flex-1 space-y-2">
-            {c.points.map((p) => (
-              <li class="flex items-start gap-2 text-fluid-sm text-graphite-soft"><span style={`color:${COLORS[c.color]}`}>✦</span>{p}</li>
-            ))}
-          </ul>
-          <div class="mt-6 flex items-center justify-between border-t border-graphite-200 pt-5">
-            <span class="font-display text-fluid-lg font-bold tracking-tightest text-graphite">{c.price}</span>
-            <a href="/kontakt" class="btn-orange px-5 py-2.5 text-fluid-sm">Zapisz się</a>
-          </div>
-        </article>
-      ))}
-    </div>
-
-    <div class="shell mt-12">
-      <div class="rounded-[32px] bg-graphite p-8 text-white sm:p-12">
-        <SectionHeading kicker="Bon dla zespołu" title="Szkolenie jako prezent? <span class='text-orange'>Świetny pomysł.</span>" />
-        <p class="mt-4 max-w-2xl text-fluid-sm text-white/75">Każde szkolenie możesz wykupić w formie vouchera. To prezent, który zostaje w głowie (i w rękach) na długo — a Ty wspierasz nasz zespół.</p>
-        <a href="/sklep" class="btn-orange mt-7 animate-glow">Kup voucher na szkolenie</a>
+<BaseLayout title="Szkolenia — MOCna!">
+  <div class="home-page flex min-h-full flex-1 flex-col">
+    <section class="relative scroll-mt-16 pt-10 pb-20 sm:scroll-mt-[4.5rem] sm:pt-12 sm:pb-28">
+      <div class="shell">
+        <SectionHeading title="Szkolenia" />
       </div>
-    </div>
-  </section>
+    </section>
+  </div>
 </BaseLayout>

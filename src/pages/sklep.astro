@@ -1,50 +1,254 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
-import PageHero from "@components/PageHero.astro";
+import SectionHeading from "@components/SectionHeading.astro";
 import { PRODUCTS, COLORS } from "@data/site";
 
-const categories = ["Wszystko", "Kawa", "Vouchery", "Rękodzieło", "Cukiernia"];
+const products = PRODUCTS.slice(0, 3);
 ---
-<BaseLayout title="Sklep MOCnej — kawa specialty i rękodzieło">
-  <PageHero
-    kicker="Sklep MOCnej"
-    title="Kupujesz produkt — <span class='text-orange'>fundujesz pracę</span>"
-    lead="Czysto, minimalistycznie i z sercem. Kawa z naszego wypału, rękodzieło uczestników i prezenty pełne MOCy."
-    variant="cool"
-  />
+<BaseLayout title="Sklep — MOCna!">
+  <div class="home-page">
+    <section class="relative scroll-mt-16 pt-10 pb-20 sm:scroll-mt-[4.5rem] sm:pt-12 sm:pb-28">
+      <div class="shell">
+        <SectionHeading
+          title="<span class='text-orange'>Sk</span><span class='text-green'>lep</span> <span class='text-blue'>M</span><span class='text-red'>O</span><span class='text-yellow'>C</span><span class='text-green'>n</span><span class='text-pink'>e</span><span class='text-orange'>j</span>"
+        />
 
-  <section class="pb-20">
-    <div class="shell">
-      <div class="flex flex-wrap gap-2">
-        {categories.map((c, i) => (
-          <button class:list={["rounded-full border px-5 py-2 text-fluid-sm font-medium transition-colors", i === 0 ? "border-orange bg-orange text-white" : "border-graphite-200 text-graphite-soft hover:border-orange hover:text-orange"]}>
-            {c}
-          </button>
-        ))}
-      </div>
+        <ul class="mt-12 grid list-none gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {
+            products.map((product) => (
+              <li>
+                <article
+                  class="flex h-full flex-col overflow-hidden border border-graphite-200 bg-white"
+                  data-product-card
+                  data-product-id={product.id}
+                  data-product-name={product.name}
+                  data-product-price={product.price}
+                  data-product-color={COLORS[product.color]}
+                  data-product-emoji={product.emoji}
+                  data-product-image={product.image ?? ""}
+                >
+                  {
+                    product.image ? (
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        class="aspect-[4/3] w-full object-cover"
+                        loading="lazy"
+                        width="640"
+                        height="480"
+                      />
+                    ) : (
+                      <div
+                        class="aspect-[4/3]"
+                        style={`background:${COLORS[product.color]}18`}
+                        aria-hidden="true"
+                      ></div>
+                    )
+                  }
+                  <div class="flex flex-1 flex-col p-5 sm:p-6">
+                    <h3 class="text-fluid-lg font-bold text-graphite">{product.name}</h3>
+                    <p class="mt-2 font-display text-fluid-xl font-bold tracking-tightest text-graphite">
+                      {product.price}
+                    </p>
 
-      <div class="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
-        {PRODUCTS.map((p) => (
-          <article class="group flex flex-col overflow-hidden rounded-[26px] border border-graphite-200 bg-white transition-all duration-500 hover:-translate-y-1 hover:shadow-soft">
-            <div class="relative grid aspect-[4/3] place-items-center text-6xl" style={`background:${COLORS[p.color]}1a`}>
-              <span class="transition-transform duration-500 group-hover:scale-110">{p.emoji}</span>
-              <span class="absolute left-4 top-4 rounded-full bg-white/80 px-3 py-1 text-xs font-medium backdrop-blur" style={`color:${COLORS[p.color]}`}>{p.tag}</span>
-            </div>
-            <div class="flex flex-1 flex-col p-5">
-              <h3 class="text-fluid-sm font-semibold leading-snug text-graphite">{p.name}</h3>
-              <div class="mt-auto flex items-center justify-between pt-4">
-                <span class="font-display text-fluid-lg font-bold tracking-tightest text-graphite">{p.price}</span>
-                <button class="btn-orange px-4 py-2 text-xs">Do koszyka</button>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
+                    <div class="mt-5 flex flex-col gap-3">
+                      <div class="flex items-center justify-between gap-3">
+                        <span class="text-sm font-medium text-graphite-muted">Ilość</span>
+                        <div class="flex items-center border border-graphite-200">
+                          <button
+                            type="button"
+                            data-qty-minus
+                            class="grid h-10 w-10 place-items-center text-lg leading-none text-graphite transition-colors hover:bg-graphite-100"
+                            aria-label="Zmniejsz ilość"
+                          >
+                            −
+                          </button>
+                          <input
+                            type="number"
+                            data-qty
+                            min="1"
+                            max="99"
+                            step="1"
+                            value="1"
+                            inputmode="numeric"
+                            aria-label={`Ilość — ${product.name}`}
+                            class="shop-qty-input h-10 w-14 border-x border-graphite-200 bg-white text-center text-sm font-medium text-graphite focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue/30"
+                          />
+                          <button
+                            type="button"
+                            data-qty-plus
+                            class="grid h-10 w-10 place-items-center text-lg leading-none text-graphite transition-colors hover:bg-graphite-100"
+                            aria-label="Zwiększ ilość"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
 
-      <div class="mt-12 rounded-[32px] bg-yellow-cream p-8 text-center sm:p-12">
-        <p class="text-fluid-xl font-display font-bold tracking-tightest">100% zysku wraca do <span class="text-orange">ludzi i miejsca</span></p>
-        <p class="mx-auto mt-3 max-w-xl text-fluid-sm text-graphite-soft">Nie mamy inwestorów do spłacenia. Mamy zespół do wspierania. Dlatego każdy zakup ma dla nas ogromne znaczenie.</p>
+                      <button type="button" data-add-to-cart class="shop-add-btn btn-orange w-full justify-center">
+                        <span data-add-default class="inline-flex items-center gap-2.5">
+                          <svg
+                            class="h-5 w-5 shrink-0"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.6"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M6 6h15l-1.5 9h-12z"></path>
+                            <path d="M6 6l-1.2-3H2"></path>
+                            <circle cx="9" cy="20" r="1"></circle>
+                            <circle cx="18" cy="20" r="1"></circle>
+                          </svg>
+                          Dodaj do koszyka
+                        </span>
+                        <span data-add-success class="hidden">Dodano do koszyka</span>
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              </li>
+            ))
+          }
+        </ul>
       </div>
-    </div>
-  </section>
+    </section>
+  </div>
 </BaseLayout>
+
+<style>
+  .shop-qty-input::-webkit-outer-spin-button,
+  .shop-qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .shop-qty-input {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+
+  .shop-add-btn {
+    transition:
+      background-color 0.18s ease,
+      border-color 0.18s ease,
+      box-shadow 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .shop-add-btn [data-add-default],
+  .shop-add-btn [data-add-success] {
+    transition: opacity 0.15s ease;
+  }
+
+  .shop-add-btn.is-added {
+    background-color: #00955e;
+    border-color: #00955e;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 10px 28px -8px rgba(0, 149, 94, 0.35);
+    transform: translateY(-2px);
+  }
+
+  .shop-add-btn.is-added:hover {
+    background-color: #007a4c;
+    border-color: #007a4c;
+  }
+</style>
+
+<script>
+  import { clampQty, migrateCart, readCart, writeCart } from "../scripts/cart";
+
+  function initShopCards() {
+    document.querySelectorAll("[data-product-card]").forEach((card) => {
+      const qtyInput = card.querySelector<HTMLInputElement>("[data-qty]");
+      const minusBtn = card.querySelector<HTMLButtonElement>("[data-qty-minus]");
+      const plusBtn = card.querySelector<HTMLButtonElement>("[data-qty-plus]");
+      const addBtn = card.querySelector<HTMLButtonElement>("[data-add-to-cart]");
+      const addDefault = addBtn?.querySelector<HTMLElement>("[data-add-default]");
+      const addSuccess = addBtn?.querySelector<HTMLElement>("[data-add-success]");
+      let resetTimer: ReturnType<typeof setTimeout> | undefined;
+
+      if (!qtyInput || !minusBtn || !plusBtn || !addBtn) return;
+      if (card.getAttribute("data-qty-ready") === "true") return;
+      card.setAttribute("data-qty-ready", "true");
+
+      const getQty = () => clampQty(parseInt(qtyInput.value, 10) || 1);
+
+      const setQty = (next: number) => {
+        qtyInput.value = String(clampQty(next));
+      };
+
+      minusBtn.addEventListener("click", () => {
+        setQty(getQty() - 1);
+      });
+
+      plusBtn.addEventListener("click", () => {
+        setQty(getQty() + 1);
+      });
+
+      qtyInput.addEventListener("change", () => {
+        setQty(parseInt(qtyInput.value, 10) || 1);
+      });
+
+      addBtn.addEventListener("click", () => {
+        const id = card.getAttribute("data-product-id") ?? "";
+        const name = card.getAttribute("data-product-name") ?? "";
+        const price = card.getAttribute("data-product-price") ?? "";
+        const color = card.getAttribute("data-product-color") ?? "";
+        const emoji = card.getAttribute("data-product-emoji") ?? "";
+        const image = card.getAttribute("data-product-image") ?? "";
+        const qty = getQty();
+
+        if (!id || !name) return;
+
+        const cart = readCart();
+        const existing = cart.find((item) => item.id === id);
+
+        if (existing) {
+          existing.qty = clampQty(existing.qty + qty);
+          if (color) existing.color = color;
+          if (emoji) existing.emoji = emoji;
+          if (image) existing.image = image;
+        } else {
+          cart.push({
+            id,
+            name,
+            price,
+            qty,
+            ...(color ? { color } : {}),
+            ...(emoji ? { emoji } : {}),
+            ...(image ? { image } : {}),
+          });
+        }
+
+        writeCart(cart);
+        window.dispatchEvent(new CustomEvent("mocna:cart-added"));
+
+        if (!addDefault || !addSuccess) return;
+
+        if (resetTimer) window.clearTimeout(resetTimer);
+
+        addBtn.classList.add("is-added");
+        addDefault.classList.add("hidden");
+        addSuccess.classList.remove("hidden");
+        addBtn.disabled = true;
+
+        resetTimer = window.setTimeout(() => {
+          addBtn.classList.remove("is-added");
+          addDefault.classList.remove("hidden");
+          addSuccess.classList.add("hidden");
+          addBtn.disabled = false;
+        }, 1100);
+      });
+    });
+  }
+
+  function initShop() {
+    migrateCart();
+    initShopCards();
+  }
+
+  initShop();
+  document.addEventListener("astro:page-load", initShop);
+</script>

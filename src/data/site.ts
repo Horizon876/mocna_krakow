@@ -5,24 +5,42 @@
 export const BRAND = {
   name: "MOCna!",
   tagline: "miejsce, gdzie kawa spotyka człowieka",
-  email: "hej@mocna.org",
-  phone: "+48 600 100 200",
-  address: "ul. Przykładowa 12, 31-000 Kraków",
+  email: "kawiarniamocna@gmail.com",
+  phone: "+48 786 507 513",
+  address: "ul. Rzeczna 11A, 30-021 Kraków",
   hours: [
-    { d: "Pon – Pt", h: "8:00 – 19:00" },
-    { d: "Sobota", h: "9:00 – 18:00" },
-    { d: "Niedziela", h: "10:00 – 16:00" },
+    { d: "Pon – Pt", h: "9:00 – 19:00" },
+    { d: "Sobota", h: "9:00 – 19:00" },
+    { d: "Niedziela", h: "9:00 – 19:00" },
   ],
   socials: [
-    { label: "Instagram", href: "https://instagram.com" },
-    { label: "Facebook", href: "https://facebook.com" },
-    { label: "TikTok", href: "https://tiktok.com" },
-    { label: "LinkedIn", href: "https://linkedin.com" },
+    {
+      label: "Facebook",
+      href: "https://www.facebook.com/p/Mocna-Krak%C3%B3w-61575248613935",
+    },
+    { label: "Instagram", href: "https://www.instagram.com/mocna.krakow/" },
   ],
-  // Mapa Google (embed) – centrum Krakowa jako placeholder
   mapEmbed:
-    "https://www.google.com/maps?q=Rynek+G%C5%82%C3%B3wny+Krak%C3%B3w&output=embed",
+    "https://www.google.com/maps?q=Kawiarnia+MOCna!+Rzeczna+11A+Krak%C3%B3w&hl=pl&z=16&output=embed",
+  mapLink: "https://share.google/iZ7yLHhxWEjOwHZGf",
 } as const;
+
+/** Godziny otwarcia — źródło dla skryptu otwarte/zamknięte (0 = niedziela … 6 = sobota). */
+export const OPEN_HOURS = [
+  { label: "Pon – Pt", days: [1, 2, 3, 4, 5], open: "9:00", close: "19:00" },
+  { label: "Sobota", days: [6], open: "9:00", close: "19:00" },
+  { label: "Niedziela", days: [0], open: "9:00", close: "19:00" },
+] as const;
+
+export const WEEKDAY_LABELS = [
+  "Niedziela",
+  "Poniedziałek",
+  "Wtorek",
+  "Środa",
+  "Czwartek",
+  "Piątek",
+  "Sobota",
+] as const;
 
 // Dokładne kolory marki (z pliku logo)
 export const COLORS = {
@@ -69,6 +87,43 @@ export const NAV: NavItem[] = [
   { label: "Projekty", href: "/projekty" },
   { label: "Wesprzyj", href: "/#wesprzyj-nas" },
   { label: "Kontakt", href: "/kontakt" },
+];
+
+export type FooterSection = { title: string; links: NavItem[] };
+
+/** Stopka — logiczne grupy linków. */
+export const FOOTER_SECTIONS: FooterSection[] = [
+  {
+    title: "O nas",
+    links: [
+      { label: "Start", href: "/" },
+      { label: "O MOCnej", href: "/#poznaj-mocna" },
+      { label: "Ludzie MOCnej", href: "/ludziemocnej" },
+      { label: "W mediach", href: "/#mocna-w-mediach" },
+      { label: "Projekty", href: "/projekty" },
+      { label: "Wolontariat", href: "/wolontariat" },
+    ],
+  },
+  {
+    title: "Oferta",
+    links: [
+      { label: "Kawiarnia", href: "/kawiarnia" },
+      { label: "Rezerwacja", href: "/rezerwacja" },
+      { label: "Wydarzenia", href: "/wydarzenia" },
+      { label: "Sklep", href: "/sklep" },
+      { label: "Catering", href: "/catering" },
+      { label: "Szkolenia", href: "/szkolenia" },
+    ],
+  },
+  {
+    title: "Informacje",
+    links: [
+      { label: "Wesprzyj", href: "/#wesprzyj-nas" },
+      { label: "Kontakt", href: "/kontakt" },
+      { label: "Polityka prywatności", href: "/polityka-prywatnosci" },
+      { label: "Regulamin", href: "/regulamin" },
+    ],
+  },
 ];
 
 export type StatAccent = "orange" | "yellow" | "red" | "green" | "blue";
@@ -174,6 +229,101 @@ export const STORIES: Story[] = [
   },
 ];
 
+export type TeamMember = {
+  slug: string;
+  name: string;
+  desc: string;
+  /** Ścieżka w public, np. /photos/ludzie/karolina.jpg */
+  photo?: string;
+  accent: keyof typeof COLORS;
+};
+
+export const TEAM: TeamMember[] = [
+  {
+    slug: "kasia-kubicka",
+    name: "Kasia Kubicka",
+    desc: "Założycielka Fundacji MOCna!, trenerka, coachka i liderka społeczna. Od lat działa na rzecz osób z niepełnosprawnościami, tworząc miejsca, które dają szansę na rozwój, pracę i budowanie niezależności.",
+    photo: "/photos/kubicka.jpeg",
+    accent: "orange",
+  },
+  {
+    slug: "tadeusz",
+    name: "Tadeusz",
+    desc: "Współtwórca MOCnej! i cicha siła stojącą za wieloma działaniami Fundacji. Wspiera organizację od strony technicznej, logistycznej i organizacyjnej, zawsze gotowy do działania tam, gdzie jest potrzebny.",
+    photo: "/photos/tadeusz.jpeg",
+    accent: "blue",
+  },
+  {
+    slug: "michal-menadzer",
+    name: "Michał",
+    desc: "Menadżer. Wspiera rozwój przedsiębiorstwa społecznego, organizację pracy zespołu oraz realizację nowych przedsięwzięć. Dba o to, aby misja społeczna szła w parze z profesjonalnym zarządzaniem.",
+    photo: "/photos/michal.jpeg",
+    accent: "red",
+  },
+  {
+    slug: "kasia-b",
+    name: "Kasia B",
+    desc: "Koordynatorka ds. reintegracji i trenerka pracy. Wspiera pracowników w rozwoju zawodowym.",
+    photo: "/photos/kasia.jpeg",
+    accent: "yellow",
+  },
+  {
+    slug: "maja",
+    name: "Maja",
+    desc: "Lorem ipsum",
+    accent: "green",
+  },
+  {
+    slug: "karolina",
+    name: "Karolina",
+    desc: "Od uczestniczki rehabilitacji do pracy w kawiarni.",
+    accent: "pink",
+  },
+  {
+    slug: "wiktor",
+    name: "Wiktor",
+    desc: "Koordynator wydarzeń i ambasador samodzielności.",
+    accent: "blue",
+  },
+  {
+    slug: "adam",
+    name: "Adam",
+    desc: "Buduje swoje doświadczenie zawodowe każdego dnia.",
+    accent: "orange",
+  },
+  {
+    slug: "klaudia",
+    name: "Klaudia",
+    desc: "Łączy pracę z organizacją szkoleń i działań Fundacji. Wspiera rozwój MOCnej i budowanie relacji z uczestnikami oraz partnerami.",
+    accent: "green",
+  },
+  {
+    slug: "michal-barista",
+    name: "Michał",
+    desc: "Barista, kelner i pasjonat wypieków. W MOCnej! łączy pracę z ludźmi z zamiłowaniem do tworzenia domowych słodkości.",
+    accent: "pink",
+  },
+  {
+    slug: "szymon",
+    name: "Szymon",
+    desc: "Odpowiada za działania promocyjne i wspiera organizację wydarzeń. Wnosi kreatywność, energię i świeże spojrzenie na komunikację.",
+    accent: "red",
+  },
+  {
+    slug: "magda",
+    name: "Magda",
+    desc: "Współtworzy atmosferę MOCnej, dbając o obsługę gości i codzienne funkcjonowanie kawiarni. Jej otwartość i serdeczność sprawiają, że każdy czuje się mile widziany.",
+    accent: "yellow",
+  },
+];
+
+export type CafePhoto = { src: string; alt: string };
+
+export const CAFE_GALLERY: CafePhoto[] = [
+  { src: "/photos/poznaj_mocna.jpeg", alt: "Wnętrze kawiarni MOCna!" },
+  { src: "/photos/zespol.jpeg", alt: "Zespół w kawiarni MOCna!" },
+];
+
 export type MediaLogo = { name: string; logo: string; href?: string };
 
 export const MEDIA_LOGOS_HOME: MediaLogo[] = [
@@ -195,13 +345,21 @@ export const MEDIA: MediaItem[] = [
   { outlet: "Onet", title: "Ekonomia społeczna od kuchni", href: "#", accent: "yellow" },
 ];
 
-export type Product = { name: string; price: string; tag: string; color: keyof typeof COLORS; emoji: string };
+export type Product = {
+  id: string;
+  name: string;
+  price: string;
+  tag: string;
+  color: keyof typeof COLORS;
+  emoji: string;
+  image?: string;
+};
 
 export const PRODUCTS: Product[] = [
-  { name: "Kawa MOCna! — Blend Sezonowy", price: "44 zł", tag: "Ziarno specialty", color: "orange", emoji: "☕" },
-  { name: "Voucher prezentowy", price: "od 50 zł", tag: "Najlepszy prezent", color: "red", emoji: "🎁" },
-  { name: "Kubek ceramiczny MOCna!", price: "59 zł", tag: "Rękodzieło", color: "blue", emoji: "🥤" },
-  { name: "Świeca sojowa", price: "39 zł", tag: "Robione ręcznie", color: "green", emoji: "🕯️" },
-  { name: "Rękodzieło uczestników", price: "od 25 zł", tag: "Unikat", color: "pink", emoji: "🧶" },
-  { name: "Ciasto na zamówienie", price: "od 89 zł", tag: "Cukiernia Klaudii", color: "yellow", emoji: "🍰" },
+  { id: "herbata-owocowa", name: "Herbata owocowa", price: "44 zł", tag: "Ziarno specialty", color: "orange", emoji: "☕", image: "/photos/herbata.png" },
+  { id: "voucher-prezentowy", name: "Voucher prezentowy", price: "od 50 zł", tag: "Najlepszy prezent", color: "red", emoji: "🎁", image: "/photos/voucher.png" },
+  { id: "kubek-ceramiczny", name: "Kubek ceramiczny MOCna!", price: "59 zł", tag: "Rękodzieło", color: "blue", emoji: "🥤", image: "/photos/kubek.png" },
+  { id: "swieca-sojowa", name: "Świeca sojowa", price: "39 zł", tag: "Robione ręcznie", color: "green", emoji: "🕯️" },
+  { id: "rekodzielo-uczestnikow", name: "Rękodzieło uczestników", price: "od 25 zł", tag: "Unikat", color: "pink", emoji: "🧶" },
+  { id: "ciasto-na-zamowienie", name: "Ciasto na zamówienie", price: "od 89 zł", tag: "Cukiernia Klaudii", color: "yellow", emoji: "🍰" },
 ];

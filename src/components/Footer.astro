@@ -1,104 +1,59 @@
 ---
-import { BRAND, NAV } from "@data/site";
+import { FOOTER_SECTIONS } from "@data/site";
+
 const year = new Date().getFullYear();
 ---
-<footer class="relative mt-0 overflow-hidden bg-[#000000] text-white">
-  <div class="pointer-events-none absolute inset-0 -z-0 opacity-[0.06]">
-    <img src="/brand/pattern.png" alt="" class="h-full w-full object-cover" />
-  </div>
-
-  <div class="shell relative z-10 py-16 sm:py-20">
-    <div class="grid gap-12 lg:grid-cols-[1.3fr_1fr_1fr_1.1fr]">
-      <!-- Brand + newsletter -->
+<footer class="bg-[#0f1b33] text-white">
+  <div class="shell py-16 sm:py-20">
+    <div class="grid gap-12 lg:grid-cols-[1.35fr_1fr_1fr_1fr]">
       <div>
-        <img src="/brand/logo-white.svg" alt="MOCna!" class="h-12 w-auto" />
-        <p class="mt-5 max-w-xs text-fluid-sm leading-relaxed text-white/70">
-          Społeczna kawiarnia specialty. Tworzymy miejsca pracy dla osób
-          z niepełnosprawnościami — filiżanka po filiżance.
+        <a href="/" class="inline-block">
+          <img src="/brand/logo-white.svg" alt="MOCna!" class="h-20 w-auto sm:h-28" />
+        </a>
+        <p class="mt-6 max-w-md text-fluid-sm leading-relaxed text-white/75">
+          Fundacja MOCna! tworzymy miejsca pracy, rozwijamy samodzielność i budujemy
+          przestrzeń spotkań dla osób z niepełnosprawnościami oraz ich bliskich.
         </p>
-        <form class="mt-6 flex max-w-sm items-center gap-2 rounded-full border border-white/20 bg-white/10 p-1.5 backdrop-blur" data-newsletter>
-          <input
-            type="email"
-            required
-            placeholder="Twój e-mail"
-            aria-label="Adres e-mail do newslettera"
-            class="w-full bg-transparent px-4 py-2 text-fluid-sm text-white placeholder:text-white/50 focus:outline-none"
-          />
-          <button type="submit" class="shrink-0 rounded-full bg-orange px-5 py-2 text-fluid-sm font-medium text-white transition-colors hover:bg-orange-soft">
-            Zapisz się
-          </button>
-        </form>
-        <p class="mt-2 text-xs text-white/40">Bez spamu. Tylko MOC i ciepłe wieści.</p>
       </div>
 
-      <!-- Menu -->
-      <nav aria-label="Stopka – nawigacja">
-        <h3 class="text-fluid-sm font-semibold uppercase tracking-[0.18em] text-white/50">Strona</h3>
-        <ul class="mt-4 grid gap-2">
-          {NAV.slice(0, 6).map((n) => (
-            <li><a href={n.href} class="text-fluid-sm text-white/80 transition-colors hover:text-orange-soft">{n.label}</a></li>
-          ))}
-        </ul>
-      </nav>
-      <nav aria-label="Stopka – nawigacja 2">
-        <h3 class="text-fluid-sm font-semibold uppercase tracking-[0.18em] text-white/50">Działamy</h3>
-        <ul class="mt-4 grid gap-2">
-          {NAV.slice(6).map((n) => (
-            <li><a href={n.href} class="text-fluid-sm text-white/80 transition-colors hover:text-orange-soft">{n.label}</a></li>
-          ))}
-        </ul>
-      </nav>
-
-      <!-- Kontakt + mapa -->
-      <div>
-        <h3 class="text-fluid-sm font-semibold uppercase tracking-[0.18em] text-white/50">Zajrzyj do nas</h3>
-        <ul class="mt-4 grid gap-2 text-fluid-sm text-white/80">
-          <li>{BRAND.address}</li>
-          <li><a href={`tel:${BRAND.phone.replace(/\s/g, "")}`} class="hover:text-orange-soft">{BRAND.phone}</a></li>
-          <li><a href={`mailto:${BRAND.email}`} class="hover:text-orange-soft">{BRAND.email}</a></li>
-        </ul>
-        <div class="mt-4 overflow-hidden rounded-2xl border border-white/15">
-          <iframe
-            title="Mapa dojazdu do MOCnej"
-            src={BRAND.mapEmbed}
-            width="100%"
-            height="150"
-            loading="lazy"
-            style="border:0; filter: grayscale(0.4) contrast(1.05);"
-            referrerpolicy="no-referrer-when-downgrade"
-          ></iframe>
-        </div>
-        <ul class="mt-5 flex flex-wrap gap-2">
-          {BRAND.socials.map((s) => (
-            <li>
-              <a href={s.href} target="_blank" rel="noopener" class="rounded-full border border-white/20 px-3 py-1.5 text-xs text-white/80 transition-colors hover:border-orange hover:text-orange-soft">
-                {s.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {
+        FOOTER_SECTIONS.map((section) => (
+          <nav aria-label={`Stopka — ${section.title}`}>
+            <h3 class="text-fluid-sm font-semibold uppercase tracking-[0.18em] text-white/50">
+              {section.title}
+            </h3>
+            <ul class="mt-4 grid gap-2">
+              {
+                section.links.map((item) => (
+                  <li>
+                    <a
+                      href={item.href}
+                      class="text-fluid-sm text-white/80 transition-colors hover:text-orange-soft"
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+          </nav>
+        ))
+      }
     </div>
 
-    <div class="mt-14 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
-      <p>© {year} {BRAND.name} — przedsiębiorstwo społeczne. Kawa pełna MOCy.</p>
-      <div class="flex gap-4">
-        <a href="/#wesprzyj-nas" class="hover:text-orange-soft">Wesprzyj</a>
-        <a href="/kontakt" class="hover:text-orange-soft">Polityka prywatności</a>
-      </div>
+    <div class="mt-14 flex flex-col gap-3 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
+      <p>© {year} Fundacja MOCna!</p>
+      <p class="uppercase tracking-[0.12em]">
+        DESIGN BY{" "}
+        <a
+          href="https://web2sell.pl/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="transition-colors hover:text-orange-soft"
+        >
+          WEB2SELL
+        </a>
+      </p>
     </div>
   </div>
 </footer>
-
-<script>
-  document.querySelectorAll("[data-newsletter]").forEach((form) => {
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const btn = form.querySelector("button");
-      if (btn) {
-        btn.textContent = "Dzięki! ☕";
-        btn.setAttribute("disabled", "true");
-      }
-    });
-  });
-</script>
