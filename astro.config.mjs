@@ -2,14 +2,13 @@
 import { defineConfig } from "astro/config";
 import tailwind from "@astrojs/tailwind";
 import react from "@astrojs/react";
-
-import node from "@astrojs/node";
+import vercel from "@astrojs/vercel/serverless";
 
 // https://astro.build/config
 export default defineConfig({
   output: "server",
-  adapter: node({
-    mode: "standalone"
+  adapter: vercel({
+    maxDuration: 60,
   }),
   site: "https://mocna.org",
   devToolbar: {
@@ -22,10 +21,8 @@ export default defineConfig({
       },
     },
   },
-  // Astro Islands: JS is shipped only for components hydrated with client:* directives.
   integrations: [
     tailwind({
-      // We control base styles ourselves in src/styles/global.css.
       applyBaseStyles: false,
     }),
     react(),

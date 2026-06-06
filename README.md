@@ -80,7 +80,36 @@ npm install
 npm run dev
 ```
 
-## 5. Podmiana placeholderów na prawdziwe zdjęcia
+### Zmienne środowiskowe
+
+Skopiuj `.env.example` do `.env` i uzupełnij:
+
+| Zmienna | Opis |
+|---|---|
+| `DATABASE_URL` | PostgreSQL (Neon, Supabase, Vercel Postgres) |
+| `SESSION_SECRET` | Losowy sekret sesji admina (min. 32 znaki) |
+| `ADMIN_PASSWORD_HASH_B64` | Hash bcrypt hasła admina w base64 |
+| `BLOB_READ_WRITE_TOKEN` | Opcjonalnie lokalnie; na Vercel — po podłączeniu Blob Storage |
+
+Schemat bazy:
+
+```bash
+npm run db:push
+```
+
+## 5. Deploy na Vercel
+
+1. Wypchnij repozytorium na GitHub i zaimportuj projekt w [Vercel](https://vercel.com).
+2. Framework zostanie wykryty automatycznie (Astro).
+3. W **Settings → Environment Variables** dodaj zmienne z `.env.example`.
+4. Utwórz bazę **Vercel Postgres** (lub podłącz Neon/Supabase) i ustaw `DATABASE_URL`.
+5. Uruchom `npm run db:push` lokalnie z produkcyjnym `DATABASE_URL` (jednorazowo).
+6. W **Storage → Blob** utwórz store — token `BLOB_READ_WRITE_TOKEN` zostanie dodany automatycznie.
+7. Deploy — build: `npm run build`, adapter: `@astrojs/vercel/serverless`.
+
+Panel admina: `/admin/login`
+
+## 6. Podmiana placeholderów na prawdziwe zdjęcia
 
 Komponent `Photo.astro` renderuje markowy placeholder, dopóki nie podasz zdjęcia.
 Wgraj plik do `public/photos/` i podaj `src`:
@@ -89,7 +118,7 @@ Wgraj plik do `public/photos/` i podaj `src`:
 <Photo src="/photos/zespol.jpg" alt="Zespół MOCnej" mask="blob" ratio="4/5" />
 ```
 
-## 6. Architektura wysp (Astro Islands)
+## 7. Architektura wysp (Astro Islands)
 
 Tylko dwa komponenty wysyłają JS do klienta — i to dopiero, gdy wjadą w viewport:
 

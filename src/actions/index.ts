@@ -1,12 +1,12 @@
 import { defineAction, ActionError } from 'astro:actions';
 import { z } from 'astro:schema';
 import { db } from '../db';
-import { products, events } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { products, events, reservations } from '../db/schema';
+import { and, eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { createSessionToken, COOKIE_NAME_EXPORT, SESSION_DURATION_SEC } from '../lib/session';
-import fs from 'node:fs/promises';
-import path from 'node:path';
+import { saveProductImage } from '../lib/upload';
+import { cancelReservationById } from '../lib/reservations';
 
 
 export const server = {
@@ -15,7 +15,7 @@ export const server = {
     input: z.object({
       name: z.string().min(1, 'Nazwa produktu jest wymagana'),
       description: z.string().optional(),
-      price: z.number({ coerce: true }).min(0, 'Cena nie może być ujemna'),
+      price: z.number({ coerce: true }).int('Cena musi być liczbą całkowitą').min(0, 'Cena nie może być ujemna').max(10000000, 'Cena jest zbyt wysoka'),
       imageFile: z.any().optional(),
       availabilityStatus: z.enum(['available', 'unavailable']).default('available'),
     }),
@@ -23,14 +23,7 @@ export const server = {
       try {
         let imageUrl = null;
         if (input.imageFile && input.imageFile instanceof File && input.imageFile.size > 0) {
-          const file = input.imageFile;
-          const ext = file.name.split('.').pop();
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-          const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-          await fs.mkdir(uploadDir, { recursive: true });
-          const buffer = Buffer.from(await file.arrayBuffer());
-          await fs.writeFile(path.join(uploadDir, fileName), buffer);
-          imageUrl = `/uploads/${fileName}`;
+          imageUrl = await saveProductImage(input.imageFile);
         }
 
         const result = await db.insert(products).values({
@@ -53,7 +46,7 @@ export const server = {
       id: z.string().min(1),
       name: z.string().min(1, 'Nazwa produktu jest wymagana'),
       description: z.string().optional(),
-      price: z.number({ coerce: true }).min(0, 'Cena nie może być ujemna'),
+      price: z.number({ coerce: true }).int('Cena musi być liczbą całkowitą').min(0, 'Cena nie może być ujemna').max(10000000, 'Cena jest zbyt wysoka'),
       imageFile: z.any().optional(),
       existingImageUrl: z.string().optional(),
       availabilityStatus: z.enum(['available', 'unavailable']).default('available'),
@@ -62,14 +55,7 @@ export const server = {
       try {
         let imageUrl = input.existingImageUrl || null;
         if (input.imageFile && input.imageFile instanceof File && input.imageFile.size > 0) {
-          const file = input.imageFile;
-          const ext = file.name.split('.').pop();
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-          const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-          await fs.mkdir(uploadDir, { recursive: true });
-          const buffer = Buffer.from(await file.arrayBuffer());
-          await fs.writeFile(path.join(uploadDir, fileName), buffer);
-          imageUrl = `/uploads/${fileName}`;
+          imageUrl = await saveProductImage(input.imageFile);
         }
 
         const result = await db.update(products).set({
@@ -108,8 +94,8 @@ export const server = {
       longDescription: z.string().optional(),
       shortDescription: z.string().optional(),
       eventDate: z.string().pipe(z.coerce.date()),
-      ticketPrice: z.number({ coerce: true }).min(0, 'Cena biletu nie może być ujemna'),
-      seatLimit: z.number({ coerce: true }).min(1, 'Limit miejsc musi być większy od 0'),
+      ticketPrice: z.number({ coerce: true }).int('Cena musi być liczbą całkowitą').min(0, 'Cena biletu nie może być ujemna').max(10000000, 'Cena jest zbyt wysoka'),
+      seatLimit: z.number({ coerce: true }).int('Limit miejsc musi być liczbą całkowitą').min(1, 'Limit miejsc musi być większy od 0').max(10000, 'Limit miejsc jest zbyt wysoki'),
       status: z.enum(['active', 'cancelled', 'completed']).default('active'),
     }),
     handler: async (input) => {
@@ -138,8 +124,8 @@ export const server = {
       longDescription: z.string().optional(),
       shortDescription: z.string().optional(),
       eventDate: z.string().pipe(z.coerce.date()),
-      ticketPrice: z.number({ coerce: true }).min(0, 'Cena biletu nie może być ujemna'),
-      seatLimit: z.number({ coerce: true }).min(1, 'Limit miejsc musi być większy od 0'),
+      ticketPrice: z.number({ coerce: true }).int('Cena musi być liczbą całkowitą').min(0, 'Cena biletu nie może być ujemna').max(10000000, 'Cena jest zbyt wysoka'),
+      seatLimit: z.number({ coerce: true }).int('Limit miejsc musi być liczbą całkowitą').min(1, 'Limit miejsc musi być większy od 0').max(10000, 'Limit miejsc jest zbyt wysoki'),
       status: z.enum(['active', 'cancelled', 'completed']).default('active'),
     }),
     handler: async (input) => {
@@ -175,8 +161,48 @@ export const server = {
     },
   }),
 
-  // ─── AUTORYZACJA ────────────────────────────────────────────────────────────
+  // ─── REZERWACJE ─────────────────────────────────────────────────────────────
 
+  cancelReservation: defineAction({
+    accept: 'form',
+    input: z.object({
+      id: z.string().min(1),
+    }),
+    handler: async (input) => {
+      const reservation = await cancelReservationById(input.id);
+      if (!reservation) {
+        throw new ActionError({
+          code: 'BAD_REQUEST',
+          message: 'Rezerwacja nie istnieje lub jest już anulowana.',
+        });
+      }
+      return { success: true };
+    },
+  }),
+
+  deleteReservation: defineAction({
+    accept: 'form',
+    input: z.object({
+      id: z.string().min(1),
+    }),
+    handler: async (input) => {
+      const result = await db
+        .delete(reservations)
+        .where(and(eq(reservations.id, input.id), eq(reservations.status, 'cancelled')))
+        .returning({ id: reservations.id });
+
+      if (result.length === 0) {
+        throw new ActionError({
+          code: 'BAD_REQUEST',
+          message: 'Można usunąć tylko anulowane rezerwacje.',
+        });
+      }
+
+      return { success: true };
+    },
+  }),
+
+  // ─── AUTORYZACJA ────────────────────────────────────────────────────────────
   login: defineAction({
     accept: 'form',
     input: z.object({

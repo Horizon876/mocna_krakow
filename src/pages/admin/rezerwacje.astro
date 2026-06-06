@@ -1,15 +1,197 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import { db } from '../../db';
+import { reservations } from '../../db/schema';
+import { desc } from 'drizzle-orm';
 import { actions } from 'astro:actions';
 
 const logoutResult = Astro.getActionResult(actions.logout);
 if (logoutResult?.data?.success) {
   return Astro.redirect('/admin/login');
 }
+
+const cancelResult = Astro.getActionResult(actions.cancelReservation);
+const deleteResult = Astro.getActionResult(actions.deleteReservation);
+if (cancelResult?.data?.success || deleteResult?.data?.success) {
+  return Astro.redirect('/admin/rezerwacje');
+}
+
+// Filtry
+const filterStatus = Astro.url.searchParams.get('status') ?? 'all';
+const filterDate   = Astro.url.searchParams.get('date')   ?? '';
+
+const allReservations = await db
+  .select()
+  .from(reservations)
+  .orderBy(desc(reservations.startsAt));
+
+const filtered = allReservations.filter((r) => {
+  if (filterStatus !== 'all' && r.status !== filterStatus) return false;
+  if (filterDate && r.reservationDate !== filterDate) return false;
+  return true;
+});
+
+const TABLE_LABELS: Record<string, string> = {
+  T1: 'Stolik 1', T2: 'Stolik 2', T3: 'Stolik 3', T4: 'Stolik 4', T5: 'Stolik 5',
+  T6: 'Stolik 6', T7: 'Stolik 7', T8: 'Stolik 8', T9: 'Stolik 9', T10: 'Stolik 10 (lounge)',
+  G1: 'Ogród 1', G2: 'Ogród 2', G3: 'Ogród 3', G4: 'Ogród 4', G5: 'Ogród 5', G6: 'Ogród 6',
+};
+
+function formatDate(d: string) {
+  return d.split('-').reverse().join('.');
+}
+
 ---
 
 <AdminLayout title="Rezerwacje - Panel Admina" activeTab="rezerwacje">
-  <div class="admin-panel p-8 text-center">
-    <p class="text-graphite-muted">Zarządzanie rezerwacjami — wkrótce.</p>
+  <div class="space-y-6">
+
+    <!-- Nagłówek -->
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h1 class="text-fluid-xl font-display font-bold leading-tighter tracking-tightest text-graphite">
+          Rezerwacje
+        </h1>
+      </div>
+    </div>
+
+    <!-- Filtry -->
+    <form method="GET" action="/admin/rezerwacje" class="flex flex-wrap items-end gap-3">
+      <div class="w-44">
+        <label class="field-label mb-1 block" for="f-status">Status</label>
+        <select id="f-status" name="status" class="field-input filter-control pr-8">
+          <option value="all"       selected={filterStatus === 'all'}>Wszystkie</option>
+          <option value="confirmed" selected={filterStatus === 'confirmed'}>Potwierdzone</option>
+          <option value="cancelled" selected={filterStatus === 'cancelled'}>Anulowane</option>
+        </select>
+      </div>
+      <div class="w-44">
+        <label class="field-label mb-1 block" for="f-date">Data</label>
+        <input
+          type="date"
+          id="f-date"
+          name="date"
+          value={filterDate}
+          class="field-input filter-control"
+        />
+      </div>
+      <div class="w-44">
+        <span class="field-label mb-1 block invisible" aria-hidden="true">Filtruj</span>
+        <button type="submit" class="btn btn-orange filter-control w-full text-sm">Filtruj</button>
+      </div>
+      {(filterStatus !== 'all' || filterDate) && (
+        <div class="w-44">
+          <span class="field-label mb-1 block invisible" aria-hidden="true">Wyczyść</span>
+          <a href="/admin/rezerwacje" class="btn btn-outline filter-control w-full text-sm">Wyczyść</a>
+        </div>
+      )}
+    </form>
+
+    <!-- Lista rezerwacji -->
+    <div class="admin-panel p-0 overflow-hidden">
+      {filtered.length === 0 ? (
+        <div class="p-10 text-center">
+          <p class="text-graphite-muted italic">Brak rezerwacji spełniających kryteria.</p>
+        </div>
+      ) : (
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[700px] border-collapse text-sm">
+            <thead>
+              <tr class="border-b border-graphite-200/60 bg-graphite/3">
+                <th class="px-4 py-3 text-left font-semibold text-graphite">Data / godzina</th>
+                <th class="px-4 py-3 text-left font-semibold text-graphite">Stolik</th>
+                <th class="px-4 py-3 text-left font-semibold text-graphite">Klient</th>
+                <th class="px-4 py-3 text-left font-semibold text-graphite">Kontakt</th>
+                <th class="px-4 py-3 text-left font-semibold text-graphite">Uwagi</th>
+                <th class="px-4 py-3 text-left font-semibold text-graphite">Status</th>
+                <th class="px-4 py-3 text-right font-semibold text-graphite">Akcja</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r) => (
+                <tr class:list={[
+                  "border-b border-graphite-200/40 transition-colors hover:bg-graphite/[.02]",
+                  r.status === 'cancelled' && "opacity-55",
+                ]}>
+                  <td class="px-4 py-3 font-medium text-graphite whitespace-nowrap">
+                    {formatDate(r.reservationDate)}<br />
+                    <span class="text-graphite-muted font-normal">{r.reservationTime}–{
+                      (() => {
+                        const [h, m] = r.reservationTime.split(':').map(Number);
+                        const end = new Date(0, 0, 0, h + 1, m);
+                        return `${String(end.getHours()).padStart(2,'0')}:${String(end.getMinutes()).padStart(2,'0')}`;
+                      })()
+                    }</span>
+                  </td>
+                  <td class="px-4 py-3 text-graphite">
+                    {TABLE_LABELS[r.tableId] ?? r.tableId}
+                  </td>
+                  <td class="px-4 py-3 text-graphite">
+                    {r.firstName} {r.lastName}
+                  </td>
+                  <td class="px-4 py-3 text-graphite-muted">
+                    <a href={`mailto:${r.email}`} class="hover:text-blue">{r.email}</a>
+                    {r.phone && <><br />{r.phone}</>}
+                  </td>
+                  <td class="px-4 py-3 text-graphite-muted max-w-[180px]">
+                    {r.notes ? (
+                      <span title={r.notes} class="line-clamp-2">{r.notes}</span>
+                    ) : (
+                      <span class="italic opacity-50">—</span>
+                    )}
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class:list={[
+                      "pill !rounded-none !border-none !px-3 !py-1 !text-xs whitespace-nowrap",
+                      r.status === 'confirmed' ? "bg-green/10 text-green" : "bg-graphite/10 text-graphite-muted",
+                    ]}>
+                      {r.status === 'confirmed' ? 'Potwierdzona' : 'Anulowana'}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    {r.status === 'confirmed' && (
+                      <form
+                        method="POST"
+                        action={actions.cancelReservation}
+                        onsubmit="return confirm('Anulować tę rezerwację?');"
+                      >
+                        <input type="hidden" name="id" value={r.id} />
+                        <button type="submit" class="btn btn-delete px-3 py-1.5 text-xs">
+                          Anuluj
+                        </button>
+                      </form>
+                    )}
+                    {r.status === 'cancelled' && (
+                      <form
+                        method="POST"
+                        action={actions.deleteReservation}
+                        onsubmit="return confirm('Trwale usunąć tę rezerwację? Tej operacji nie można cofnąć.');"
+                      >
+                        <input type="hidden" name="id" value={r.id} />
+                        <button type="submit" class="btn btn-delete px-3 py-1.5 text-xs">
+                          Usuń
+                        </button>
+                      </form>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+
   </div>
 </AdminLayout>
+
+<style>
+  .filter-control {
+    @apply h-10 py-0 text-sm;
+  }
+
+  .btn.filter-control,
+  a.filter-control {
+    @apply inline-flex items-center justify-center;
+  }
+</style>

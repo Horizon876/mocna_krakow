@@ -1,0 +1,210 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import { findByCancelToken, findConfirmedByCancelToken } from "../../lib/reservations";
+
+const token = Astro.url.searchParams.get("token")?.trim() ?? "";
+
+const TABLE_LABELS: Record<string, string> = {
+  T1: "Stolik 1", T2: "Stolik 2", T3: "Stolik 3", T4: "Stolik 4", T5: "Stolik 5",
+  T6: "Stolik 6", T7: "Stolik 7", T8: "Stolik 8", T9: "Stolik 9", T10: "Stolik 10 (lounge)",
+  G1: "Ogród 1", G2: "Ogród 2", G3: "Ogród 3", G4: "Ogród 4", G5: "Ogród 5", G6: "Ogród 6",
+};
+
+type PageState = "missing" | "notfound" | "already" | "ready";
+
+let state: PageState = "missing";
+let reservation: Awaited<ReturnType<typeof findConfirmedByCancelToken>> = null;
+
+if (token) {
+  reservation = await findConfirmedByCancelToken(token);
+  if (reservation) {
+    state = "ready";
+  } else {
+    const existing = await findByCancelToken(token);
+    state = existing?.status === "cancelled" ? "already" : "notfound";
+  }
+}
+
+function formatDate(d: string) {
+  return d.split("-").reverse().join(".");
+}
+
+function formatEndTime(time: string) {
+  const [h, m] = time.split(":").map(Number);
+  const end = new Date(0, 0, 0, h + 1, m);
+  return `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`;
+}
+---
+
+<BaseLayout title="Anulowanie rezerwacji — MOCna!">
+  <div class="cancel-page home-page flex min-h-full flex-1 flex-col">
+    <section class="flex flex-1 flex-col px-6 py-10 sm:py-14">
+      <div class="mx-auto w-full max-w-lg">
+
+        <div id="cancel-success" class="hidden rounded-none border border-green/40 bg-green/5 p-6 sm:p-8">
+          <h1 class="mb-2 font-display text-xl font-bold tracking-tightest text-graphite">
+            Rezerwacja anulowana
+          </h1>
+          <p id="cancel-success-text" class="text-graphite-muted"></p>
+          <a href="/rezerwacja" class="btn btn-orange mt-5 inline-block">
+            Zarezerwuj ponownie
+          </a>
+        </div>
+
+        <div id="cancel-flow">
+          {state === "missing" && (
+            <div class="border border-graphite-200 bg-white p-6 sm:p-8">
+              <h1 class="mb-2 font-display text-xl font-bold tracking-tightest text-graphite">
+                Brak linku do anulowania
+              </h1>
+              <p class="text-graphite-muted">
+                Użyj linku z e-maila potwierdzającego rezerwację lub skontaktuj się z nami.
+              </p>
+              <a href="/rezerwacja" class="btn btn-orange mt-5 inline-block">Przejdź do rezerwacji</a>
+            </div>
+          )}
+
+          {state === "notfound" && (
+            <div class="border border-graphite-200 bg-white p-6 sm:p-8">
+              <h1 class="mb-2 font-display text-xl font-bold tracking-tightest text-graphite">
+                Nie znaleziono rezerwacji
+              </h1>
+              <p class="text-graphite-muted">
+                Link jest nieprawidłowy lub wygasł. Jeśli potrzebujesz pomocy, napisz do nas.
+              </p>
+              <a href="/kontakt" class="btn btn-orange mt-5 inline-block">Kontakt</a>
+            </div>
+          )}
+
+          {state === "already" && (
+            <div class="border border-graphite-200 bg-white p-6 sm:p-8">
+              <h1 class="mb-2 font-display text-xl font-bold tracking-tightest text-graphite">
+                Rezerwacja już anulowana
+              </h1>
+              <p class="text-graphite-muted">
+                Ta rezerwacja została wcześniej anulowana.
+              </p>
+              <a href="/rezerwacja" class="btn btn-orange mt-5 inline-block">Nowa rezerwacja</a>
+            </div>
+          )}
+
+          {state === "ready" && reservation && (
+            <div class="border border-graphite-200 bg-white p-6 sm:p-8">
+              <h1 class="mb-2 font-display text-xl font-bold tracking-tightest text-graphite">
+                Anulować rezerwację?
+              </h1>
+              <p class="mb-6 text-graphite-muted">
+                Cześć {reservation.firstName}, czy na pewno chcesz anulować tę rezerwację?
+              </p>
+
+              <div class="mb-6 border border-graphite-200/60 bg-[#fff8f0] p-4 text-sm leading-relaxed text-graphite">
+                <p><strong>Stolik:</strong> {TABLE_LABELS[reservation.tableId] ?? reservation.tableId}</p>
+                <p><strong>Data:</strong> {formatDate(reservation.reservationDate)}</p>
+                <p><strong>Godzina:</strong> {reservation.reservationTime} – {formatEndTime(reservation.reservationTime)}</p>
+              </div>
+
+              <div
+                id="cancel-error"
+                role="alert"
+                class="mb-4 hidden rounded-none border border-red/40 bg-red/5 p-4 text-sm text-red"
+              ></div>
+
+              <div class="flex flex-col gap-3 sm:flex-row">
+                <button type="button" id="cancel-btn" class="btn btn-cancel">
+                  Tak, anuluj rezerwację
+                </button>
+                <a href="/" class="btn btn-back text-center">
+                  Nie, wróć
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+{state === "ready" && token && (
+  <script define:vars={{ token }}>
+    const btn = document.getElementById("cancel-btn");
+    const errorEl = document.getElementById("cancel-error");
+    const flow = document.getElementById("cancel-flow");
+    const success = document.getElementById("cancel-success");
+    const successText = document.getElementById("cancel-success-text");
+
+    btn?.addEventListener("click", async () => {
+      if (!btn) return;
+      errorEl?.classList.add("hidden");
+      btn.disabled = true;
+      const label = btn.textContent;
+      btn.textContent = "Anuluję…";
+
+      try {
+        const res = await fetch("/api/reservations/cancel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
+        const data = await res.json().catch(() => null);
+
+        if (data?.success) {
+          const dateLabel = data.date?.split("-").reverse().join(".");
+          if (successText) {
+            successText.textContent =
+              `Rezerwacja stolika ${data.tableId} na ${dateLabel} godz. ${data.time} została anulowana. ` +
+              `Potwierdzenie wyślemy na Twój e-mail.`;
+          }
+          flow?.classList.add("hidden");
+          success?.classList.remove("hidden");
+          window.scrollTo(0, 0);
+          return;
+        }
+
+        if (errorEl) {
+          errorEl.textContent = data?.message ?? "Nie udało się anulować rezerwacji.";
+          errorEl.classList.remove("hidden");
+        }
+      } catch {
+        if (errorEl) {
+          errorEl.textContent = "Błąd połączenia. Spróbuj ponownie.";
+          errorEl.classList.remove("hidden");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = label ?? "Tak, anuluj rezerwację";
+      }
+    });
+  </script>
+)}
+
+<style is:global>
+  main:has(.cancel-page) {
+    animation: none !important;
+  }
+
+  .cancel-page .btn,
+  .cancel-page .btn:hover {
+    transition: none !important;
+    transform: none !important;
+  }
+
+  .cancel-page .btn-cancel {
+    @apply border-red bg-red text-white;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+
+  .cancel-page .btn-cancel:hover {
+    @apply border-red bg-red text-white;
+  }
+
+  .cancel-page .btn-back {
+    @apply bg-blue text-white;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 2px 6px -2px rgba(44, 94, 169, 0.3);
+  }
+
+  .cancel-page .btn-back:hover {
+    @apply bg-blue text-white;
+  }
+</style>

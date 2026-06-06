@@ -1,0 +1,1256 @@
+---
+/**
+ * TableMap.astro – interaktywna mapa stolików kawiarni MOCna!
+ *
+ * Props:
+ *   occupiedTables – tablica ID zajętych stolików, np. ['T1', 'G3']
+ *
+ * Emituje CustomEvent('tableSelected', { detail: { tableId, date, time, ... } })
+ * oraz ustawia ukryte inputy #selected-table-input / #selected-time-input / #selected-date-input.
+ */
+
+interface Props {
+  occupiedTables?: string[];
+}
+const { occupiedTables = [] } = Astro.props;
+
+// Sloty 09:00–18:30 co 30 min
+const TIME_SLOTS: string[] = [];
+for (let h = 9; h <= 18; h++) {
+  TIME_SLOTS.push(`${String(h).padStart(2, "0")}:00`);
+  if (h < 19) TIME_SLOTS.push(`${String(h).padStart(2, "0")}:30`);
+}
+
+const TODAY    = new Date().toISOString().split("T")[0];
+const MAX_DATE = new Date(Date.now() + 90 * 24 * 3600 * 1000).toISOString().split("T")[0];
+
+// ---- Układ wg szkicu ----
+// Wnętrze górny rząd:  T1–T5 (2-osobowe)
+// Wnętrze dolny rząd:  T6(2os), T7(2os), T8(1os), T9(2os), T10(lounge 4os)
+// Ogród od dołu:       G1, G2 (3os) | G3, G4 (3os) | G5 (3os) | G6 (3os)
+const TABLE_META: Record<string, { label: string; cap: number; zone: string }> = {
+  T1:  { label: "Stolik 1",      cap: 2, zone: "Wnętrze" },
+  T2:  { label: "Stolik 2",      cap: 2, zone: "Wnętrze" },
+  T3:  { label: "Stolik 3",      cap: 2, zone: "Wnętrze" },
+  T4:  { label: "Stolik 4",      cap: 2, zone: "Wnętrze" },
+  T5:  { label: "Stolik 5",      cap: 2, zone: "Wnętrze" },
+  T6:  { label: "Stolik 6",      cap: 2, zone: "Wnętrze" },
+  T7:  { label: "Stolik 7",      cap: 2, zone: "Wnętrze" },
+  T8:  { label: "Stolik 8",      cap: 1, zone: "Wnętrze" },
+  T9:  { label: "Stolik 9",      cap: 2, zone: "Wnętrze" },
+  T10: { label: "Stolik 10", cap: 4, zone: "Strefa lounge" },
+  G1:  { label: "Ogród 1",       cap: 3, zone: "Ogród" },
+  G2:  { label: "Ogród 2",       cap: 3, zone: "Ogród" },
+  G3:  { label: "Ogród 3",       cap: 3, zone: "Ogród" },
+  G4:  { label: "Ogród 4",       cap: 3, zone: "Ogród" },
+  G5:  { label: "Ogród 5",       cap: 3, zone: "Ogród" },
+  G6:  { label: "Ogród 6",       cap: 3, zone: "Ogród" },
+};
+
+const occupiedSet = new Set(occupiedTables);
+const tableColor  = (id: string) => occupiedSet.has(id) ? "#9ca3af" : "#2c5ea9";
+const tableCursor = (id: string) => occupiedSet.has(id) ? "not-allowed" : "pointer";
+
+const metaJSON       = JSON.stringify(TABLE_META);
+const occupiedJSON   = JSON.stringify(occupiedTables);
+const timeSlotsJSON  = JSON.stringify(TIME_SLOTS);
+
+const MONTH_NAMES = [
+  "styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
+  "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień",
+];
+const WEEKDAY_NAMES = ["Pon", "Wt", "Śr", "Cz", "Pt", "So", "Nd"];
+---
+
+<div id="table-map-root" class="w-full">
+
+  <!-- ===== KROK 1: Wybór daty i godziny ===== -->
+  <div id="step-time" class="mx-auto max-w-2xl">
+    <div class="mb-8 text-center">
+      <h2 class="text-fluid-xl font-display font-bold tracking-tightest" aria-label="Zarezerwuj stolik">
+        <span class="text-blue">Z</span><span class="text-red">a</span><span class="text-yellow">r</span><span class="text-green">e</span><span class="text-pink">z</span><span class="text-orange">e</span><span class="text-blue">r</span><span class="text-red">w</span><span class="text-yellow">u</span><span class="text-green">j</span>
+        {" "}
+        <span class="text-pink">s</span><span class="text-orange">t</span><span class="text-blue">o</span><span class="text-red">l</span><span class="text-yellow">i</span><span class="text-green">k</span>
+      </h2>
+      <p id="step-time-hint" class="mt-2 font-bold text-graphite">
+        Wybierz datę wizyty.
+      </p>
+    </div>
+
+    <!-- Krok 1a: kalendarz -->
+    <div id="step-pick-date">
+      <div id="date-calendar" class="date-calendar" role="application" aria-label="Wybierz datę wizyty">
+        <div class="date-calendar__header">
+          <button id="cal-prev" type="button" class="date-calendar__nav" aria-label="Poprzedni miesiąc">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M10 3L5 8l5 5"/>
+            </svg>
+          </button>
+          <p id="cal-month-label" class="date-calendar__month"></p>
+          <button id="cal-next" type="button" class="date-calendar__nav" aria-label="Następny miesiąc">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M6 3l5 5-5 5"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="date-calendar__weekdays" aria-hidden="true">
+          {WEEKDAY_NAMES.map((day) => (
+            <span class="date-calendar__weekday">{day}</span>
+          ))}
+        </div>
+
+        <div id="cal-grid" class="date-calendar__grid" role="grid" aria-label="Dni miesiąca"></div>
+      </div>
+
+      <input type="hidden" id="date-input" value="" />
+    </div>
+
+    <!-- Krok 1b: godziny (po wyborze daty) -->
+    <div id="step-pick-time" class="hidden">
+      <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="text-sm text-graphite-muted">Wybrana data</p>
+          <p id="picked-date-label" class="text-lg font-bold capitalize text-graphite"></p>
+        </div>
+        <button id="back-to-date-btn" type="button" class="btn btn-outline self-start text-sm sm:self-auto">
+          ← Zmień datę
+        </button>
+      </div>
+
+      <p id="time-slots-hint" class="mb-3 hidden text-sm text-graphite-muted">
+        Na dziś nie ma już wolnych terminów. Wybierz inny dzień.
+      </p>
+      <div id="time-slots-grid" class="time-slots-grid mb-8">
+        {TIME_SLOTS.map((slot) => (
+          <button type="button" class="time-slot" data-time={slot}>
+            {slot}
+          </button>
+        ))}
+      </div>
+
+      <button
+        id="show-map-btn"
+        type="button"
+        disabled
+        class="btn btn-orange w-full justify-center opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+      >
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6-10l6-3m0 13l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4"/>
+        </svg>
+        Pokaż plan kawiarni
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== KROK 2: Mapa kawiarni ===== -->
+  <div id="step-map" class="hidden">
+
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p class="text-sm text-graphite-muted">Rezerwacja na</p>
+        <p class="text-lg font-bold text-graphite" id="chosen-datetime">— —</p>
+      </div>
+      <button id="back-btn" type="button" class="btn btn-outline self-start text-sm sm:self-auto">
+        ← Zmień godzinę
+      </button>
+    </div>
+
+    <!-- Legenda -->
+    <div class="mb-4 flex flex-wrap gap-4 text-sm font-medium text-graphite-soft">
+      <span class="flex items-center gap-2">
+        <span class="inline-block h-4 w-4 rounded-full bg-blue shadow-sm"></span>Wolny
+      </span>
+      <span class="flex items-center gap-2">
+        <span class="inline-block h-4 w-4 rounded-full bg-[#9ca3af] shadow-sm"></span>Zajęty
+      </span>
+      <span class="flex items-center gap-2">
+        <span class="inline-block h-4 w-4 rounded-full bg-red shadow-sm"></span>Wybrany
+      </span>
+    </div>
+
+    <!-- ============================================================
+         SVG PLAN KAWIARNI
+         viewBox: 0 0 920 480
+         Wnętrze: x=22..610, y=22..458
+         Separator: x=610..630
+         Ogród: x=630..898, y=22..458
+    ============================================================ -->
+    <div class="relative w-full overflow-x-auto rounded-none border border-graphite-200 bg-white shadow-sm">
+      <svg
+        id="cafe-floorplan"
+        viewBox="0 0 920 480"
+        xmlns="http://www.w3.org/2000/svg"
+        class="w-full"
+        role="img"
+        aria-label="Plan kawiarni MOCna! ze stolikami"
+        style="min-width:460px; max-height:80vh"
+      >
+        <defs>
+          <filter id="tshadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#1e3a5f" flood-opacity="0.22"/>
+          </filter>
+          <pattern id="parquet" patternUnits="userSpaceOnUse" width="24" height="24">
+            <rect width="24" height="24" fill="#fdf6ee"/>
+            <rect x="0"  y="0"  width="12" height="12" fill="#f7eedd" opacity="0.7"/>
+            <rect x="12" y="12" width="12" height="12" fill="#f7eedd" opacity="0.7"/>
+          </pattern>
+          <pattern id="grass" patternUnits="userSpaceOnUse" width="14" height="14">
+            <rect width="14" height="14" fill="#dcfce7"/>
+            <path d="M3 12 Q4.5 7 6 12" stroke="#86efac" stroke-width="1.2" fill="none"/>
+            <path d="M8 12 Q9.5 8 11 12" stroke="#86efac" stroke-width="1.2" fill="none"/>
+          </pattern>
+        </defs>
+
+        <!-- ==============================
+             TŁO
+        ============================== -->
+        <!-- Podłoga wnętrza (parkiet) -->
+        <rect x="22" y="22" width="588" height="436" fill="url(#parquet)"/>
+        <!-- Ogród (trawa) -->
+        <rect x="630" y="22" width="268" height="436" fill="url(#grass)"/>
+        <!-- Szyba tarasowa (między wnętrzem a ogrodem) -->
+        <rect x="610" y="22" width="20" height="436" fill="#bfdbfe" opacity="0.22"/>
+        <line x1="617" y1="22" x2="617" y2="458" stroke="#93c5fd" stroke-width="1"  opacity="0.6"/>
+        <line x1="623" y1="22" x2="623" y2="458" stroke="#93c5fd" stroke-width="1"  opacity="0.6"/>
+        <line x1="610" y1="130" x2="630" y2="130" stroke="#6b7280" stroke-width="1" opacity="0.4"/>
+        <line x1="610" y1="240" x2="630" y2="240" stroke="#6b7280" stroke-width="1" opacity="0.4"/>
+        <line x1="610" y1="350" x2="630" y2="350" stroke="#6b7280" stroke-width="1" opacity="0.4"/>
+
+        <!-- ==============================
+             DEKORACYJNE ROŚLINY W OGRODZIE
+        ============================== -->
+        <circle cx="644" cy="38"  r="9"  fill="#4ade80" opacity="0.45"/>
+        <circle cx="657" cy="46"  r="6"  fill="#22c55e" opacity="0.40"/>
+        <circle cx="886" cy="38"  r="9"  fill="#4ade80" opacity="0.45"/>
+        <circle cx="874" cy="46"  r="6"  fill="#22c55e" opacity="0.40"/>
+        <circle cx="644" cy="450" r="9"  fill="#4ade80" opacity="0.45"/>
+        <circle cx="657" cy="442" r="6"  fill="#22c55e" opacity="0.40"/>
+        <circle cx="886" cy="450" r="9"  fill="#4ade80" opacity="0.45"/>
+        <circle cx="874" cy="442" r="6"  fill="#22c55e" opacity="0.40"/>
+
+        <!-- ==============================
+             KRZESŁA – rysowane PRZED stolikami
+        ============================== -->
+
+        <!-- -- TOP ROW (y=100, r=22) – żółte, 2-osobowe -- -->
+        <!-- T1 cx=110 -->
+        <rect x="103" y="68"  width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <rect x="103" y="124" width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <!-- T2 cx=210 -->
+        <rect x="203" y="68"  width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <rect x="203" y="124" width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <!-- T3 cx=310 -->
+        <rect x="303" y="68"  width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <rect x="303" y="124" width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <!-- T4 cx=410 -->
+        <rect x="403" y="68"  width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <rect x="403" y="124" width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <!-- T5 cx=510 -->
+        <rect x="503" y="68"  width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <rect x="503" y="124" width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+
+        <!-- -- BOTTOM ROW (y=390) – żółte -- -->
+        <!-- T6 cx=85, r=22 -->
+        <rect x="78"  y="358" width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <rect x="78"  y="414" width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <!-- T7 cx=172, r=22 -->
+        <rect x="165" y="358" width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <rect x="165" y="414" width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <!-- T8 cx=288, r=22 (1-osobowy, tylko 1 krzesło) -->
+        <rect x="281" y="358" width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <!-- T9 cx=375, r=22 -->
+        <rect x="368" y="358" width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+        <rect x="368" y="414" width="14" height="8" rx="2" fill="#ffde00" opacity="0.95"/>
+
+        <!-- -- OGRÓD – szare krzesła (3 na stolik: lewe, prawe, dolne) -- -->
+        <!-- G1 cx=672, cy=415 -->
+        <rect x="640" y="408" width="8" height="14" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <rect x="696" y="408" width="8" height="14" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <rect x="665" y="439" width="14" height="8" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <!-- G2 cx=840, cy=415 -->
+        <rect x="808" y="408" width="8" height="14" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <rect x="864" y="408" width="8" height="14" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <rect x="833" y="439" width="14" height="8" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <!-- G3 cx=672, cy=320 -->
+        <rect x="640" y="313" width="8" height="14" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <rect x="696" y="313" width="8" height="14" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <rect x="665" y="344" width="14" height="8" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <!-- G4 cx=840, cy=320 -->
+        <rect x="808" y="313" width="8" height="14" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <rect x="864" y="313" width="8" height="14" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <rect x="833" y="344" width="14" height="8" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <!-- G5 cx=756, cy=225 -->
+        <rect x="724" y="218" width="8" height="14" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <rect x="780" y="218" width="8" height="14" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <rect x="749" y="249" width="14" height="8" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <!-- G6 cx=756, cy=130 -->
+        <rect x="724" y="123" width="8" height="14" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <rect x="780" y="123" width="8" height="14" rx="2" fill="#d1d5db" opacity="0.95"/>
+        <rect x="749" y="154" width="14" height="8" rx="2" fill="#d1d5db" opacity="0.95"/>
+
+        <!-- ==============================
+             STREFA LOUNGE – tło
+        ============================== -->
+        <rect x="450" y="342" width="144" height="104" rx="8" fill="#fff1f2" opacity="0.8"/>
+
+        <!-- ==============================
+             STOLIKI – WNĘTRZE GÓRNY RZĄD (r=22, 2-osobowe)
+        ============================== -->
+        <g class="cafe-table" data-table-id="T1"
+           data-status={occupiedSet.has("T1") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("T1")}`}
+           role="button" tabindex="0" aria-label="Stolik 1 – 2 os. – Wnętrze">
+          <circle cx="110" cy="100" r="22" fill={tableColor("T1")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="110" y="104" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="sans-serif">1</text>
+        </g>
+
+        <g class="cafe-table" data-table-id="T2"
+           data-status={occupiedSet.has("T2") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("T2")}`}
+           role="button" tabindex="0" aria-label="Stolik 2 – 2 os. – Wnętrze">
+          <circle cx="210" cy="100" r="22" fill={tableColor("T2")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="210" y="104" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="sans-serif">2</text>
+        </g>
+
+        <g class="cafe-table" data-table-id="T3"
+           data-status={occupiedSet.has("T3") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("T3")}`}
+           role="button" tabindex="0" aria-label="Stolik 3 – 2 os. – Wnętrze">
+          <circle cx="310" cy="100" r="22" fill={tableColor("T3")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="310" y="104" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="sans-serif">3</text>
+        </g>
+
+        <g class="cafe-table" data-table-id="T4"
+           data-status={occupiedSet.has("T4") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("T4")}`}
+           role="button" tabindex="0" aria-label="Stolik 4 – 2 os. – Wnętrze">
+          <circle cx="410" cy="100" r="22" fill={tableColor("T4")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="410" y="104" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="sans-serif">4</text>
+        </g>
+
+        <g class="cafe-table" data-table-id="T5"
+           data-status={occupiedSet.has("T5") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("T5")}`}
+           role="button" tabindex="0" aria-label="Stolik 5 – 2 os. – Wnętrze">
+          <circle cx="510" cy="100" r="22" fill={tableColor("T5")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="510" y="104" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="sans-serif">5</text>
+        </g>
+
+        <!-- ==============================
+             STOLIKI – WNĘTRZE DOLNY RZĄD
+        ============================== -->
+        <!-- T6: 2-osobowy, cx=85, cy=390 -->
+        <g class="cafe-table" data-table-id="T6"
+           data-status={occupiedSet.has("T6") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("T6")}`}
+           role="button" tabindex="0" aria-label="Stolik 6 – 2 os. – Wnętrze">
+          <circle cx="85" cy="390" r="22" fill={tableColor("T6")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="85" y="394" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="sans-serif">6</text>
+        </g>
+
+        <!-- T7: 2-osobowy, cx=172, cy=390 -->
+        <g class="cafe-table" data-table-id="T7"
+           data-status={occupiedSet.has("T7") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("T7")}`}
+           role="button" tabindex="0" aria-label="Stolik 7 – 2 os. – Wnętrze">
+          <circle cx="172" cy="390" r="22" fill={tableColor("T7")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="172" y="394" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="sans-serif">7</text>
+        </g>
+
+        <!-- T8: 1-osobowy, cx=288, cy=390 -->
+        <g class="cafe-table" data-table-id="T8"
+           data-status={occupiedSet.has("T8") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("T8")}`}
+           role="button" tabindex="0" aria-label="Stolik 8 – 1 os. – Wnętrze">
+          <circle cx="288" cy="390" r="22" fill={tableColor("T8")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="288" y="394" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="sans-serif">8</text>
+        </g>
+
+        <!-- T9: 2-osobowy, cx=375, cy=390 -->
+        <g class="cafe-table" data-table-id="T9"
+           data-status={occupiedSet.has("T9") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("T9")}`}
+           role="button" tabindex="0" aria-label="Stolik 9 – 2 os. – Wnętrze">
+          <circle cx="375" cy="390" r="22" fill={tableColor("T9")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="375" y="394" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="sans-serif">9</text>
+        </g>
+
+        <!-- T10: Strefa Lounge (2 fotele + kanapa = 4 os.) -->
+        <!-- Krzesła przy fotelach (czerwone, dekoracyjne) -->
+        <rect x="469" y="342" width="14" height="8"  rx="2" fill="#de3c42" opacity="0.7"/>
+        <rect x="443" y="363" width="8"  height="14" rx="2" fill="#de3c42" opacity="0.7"/>
+        <rect x="543" y="342" width="14" height="8"  rx="2" fill="#de3c42" opacity="0.7"/>
+        <rect x="572" y="363" width="8"  height="14" rx="2" fill="#de3c42" opacity="0.7"/>
+
+        <g class="cafe-table" data-table-id="T10"
+           data-status={occupiedSet.has("T10") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("T10")}`}
+           role="button" tabindex="0" aria-label="Stolik 10 – 4 os. – Strefa lounge">
+          <circle cx="476" cy="370" r="22" fill={tableColor("T10")} filter="url(#tshadow)" class="table-circle"/>
+          <circle cx="550" cy="370" r="22" fill={tableColor("T10")} filter="url(#tshadow)" class="table-circle"/>
+          <rect x="453" y="402" width="120" height="30" rx="9" fill={tableColor("T10")} filter="url(#tshadow)" class="table-circle"/>
+          <line x1="513" y1="406" x2="513" y2="428" stroke="white" stroke-width="1.5" opacity="0.4"/>
+          <text x="513" y="378" text-anchor="middle" font-size="16" font-weight="700" fill="#333333" font-family="sans-serif">10</text>
+        </g>
+
+        <!-- ==============================
+             STOLIKI – OGRÓD (r=22, 3-osobowe)
+        ============================== -->
+        <!-- G1 cx=672, cy=415 -->
+        <g class="cafe-table" data-table-id="G1"
+           data-status={occupiedSet.has("G1") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("G1")}`}
+           role="button" tabindex="0" aria-label="Ogród 1 – 3 os. – Ogród">
+          <circle cx="672" cy="415" r="22" fill={tableColor("G1")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="672" y="419" text-anchor="middle" font-size="10" font-weight="700" fill="white" font-family="sans-serif">O1</text>
+        </g>
+
+        <!-- G2 cx=840, cy=415 -->
+        <g class="cafe-table" data-table-id="G2"
+           data-status={occupiedSet.has("G2") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("G2")}`}
+           role="button" tabindex="0" aria-label="Ogród 2 – 3 os. – Ogród">
+          <circle cx="840" cy="415" r="22" fill={tableColor("G2")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="840" y="419" text-anchor="middle" font-size="10" font-weight="700" fill="white" font-family="sans-serif">O2</text>
+        </g>
+
+        <!-- G3 cx=672, cy=320 -->
+        <g class="cafe-table" data-table-id="G3"
+           data-status={occupiedSet.has("G3") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("G3")}`}
+           role="button" tabindex="0" aria-label="Ogród 3 – 3 os. – Ogród">
+          <circle cx="672" cy="320" r="22" fill={tableColor("G3")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="672" y="324" text-anchor="middle" font-size="10" font-weight="700" fill="white" font-family="sans-serif">O3</text>
+        </g>
+
+        <!-- G4 cx=840, cy=320 -->
+        <g class="cafe-table" data-table-id="G4"
+           data-status={occupiedSet.has("G4") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("G4")}`}
+           role="button" tabindex="0" aria-label="Ogród 4 – 3 os. – Ogród">
+          <circle cx="840" cy="320" r="22" fill={tableColor("G4")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="840" y="324" text-anchor="middle" font-size="10" font-weight="700" fill="white" font-family="sans-serif">O4</text>
+        </g>
+
+        <!-- G5 cx=756, cy=225 -->
+        <g class="cafe-table" data-table-id="G5"
+           data-status={occupiedSet.has("G5") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("G5")}`}
+           role="button" tabindex="0" aria-label="Ogród 5 – 3 os. – Ogród">
+          <circle cx="756" cy="225" r="22" fill={tableColor("G5")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="756" y="229" text-anchor="middle" font-size="10" font-weight="700" fill="white" font-family="sans-serif">O5</text>
+        </g>
+
+        <!-- G6 cx=756, cy=130 -->
+        <g class="cafe-table" data-table-id="G6"
+           data-status={occupiedSet.has("G6") ? "occupied" : "free"}
+           style={`cursor:${tableCursor("G6")}`}
+           role="button" tabindex="0" aria-label="Ogród 6 – 3 os. – Ogród">
+          <circle cx="756" cy="130" r="22" fill={tableColor("G6")} filter="url(#tshadow)" class="table-circle"/>
+          <text x="756" y="134" text-anchor="middle" font-size="10" font-weight="700" fill="white" font-family="sans-serif">O6</text>
+        </g>
+
+        <!-- ==============================
+             ŚCIANY I DRZWI
+        ============================== -->
+        <!-- Ściana górna -->
+        <line x1="22"  y1="22"  x2="898" y2="22"  stroke="#374151" stroke-width="4.5" stroke-linecap="square"/>
+        <!-- Ściana dolna -->
+        <line x1="22"  y1="458" x2="898" y2="458" stroke="#374151" stroke-width="4.5" stroke-linecap="square"/>
+        <!-- Ściana prawa (ogród) -->
+        <line x1="898" y1="22"  x2="898" y2="458" stroke="#374151" stroke-width="4.5" stroke-linecap="square"/>
+        <!-- Ściana lewa górna (przed drzwiami) -->
+        <line x1="22"  y1="22"  x2="22"  y2="158" stroke="#374151" stroke-width="4.5" stroke-linecap="square"/>
+        <!-- Drzwi wejściowe – szyba (y=158..300) -->
+        <rect x="10" y="158" width="24" height="142" fill="#bfdbfe" opacity="0.30" rx="1"/>
+        <line x1="17" y1="158" x2="17" y2="300" stroke="#93c5fd" stroke-width="1" opacity="0.7"/>
+        <line x1="23" y1="158" x2="23" y2="300" stroke="#93c5fd" stroke-width="1" opacity="0.7"/>
+        <!-- Łuk otwierania drzwi -->
+        <path d="M 22 300 A 100 100 0 0 0 122 300" fill="none" stroke="#9ca3af" stroke-width="1" stroke-dasharray="5,4" opacity="0.8"/>
+        <!-- Ściana lewa dolna (po drzwiach) -->
+        <line x1="22"  y1="300" x2="22"  y2="458" stroke="#374151" stroke-width="4.5" stroke-linecap="square"/>
+        <!-- Słupki separatora -->
+        <line x1="610" y1="22"  x2="610" y2="458" stroke="#374151" stroke-width="3" stroke-linecap="square"/>
+        <line x1="630" y1="22"  x2="630" y2="458" stroke="#374151" stroke-width="3" stroke-linecap="square"/>
+
+        <!-- ==============================
+             ETYKIETY STREF
+        ============================== -->
+        <!-- Wejście (obracany tekst przy lewej ścianie) -->
+        <text transform="rotate(-90 16 228)" x="16" y="228" text-anchor="middle" font-size="8.5" fill="#6b7280" font-family="sans-serif" opacity="0.9">Wejście</text>
+        <!-- Taras -->
+        <text x="620" y="15" text-anchor="middle" font-size="8" fill="#6b7280" font-family="sans-serif" opacity="0.9">Taras</text>
+        <!-- Wnętrze -->
+        <rect x="268" y="228" width="96" height="26" rx="5" fill="white" opacity="0.55"/>
+        <text x="316" y="246" text-anchor="middle" font-size="11" font-weight="600" fill="#374151" font-family="sans-serif" opacity="0.65">WNĘTRZE</text>
+        <!-- Lounge label -->
+        <text x="513" y="338" text-anchor="middle" font-size="9" font-weight="600" fill="#be123c" font-family="sans-serif" opacity="0.85">Strefa lounge</text>
+        <!-- Ogród label -->
+        <text x="764" y="473" text-anchor="middle" font-size="10" font-weight="600" fill="#15803d" font-family="sans-serif" opacity="0.8">OGRÓD</text>
+        <!-- Stopka -->
+        <text x="892" y="473" text-anchor="end" font-size="7.5" fill="#9ca3af" font-family="sans-serif">MOCna! Plan sali</text>
+      </svg>
+    </div>
+
+    <!-- Tooltip -->
+    <div
+      id="table-tooltip"
+      class="pointer-events-none fixed z-50 hidden max-w-[180px] border border-graphite-200 bg-graphite px-3 py-2 shadow-soft"
+      role="tooltip"
+      aria-live="polite"
+    >
+      <p id="tt-name" class="text-sm font-bold text-white"></p>
+      <p id="tt-zone" class="text-xs text-white/70"></p>
+      <p id="tt-cap"  class="text-xs text-white/70"></p>
+      <p id="tt-stat" class="mt-1 text-xs font-semibold"></p>
+    </div>
+
+    <!-- Podsumowanie wyboru -->
+    <div id="selection-summary" class="mt-6 hidden border border-graphite-200 bg-white p-5">
+      <p class="mb-1 text-sm text-graphite-muted">Wybrany stolik</p>
+      <p id="summary-table"  class="text-lg font-bold text-graphite"></p>
+      <p id="summary-detail" class="text-sm text-graphite-muted"></p>
+      <p id="summary-datetime" class="mt-1 text-sm font-semibold capitalize text-blue"></p>
+    </div>
+
+    <!-- Hidden inputs dla formularza -->
+    <input type="hidden" id="selected-table-input" name="tableId"          value=""/>
+    <input type="hidden" id="selected-time-input"  name="reservationTime"  value=""/>
+    <input type="hidden" id="selected-date-input"  name="reservationDate"  value=""/>
+  </div>
+</div>
+
+<script define:vars={{ metaJSON, occupiedJSON, MAX_DATE, MONTH_NAMES, timeSlotsJSON }}>
+  const TABLE_META     = JSON.parse(metaJSON);
+  const occupiedTables = new Set(JSON.parse(occupiedJSON));
+  const TIME_SLOTS     = JSON.parse(timeSlotsJSON);
+
+  let selectedTableId = null;
+  let selectedTime    = null;
+  let selectedDate    = null;
+
+  let minDate  = null;
+  let maxDate  = null;
+  let viewYear = 0;
+  let viewMonth = 0;
+
+  function parseISODate(value) {
+    const [y, m, d] = value.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function toISO(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  function getLocalToday() {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
+  function isSameDay(a, b) {
+    return a.getFullYear() === b.getFullYear()
+      && a.getMonth() === b.getMonth()
+      && a.getDate() === b.getDate();
+  }
+
+  function formatDateLabel(value) {
+    return parseISODate(value).toLocaleDateString("pl-PL", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }
+
+  function slotToMinutes(slot) {
+    const [h, m] = slot.split(":").map(Number);
+    return h * 60 + m;
+  }
+
+  /** Najwcześniejsza godzina rezerwacji: teraz + 2h, zaokrąglone w górę do 30 min */
+  function getEarliestBookableDateTime() {
+    const t = new Date();
+    t.setSeconds(0, 0);
+    t.setMinutes(t.getMinutes() + 120);
+    const mins = t.getMinutes();
+    if (mins % 30 !== 0) {
+      t.setMinutes(mins + (30 - (mins % 30)));
+    }
+    return t;
+  }
+
+  function slotToDateTime(dateISO, slot) {
+    const d = parseISODate(dateISO);
+    const [h, m] = slot.split(":").map(Number);
+    d.setHours(h, m, 0, 0);
+    return d;
+  }
+
+  function isSlotAvailable(slot, dateISO) {
+    if (!dateISO) return false;
+
+    const selected = parseISODate(dateISO);
+    const today = getLocalToday();
+
+    if (selected < today) return false;
+    if (selected > today) return true;
+
+    const earliest = getEarliestBookableDateTime();
+    const earliestDay = new Date(earliest.getFullYear(), earliest.getMonth(), earliest.getDate());
+
+    // Np. o 23:00 + 2h wypada już następny dzień — dziś brak wolnych godzin
+    if (earliestDay > selected) return false;
+
+    return slotToDateTime(dateISO, slot) >= earliest;
+  }
+
+  function hasAvailableSlots(dateISO) {
+    return TIME_SLOTS.some((slot) => isSlotAvailable(slot, dateISO));
+  }
+
+  function renderTimeSlots(dateISO) {
+    const hint = document.getElementById("time-slots-hint");
+    let availableCount = 0;
+
+    document.querySelectorAll(".time-slot").forEach((btn) => {
+      const slot = btn.dataset.time;
+      const available = isSlotAvailable(slot, dateISO);
+      const isSelected = selectedTime === slot;
+
+      btn.classList.remove("time-slot--available", "time-slot--unavailable", "time-slot--selected");
+      btn.disabled = !available;
+      btn.style.background = "";
+      btn.style.borderColor = "";
+      btn.style.boxShadow = "";
+
+      if (!available) {
+        btn.classList.add("time-slot--unavailable");
+        btn.style.color = "#8a8a8a";
+        btn.style.fontWeight = "400";
+      } else {
+        availableCount += 1;
+        btn.classList.add("time-slot--available");
+        if (isSelected) {
+          btn.classList.add("time-slot--selected");
+          btn.style.color = "#ffffff";
+          btn.style.fontWeight = "700";
+          btn.style.background = "#2c5ea9";
+          btn.style.borderColor = "#2c5ea9";
+        } else {
+          btn.style.color = "#333333";
+          btn.style.fontWeight = "700";
+        }
+      }
+    });
+
+    if (selectedTime && !isSlotAvailable(selectedTime, dateISO)) {
+      selectedTime = null;
+    }
+
+    if (hint) {
+      hint.classList.toggle("hidden", availableCount > 0);
+    }
+  }
+
+  function resetTimeSlots() {
+    selectedTime = null;
+  }
+
+  function showDateStep() {
+    const stepPickDate = document.getElementById("step-pick-date");
+    const stepPickTime = document.getElementById("step-pick-time");
+    const stepTimeHint = document.getElementById("step-time-hint");
+    stepPickDate?.classList.remove("hidden");
+    stepPickTime?.classList.add("hidden");
+    if (stepTimeHint) stepTimeHint.textContent = "Wybierz datę wizyty.";
+    renderCalendar();
+  }
+
+  function showTimeStep(value, keepTime = false) {
+    const stepPickDate   = document.getElementById("step-pick-date");
+    const stepPickTime   = document.getElementById("step-pick-time");
+    const pickedDateLabel= document.getElementById("picked-date-label");
+    const stepTimeHint   = document.getElementById("step-time-hint");
+    const dateInput      = document.getElementById("date-input");
+
+    if (dateInput) dateInput.value = value;
+    if (pickedDateLabel) pickedDateLabel.textContent = formatDateLabel(value);
+    if (stepTimeHint) stepTimeHint.textContent = "Wybierz godzinę rezerwacji.";
+
+    stepPickDate?.classList.add("hidden");
+    stepPickTime?.classList.remove("hidden");
+
+    if (!keepTime) resetTimeSlots();
+    renderTimeSlots(value);
+    updateConfirmBtn();
+  }
+
+  function updateCalNavButtons() {
+    const calPrev = document.getElementById("cal-prev");
+    const calNext = document.getElementById("cal-next");
+    const viewStart = new Date(viewYear, viewMonth, 1);
+    const viewEnd   = new Date(viewYear, viewMonth + 1, 0);
+    if (calPrev) calPrev.disabled = viewEnd < minDate;
+    if (calNext) calNext.disabled = viewStart > maxDate;
+  }
+
+  function renderCalendar() {
+    const calGrid       = document.getElementById("cal-grid");
+    const calMonthLabel = document.getElementById("cal-month-label");
+    const dateInput     = document.getElementById("date-input");
+    if (!calGrid || !calMonthLabel || !minDate || !maxDate) return;
+
+    calMonthLabel.textContent = `${MONTH_NAMES[viewMonth]} ${viewYear}`;
+    calGrid.innerHTML = "";
+
+    const firstDayOffset = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7;
+    const daysInMonth    = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const today          = getLocalToday();
+    const selected       = dateInput?.value ? parseISODate(dateInput.value) : null;
+
+    for (let i = 0; i < firstDayOffset; i++) {
+      const spacer = document.createElement("span");
+      spacer.className = "date-calendar__spacer";
+      spacer.setAttribute("aria-hidden", "true");
+      calGrid.appendChild(spacer);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date       = new Date(viewYear, viewMonth, day);
+      const iso        = toISO(date);
+      const isPast     = date < minDate;
+      const isTooFar   = date > maxDate;
+      const noSlots    = !hasAvailableSlots(iso);
+      const isDisabled = isPast || isTooFar || noSlots;
+      const isToday    = isSameDay(date, today);
+      const isSelected = selected && isSameDay(date, selected);
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = String(day);
+      btn.dataset.date = iso;
+      btn.setAttribute("role", "gridcell");
+      btn.setAttribute("aria-label", formatDateLabel(iso));
+      btn.className = "date-calendar__day";
+
+      if (isDisabled) {
+        btn.disabled = true;
+        btn.classList.add("date-calendar__day--disabled");
+        if (isPast || noSlots) {
+          btn.classList.add("date-calendar__day--past");
+          btn.style.color = "#6b6b6b";
+          btn.style.fontWeight = "400";
+          btn.style.opacity = isPast ? "0.65" : "0.75";
+        } else {
+          btn.style.color = "#9ca3af";
+          btn.style.fontWeight = "400";
+        }
+      } else {
+        btn.classList.add("date-calendar__day--available");
+        btn.style.color = "#333333";
+        btn.style.fontWeight = "700";
+      }
+
+      if (isToday && !isDisabled) btn.classList.add("date-calendar__day--today");
+      if (isSelected) {
+        btn.classList.add("date-calendar__day--selected");
+        btn.setAttribute("aria-selected", "true");
+      }
+
+      calGrid.appendChild(btn);
+    }
+
+    updateCalNavButtons();
+  }
+
+  function updateConfirmBtn() {
+    const dateInput  = document.getElementById("date-input");
+    const showMapBtn = document.getElementById("show-map-btn");
+    const ok = selectedTime && dateInput?.value;
+    if (!showMapBtn) return;
+    showMapBtn.disabled = !ok;
+    showMapBtn.classList.toggle("opacity-50", !ok);
+  }
+
+  function initBookingDateTime() {
+    const root = document.getElementById("table-map-root");
+    if (!root) return;
+
+    minDate = getLocalToday();
+    maxDate = parseISODate(MAX_DATE);
+    viewYear = minDate.getFullYear();
+    viewMonth = minDate.getMonth();
+
+    if (!root.dataset.listenersReady) {
+      root.dataset.listenersReady = "1";
+
+      root.addEventListener("click", (e) => {
+        const dayBtn = e.target.closest(".date-calendar__day--available");
+        if (dayBtn?.dataset.date) {
+          showTimeStep(dayBtn.dataset.date);
+          return;
+        }
+
+        if (e.target.closest("#cal-prev")) {
+          viewMonth -= 1;
+          if (viewMonth < 0) { viewMonth = 11; viewYear -= 1; }
+          renderCalendar();
+          return;
+        }
+
+        if (e.target.closest("#cal-next")) {
+          viewMonth += 1;
+          if (viewMonth > 11) { viewMonth = 0; viewYear += 1; }
+          renderCalendar();
+          return;
+        }
+
+        if (e.target.closest("#back-to-date-btn")) {
+          const dateInput = document.getElementById("date-input");
+          if (dateInput) dateInput.value = "";
+          showDateStep();
+          updateConfirmBtn();
+          return;
+        }
+
+        const timeBtn = e.target.closest(".time-slot");
+        if (timeBtn && !timeBtn.disabled) {
+          selectedTime = timeBtn.dataset.time;
+          const dateInput = document.getElementById("date-input");
+          if (dateInput?.value) renderTimeSlots(dateInput.value);
+          updateConfirmBtn();
+          return;
+        }
+
+        if (e.target.closest("#show-map-btn")) {
+          const dateInput = document.getElementById("date-input");
+          if (!dateInput?.value || !selectedTime) return;
+          goToMapStep(dateInput.value, selectedTime);
+        }
+      });
+    }
+
+    showDateStep();
+  }
+
+  function goToMapStep(dateValue, timeValue) {
+    const stepTime       = document.getElementById("step-time");
+    const stepMap        = document.getElementById("step-map");
+    const chosenDatetime = document.getElementById("chosen-datetime");
+    const timeInput      = document.getElementById("selected-time-input");
+    const dateInputHidden= document.getElementById("selected-date-input");
+
+    selectedDate = dateValue;
+    selectedTime = timeValue;
+    const dateStr = formatDateLabel(dateValue);
+    if (chosenDatetime) chosenDatetime.textContent = `${dateStr}, godz. ${selectedTime}`;
+    if (timeInput) timeInput.value = selectedTime;
+    if (dateInputHidden) dateInputHidden.value = selectedDate;
+
+    if (!stepTime || !stepMap) return;
+
+    stepTime.style.opacity = "0";
+    stepTime.style.transform = "translateY(-12px)";
+    setTimeout(() => {
+      stepTime.classList.add("hidden");
+      stepTime.style.opacity = "";
+      stepTime.style.transform = "";
+      stepMap.classList.remove("hidden");
+      stepMap.style.opacity = "0";
+      stepMap.style.transform = "translateY(12px)";
+      requestAnimationFrame(() => {
+        stepMap.style.transition = "opacity .4s ease, transform .4s ease";
+        stepMap.style.opacity = "1";
+        stepMap.style.transform = "translateY(0)";
+      });
+    }, 220);
+
+    document.dispatchEvent(
+      new CustomEvent("timeSelected", { detail: { date: selectedDate, time: selectedTime } })
+    );
+
+    // Pobierz aktualne zajęte stoliki dla wybranego slotu z backendu
+    fetch(`/api/occupied-tables?date=${encodeURIComponent(dateValue)}&time=${encodeURIComponent(timeValue)}`)
+      .then((r) => r.json())
+      .then((ids) => {
+        occupiedTables.clear();
+        ids.forEach((id) => occupiedTables.add(id));
+        Object.keys(TABLE_META).forEach((id) => {
+          const group = document.querySelector(`[data-table-id="${id}"]`);
+          if (!group) return;
+          if (occupiedTables.has(id)) {
+            setTableFill(id, COLOR.occupied);
+            group.setAttribute("data-status", "occupied");
+            group.setAttribute("aria-disabled", "true");
+          } else {
+            setTableFill(id, COLOR.free);
+            group.setAttribute("data-status", "free");
+            group.removeAttribute("aria-disabled");
+          }
+        });
+      })
+      .catch(() => {});
+  }
+
+  initBookingDateTime();
+  document.addEventListener("astro:page-load", initBookingDateTime);
+
+  const backBtn         = document.getElementById("back-btn");
+  const stepTime        = document.getElementById("step-time");
+  const stepMap         = document.getElementById("step-map");
+  const tooltip         = document.getElementById("table-tooltip");
+  const ttName          = document.getElementById("tt-name");
+  const ttZone          = document.getElementById("tt-zone");
+  const ttCap           = document.getElementById("tt-cap");
+  const ttStat          = document.getElementById("tt-stat");
+  const selSummary      = document.getElementById("selection-summary");
+  const sumTable        = document.getElementById("summary-table");
+  const sumDetail       = document.getElementById("summary-detail");
+  const sumDatetime     = document.getElementById("summary-datetime");
+  const tableInput      = document.getElementById("selected-table-input");
+
+  backBtn?.addEventListener("click", () => {
+    stepMap.classList.add("hidden");
+    stepTime.classList.remove("hidden");
+    const dateInput = document.getElementById("date-input");
+    if (dateInput?.value) {
+      showTimeStep(dateInput.value, true);
+    } else {
+      showDateStep();
+    }
+    clearTableSelection();
+    document.dispatchEvent(new CustomEvent("bookingReset", { bubbles: true }));
+  });
+
+  // ---- KROK 2: interakcja ze stolikami ----
+  // Obsługuje T10 z wieloma .table-circle (fotele + kanapa)
+  function setTableFill(id, color) {
+    const g = document.querySelector(`[data-table-id="${id}"]`);
+    if (!g) return;
+    g.querySelectorAll(".table-circle").forEach((el) => el.setAttribute("fill", color));
+  }
+
+  function clearTableSelection() {
+    if (!selectedTableId) return;
+    setTableFill(selectedTableId, occupiedTables.has(selectedTableId) ? "#9ca3af" : "#2c5ea9");
+    selectedTableId = null;
+    tableInput.value = "";
+    if (sumDatetime) sumDatetime.textContent = "";
+    selSummary.classList.add("hidden");
+  }
+
+  const COLOR = { free: "#2c5ea9", occupied: "#9ca3af", selected: "#de3c42" };
+
+  function ensureTooltipInBody() {
+    if (tooltip && tooltip.parentElement !== document.body) {
+      document.body.appendChild(tooltip);
+    }
+  }
+
+  function positionTooltipNearTable(group) {
+    if (!tooltip || !group) return;
+    ensureTooltipInBody();
+
+    tooltip.classList.remove("hidden");
+    tooltip.style.visibility = "hidden";
+
+    const rect = group.getBoundingClientRect();
+    const tipW = tooltip.offsetWidth;
+    const tipH = tooltip.offsetHeight;
+    const gap = 10;
+
+    let left = rect.left + rect.width / 2 - tipW / 2;
+    let top = rect.top - tipH - gap;
+
+    if (top < 8) top = rect.bottom + gap;
+
+    left = Math.max(8, Math.min(left, window.innerWidth - tipW - 8));
+    top = Math.max(8, Math.min(top, window.innerHeight - tipH - 8));
+
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+    tooltip.style.visibility = "visible";
+  }
+
+  let hoveredTableGroup = null;
+
+  document.querySelectorAll(".cafe-table").forEach((group) => {
+    const id = group.dataset.tableId;
+
+    group.addEventListener("mouseenter", () => {
+      hoveredTableGroup = group;
+      const meta  = TABLE_META[id] || {};
+      const isSel = selectedTableId === id;
+      const isOcc = occupiedTables.has(id);
+      ttName.textContent = meta.label || id;
+      ttZone.textContent = meta.zone  || "";
+      ttCap.textContent  = meta.cap   ? `${meta.cap} ${meta.cap === 1 ? "osoba" : "osoby"}` : "";
+      ttStat.textContent = isSel ? "✓ Wybrany" : isOcc ? "Zajęty" : "Wolny";
+      ttStat.style.color = isSel ? "#fa8080" : isOcc ? "#d1d5db" : "#86efac";
+      positionTooltipNearTable(group);
+      if (!isOcc && !isSel) setTableFill(id, "#3b73c8");
+    });
+
+    group.addEventListener("mousemove", () => {
+      positionTooltipNearTable(group);
+    });
+
+    group.addEventListener("mouseleave", () => {
+      hoveredTableGroup = null;
+      tooltip.classList.add("hidden");
+      tooltip.style.visibility = "";
+      const isOcc = occupiedTables.has(id);
+      const isSel = selectedTableId === id;
+      if (!isSel) setTableFill(id, isOcc ? COLOR.occupied : COLOR.free);
+    });
+
+    group.addEventListener("click", () => {
+      if (occupiedTables.has(id)) return;
+      if (selectedTableId === id) { clearTableSelection(); return; }
+      if (selectedTableId) setTableFill(selectedTableId, COLOR.free);
+
+      selectedTableId = id;
+      setTableFill(id, COLOR.selected);
+      tableInput.value = id;
+
+      const meta = TABLE_META[id] || {};
+      const dateInput = document.getElementById("date-input");
+      sumTable.textContent  = meta.label || id;
+      sumDetail.textContent = `${meta.zone || ""} · ${meta.cap || "–"} ${meta.cap <= 1 ? "osoba" : "osoby"}`;
+      const reservationDate = dateInput?.value || selectedDate;
+      if (sumDatetime && reservationDate && selectedTime) {
+        sumDatetime.textContent = `${formatDateLabel(reservationDate)}, godz. ${selectedTime}`;
+      }
+      selSummary.classList.remove("hidden");
+
+      document.dispatchEvent(
+        new CustomEvent("tableSelected", {
+          detail: { tableId: id, label: meta.label, zone: meta.zone, cap: meta.cap, date: selectedDate, time: selectedTime },
+          bubbles: true,
+        })
+      );
+    });
+
+    group.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        group.dispatchEvent(new MouseEvent("click"));
+      }
+    });
+  });
+
+  document.getElementById("cafe-floorplan")?.parentElement?.addEventListener("scroll", () => {
+    if (hoveredTableGroup) positionTooltipNearTable(hoveredTableGroup);
+  }, { passive: true });
+</script>
+
+<style>
+  .cafe-table { transition: opacity 0.15s ease; }
+  .cafe-table[data-status="occupied"] { opacity: 0.65; }
+  .cafe-table[data-status="occupied"]:hover { opacity: 0.65; }
+  .table-circle { transition: fill 0.2s ease; }
+  .cafe-table[data-status="free"]:hover .table-circle {
+    filter: drop-shadow(0 0 8px rgba(44, 94, 169, 0.55));
+  }
+
+  #step-time, #step-map { transition: opacity 0.22s ease, transform 0.22s ease; }
+
+  @media (max-width: 640px) {
+    #cafe-floorplan { min-width: 420px; }
+  }
+
+  #table-tooltip {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    transition: opacity 0.1s;
+  }
+
+  .date-calendar {
+    border: 1px solid #e7e6e4;
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf5 100%);
+    padding: 1.25rem 1.25rem 1rem;
+    box-shadow: 0 8px 32px -20px rgba(51, 51, 51, 0.28);
+  }
+
+  .date-calendar__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .date-calendar__month {
+    flex: 1;
+    text-align: center;
+    font-family: "Clash Display", ui-sans-serif, system-ui, sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #333333;
+    text-transform: capitalize;
+  }
+
+  .date-calendar__nav {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid #e7e6e4;
+    background: #fff;
+    color: #2c5ea9;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  }
+
+  .date-calendar__nav:hover:not(:disabled) {
+    background: rgba(44, 94, 169, 0.06);
+    border-color: rgba(44, 94, 169, 0.35);
+  }
+
+  .date-calendar__nav:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .date-calendar__nav svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .date-calendar__weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .date-calendar__weekday {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6b6b6b;
+    padding-bottom: 0.25rem;
+  }
+
+  .date-calendar__grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.35rem;
+  }
+
+  .date-calendar__spacer {
+    aspect-ratio: 1;
+  }
+
+  .date-calendar__day {
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    border: 1px solid transparent;
+    background: #fff;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #333333;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  }
+
+  .date-calendar__day--available {
+    font-weight: 700;
+    color: #333333;
+  }
+
+  .date-calendar__day--available:hover:not(.date-calendar__day--selected) {
+    background: rgba(44, 94, 169, 0.08);
+    border-color: rgba(44, 94, 169, 0.2);
+    transform: translateY(-1px);
+  }
+
+  .date-calendar__day--today.date-calendar__day--available {
+    border-color: rgba(44, 94, 169, 0.45);
+    box-shadow: inset 0 0 0 1px rgba(44, 94, 169, 0.15);
+  }
+
+  .date-calendar__day--selected {
+    background: #2c5ea9;
+    border-color: #2c5ea9;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 6px 18px -8px rgba(44, 94, 169, 0.65);
+  }
+
+  .date-calendar__day--disabled {
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .date-calendar__day--past {
+    color: #c4c4c4;
+    font-weight: 400;
+    background: transparent;
+  }
+
+  .date-calendar__day--disabled:not(.date-calendar__day--past) {
+    color: #d1d5db;
+    font-weight: 400;
+    background: transparent;
+  }
+
+  .time-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .time-slots-grid {
+      grid-template-columns: repeat(5, 1fr);
+    }
+  }
+
+  .time-slot {
+    border: 1px solid #e7e6e4;
+    background: #fff;
+    padding: 0.625rem 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: #333333;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  }
+
+  .time-slot--available {
+    font-weight: 700;
+    color: #333333;
+    cursor: pointer;
+  }
+
+  .time-slot--available:hover:not(.time-slot--selected) {
+    border-color: rgba(44, 94, 169, 0.35);
+    color: #2c5ea9;
+    background: rgba(44, 94, 169, 0.06);
+  }
+
+  .time-slot--unavailable {
+    font-weight: 400;
+    color: #8a8a8a;
+    cursor: not-allowed;
+    pointer-events: none;
+    background: transparent;
+    border-color: transparent;
+  }
+
+  .time-slot--selected {
+    background: #2c5ea9;
+    border-color: #2c5ea9;
+    color: #fff;
+    font-weight: 700;
+  }
+</style>
