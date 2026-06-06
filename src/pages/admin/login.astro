@@ -1,0 +1,104 @@
+---
+import "../../styles/global.css";
+import { ViewTransitions } from "astro:transitions";
+import { actions } from "astro:actions";
+import { verifySessionToken, COOKIE_NAME_EXPORT } from "../../lib/session";
+import NoiseOverlay from "@components/NoiseOverlay.astro";
+import { BRAND } from "@data/site";
+
+const token = Astro.cookies.get(COOKIE_NAME_EXPORT)?.value;
+if (token && (await verifySessionToken(token))) {
+  return Astro.redirect("/admin/dashboard");
+}
+
+const result = Astro.getActionResult(actions.login);
+const expired = Astro.url.searchParams.get("expired") === "1";
+
+if (result?.data?.success) {
+  return Astro.redirect("/admin/dashboard");
+}
+
+const errorMessage = result?.error?.message ?? null;
+---
+
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Logowanie — Panel Admina {BRAND.name}</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#f39200" />
+    <link rel="icon" type="image/svg+xml" href="/brand/logo-kolor.svg" />
+    <ViewTransitions />
+  </head>
+  <body class="relative flex min-h-screen flex-col text-graphite font-sans">
+    <NoiseOverlay />
+
+    <main class="home-page flex flex-1 items-center justify-center py-12">
+      <div class="shell w-full">
+        <div class="admin-panel mx-auto w-full max-w-md p-8 sm:p-10" style="animation: rise-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;">
+        <div class="mb-8 text-center">
+          <a href="/" class="inline-block" aria-label="MOCna! — strona główna">
+            <img
+              src="/brand/logo-kolor.svg"
+              alt="MOCna!"
+              class="mx-auto h-16 w-auto sm:h-20"
+            />
+          </a>
+          <h1 class="mt-6 text-fluid-xl font-display font-bold leading-tighter tracking-tightest text-graphite">
+            Zaloguj się
+          </h1>
+        </div>
+
+        {expired && (
+          <div class="alert-warning mb-5" role="alert">
+            <span aria-hidden="true">⏱</span>
+            Sesja wygasła. Zaloguj się ponownie.
+          </div>
+        )}
+
+        {errorMessage && (
+          <div class="alert-error mb-5" role="alert" id="error-msg">
+            <span aria-hidden="true">⚠</span>
+            {errorMessage}
+          </div>
+        )}
+
+        <form id="login-form" method="POST" action={actions.login} novalidate class="space-y-5">
+          <div class="space-y-1.5">
+            <label for="password" class="field-label">Hasło administratora</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              autocomplete="current-password"
+              placeholder="••••••••••"
+              required
+              autofocus
+              class="field-input"
+            />
+          </div>
+
+          <button type="submit" class="btn btn-orange w-full" id="login-btn">
+            <span class="spinner hidden h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true"></span>
+            <span class="btn-text">Zaloguj się</span>
+          </button>
+        </form>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const form = document.getElementById("login-form") as HTMLFormElement;
+      const btn = document.getElementById("login-btn") as HTMLButtonElement;
+
+      form?.addEventListener("submit", () => {
+        btn.querySelector(".spinner")?.classList.remove("hidden");
+        btn.querySelector(".btn-text")?.classList.add("hidden");
+        btn.disabled = true;
+        btn.classList.add("opacity-70", "cursor-not-allowed");
+      });
+    </script>
+  </body>
+</html>

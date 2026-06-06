@@ -1,0 +1,182 @@
+---
+import "../styles/global.css";
+import { ViewTransitions } from "astro:transitions";
+import NoiseOverlay from "@components/NoiseOverlay.astro";
+import { BRAND } from "@data/site";
+import { actions } from "astro:actions";
+
+interface Props {
+  title?: string;
+  activeTab?: "dashboard" | "sklep" | "wydarzenia" | "kawiarnia" | "rezerwacje";
+  noScroll?: boolean;
+  centered?: boolean;
+}
+const {
+  title = `Panel Administratora — ${BRAND.name}`,
+  activeTab = "dashboard",
+  noScroll = false,
+  centered = false,
+} = Astro.props;
+
+const tabs = [
+  { id: "dashboard" as const, label: "Pulpit", href: "/admin/dashboard" },
+  { id: "sklep" as const, label: "Sklep", href: "/admin/sklep" },
+  { id: "wydarzenia" as const, label: "Wydarzenia", href: "/admin/wydarzenia" },
+  { id: "kawiarnia" as const, label: "Kawiarnia", href: "/admin/kawiarnia" },
+  { id: "rezerwacje" as const, label: "Rezerwacje", href: "/admin/rezerwacje" },
+];
+
+const navLinkBase =
+  "nav-link relative inline-flex items-center px-3 py-1.5 text-[13px] font-medium leading-none tracking-[-0.01em] transition-colors duration-200";
+
+const navLinkClass = (active: boolean) =>
+  [
+    navLinkBase,
+    active ? "is-nav-active text-blue" : "text-graphite-muted hover:text-graphite",
+  ] as const;
+
+const navUnderlineClass = (active: boolean) =>
+  [
+    "nav-underline absolute inset-x-3 -bottom-px h-[1.5px] bg-blue transition-opacity duration-200",
+    active ? "opacity-100" : "opacity-0",
+  ] as const;
+
+const mobileTabClass = (active: boolean) =>
+  [
+    "shrink-0 rounded-[16px] px-4 py-2.5 text-[13px] font-semibold leading-tight transition-colors",
+    active
+      ? "bg-blue/10 text-blue"
+      : "bg-graphite-100 text-graphite hover:bg-graphite-200",
+  ] as const;
+---
+<!doctype html>
+<html lang="pl" class:list={[noScroll && "h-full overflow-hidden"]}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/brand/logo-kolor.svg" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#f39200" />
+    <title>{title}</title>
+    <ViewTransitions />
+  </head>
+  <body class:list={["relative flex flex-col text-graphite font-sans", noScroll ? "h-full overflow-hidden" : "min-h-screen"]}>
+    <NoiseOverlay />
+
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-full focus:bg-graphite focus:px-5 focus:py-3 focus:text-white"
+    >
+      Przejdź do treści
+    </a>
+
+    <header
+      id="admin-header"
+      class="fixed inset-x-0 top-0 z-50 border-b border-graphite-200/40 bg-white"
+    >
+      <div class="shell">
+        <nav
+          class="flex h-16 items-center justify-between gap-4 sm:h-[4.5rem]"
+          aria-label="Menu panelu administratora"
+        >
+          <a
+            href="/admin/dashboard"
+            class="logo-anchor group relative block shrink-0"
+            aria-label="Panel administratora MOCna!"
+          >
+            <span class="block h-16 w-[8.5rem] sm:h-[4.5rem] sm:w-[11.5rem]" aria-hidden="true"></span>
+            <img
+              src="/brand/logo-kolor.svg"
+              alt="MOCna!"
+              class="logo-img absolute left-0 top-1/2 w-auto max-w-none transition-opacity duration-300 group-hover:opacity-85"
+            />
+          </a>
+
+          <ul class="hidden items-center gap-0.5 md:flex" role="list">
+            {
+              tabs.map((tab) => (
+                <li>
+                  <a
+                    href={tab.href}
+                    aria-current={activeTab === tab.id ? "page" : undefined}
+                    class:list={navLinkClass(activeTab === tab.id)}
+                  >
+                    {tab.label}
+                    <span class:list={navUnderlineClass(activeTab === tab.id)} />
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+
+          <form method="POST" action={actions.logout}>
+            <button
+              type="submit"
+              class="btn border-red bg-red px-4 py-2 text-[13px] text-white hover:border-[#c42f35] hover:bg-[#c42f35]"
+            >
+              Wyloguj
+            </button>
+          </form>
+        </nav>
+      </div>
+
+      <div class="border-t border-graphite-200/40 md:hidden">
+        <div class="shell no-scrollbar flex gap-2 overflow-x-auto py-2.5">
+          {
+            tabs.map((tab) => (
+              <a
+                href={tab.href}
+                aria-current={activeTab === tab.id ? "page" : undefined}
+                class:list={mobileTabClass(activeTab === tab.id)}
+              >
+                {tab.label}
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </header>
+
+    <div id="nav-spacer" aria-hidden="true" class="h-[7.5rem] md:h-[4.5rem]"></div>
+
+    <main
+      id="main"
+      class:list={[
+        "home-page flex flex-1 flex-col",
+        noScroll ? "min-h-0 overflow-hidden admin-main-static" : "pb-16 sm:pb-20",
+      ]}
+    >
+      <div
+        class:list={[
+          "shell pt-8 sm:pt-10",
+          noScroll && "flex min-h-0 flex-1 flex-col overflow-hidden",
+          centered && "admin-shell-centered",
+        ]}
+      >
+        <slot />
+      </div>
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  #admin-header .logo-img {
+    height: 6.5rem;
+    transform: translateY(calc(-50% + 5px)) scaleX(1.1);
+    transform-origin: left center;
+  }
+  @media (min-width: 640px) {
+    #admin-header .logo-img {
+      height: 8rem;
+      transform: translateY(calc(-50% + 6px)) scaleX(1.1);
+    }
+  }
+
+  #admin-header .is-nav-active {
+    font-weight: 600;
+  }
+
+  main {
+    animation: rise-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+</style>

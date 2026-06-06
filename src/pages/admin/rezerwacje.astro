@@ -1,0 +1,15 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { actions } from 'astro:actions';
+
+const logoutResult = Astro.getActionResult(actions.logout);
+if (logoutResult?.data?.success) {
+  return Astro.redirect('/admin/login');
+}
+---
+
+<AdminLayout title="Rezerwacje - Panel Admina" activeTab="rezerwacje">
+  <div class="admin-panel p-8 text-center">
+    <p class="text-graphite-muted">Zarządzanie rezerwacjami — wkrótce.</p>
+  </div>
+</AdminLayout>

@@ -1,0 +1,15 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { actions } from 'astro:actions';
+
+const logoutResult = Astro.getActionResult(actions.logout);
+if (logoutResult?.data?.success) {
+  return Astro.redirect('/admin/login');
+}
+---
+
+<AdminLayout title="Kawiarnia - Panel Admina" activeTab="kawiarnia">
+  <div class="admin-panel p-8 text-center">
+    <p class="text-graphite-muted">Zarządzanie kawiarnią — wkrótce.</p>
+  </div>
+</AdminLayout>

@@ -1,9 +1,21 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
 import SectionHeading from "@components/SectionHeading.astro";
-import { PRODUCTS, COLORS } from "@data/site";
+import { db } from "../db";
+import { products as dbProducts } from "../db/schema";
+import { desc, eq } from "drizzle-orm";
+import { COLORS } from "@data/site";
 
-const products = PRODUCTS.slice(0, 3);
+const productsData = await db.select().from(dbProducts).where(eq(dbProducts.availabilityStatus, 'available')).orderBy(desc(dbProducts.createdAt));
+
+// Format for template
+const products = productsData.map(p => ({
+  id: p.id,
+  name: p.name,
+  price: (p.price / 100).toFixed(2).replace('.', ',') + ' zł',
+  tag: p.description,
+  image: p.imageUrl
+}));
 ---
 <BaseLayout title="Sklep — MOCna!">
   <div class="home-page">
@@ -23,8 +35,6 @@ const products = PRODUCTS.slice(0, 3);
                   data-product-id={product.id}
                   data-product-name={product.name}
                   data-product-price={product.price}
-                  data-product-color={COLORS[product.color]}
-                  data-product-emoji={product.emoji}
                   data-product-image={product.image ?? ""}
                 >
                   {
@@ -40,7 +50,7 @@ const products = PRODUCTS.slice(0, 3);
                     ) : (
                       <div
                         class="aspect-[4/3]"
-                        style={`background:${COLORS[product.color]}18`}
+                        style={`background:#f3920018`}
                         aria-hidden="true"
                       ></div>
                     )
@@ -195,8 +205,6 @@ const products = PRODUCTS.slice(0, 3);
         const id = card.getAttribute("data-product-id") ?? "";
         const name = card.getAttribute("data-product-name") ?? "";
         const price = card.getAttribute("data-product-price") ?? "";
-        const color = card.getAttribute("data-product-color") ?? "";
-        const emoji = card.getAttribute("data-product-emoji") ?? "";
         const image = card.getAttribute("data-product-image") ?? "";
         const qty = getQty();
 
@@ -207,8 +215,6 @@ const products = PRODUCTS.slice(0, 3);
 
         if (existing) {
           existing.qty = clampQty(existing.qty + qty);
-          if (color) existing.color = color;
-          if (emoji) existing.emoji = emoji;
           if (image) existing.image = image;
         } else {
           cart.push({
@@ -216,8 +222,6 @@ const products = PRODUCTS.slice(0, 3);
             name,
             price,
             qty,
-            ...(color ? { color } : {}),
-            ...(emoji ? { emoji } : {}),
             ...(image ? { image } : {}),
           });
         }

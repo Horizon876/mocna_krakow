@@ -115,6 +115,136 @@
     @apply mb-4 inline-flex items-center gap-2 text-fluid-sm font-medium uppercase tracking-[0.22em] text-orange;
   }
 
+  /* Pola formularzy (panel admina i formularze publiczne) */
+  .field-input {
+    @apply w-full border border-graphite-200 bg-white/80 px-4 py-3 text-graphite shadow-sm transition-all placeholder:text-graphite/40 focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20;
+  }
+
+  .field-label {
+    @apply block text-sm font-bold text-graphite;
+  }
+
+  .alert {
+    @apply flex items-center gap-2 rounded-none border p-4 text-sm font-medium;
+  }
+  .alert-error {
+    @apply alert border-red/30 bg-red/10 text-red;
+  }
+  .alert-success {
+    @apply alert border-green/30 bg-green/10 text-green;
+  }
+  .alert-warning {
+    @apply alert border-orange/30 bg-orange/10 text-orange-ink;
+  }
+
+  /* Karta panelu admina – spójna z kartami na stronie głównej */
+  .admin-card {
+    @apply relative flex flex-col border border-graphite-200 bg-white p-6 transition-colors duration-300 sm:p-8;
+  }
+  .admin-card:hover {
+    @apply border-orange/30;
+  }
+
+  .admin-shell-centered {
+    @apply flex min-h-[calc(100dvh-12rem)] flex-1 flex-col items-center justify-center;
+  }
+  @media (min-width: 768px) {
+    .admin-shell-centered {
+      min-height: calc(100dvh - 9rem);
+    }
+  }
+
+  .admin-dashboard-grid {
+    @apply mx-auto;
+  }
+
+  .admin-dashboard-tile {
+    @apply admin-card flex min-h-[9.5rem] flex-col items-center justify-center px-4 py-8 text-center transition-colors duration-300 sm:min-h-[10.5rem] sm:px-6 sm:py-10;
+  }
+  .admin-dashboard-tile:hover {
+    @apply border-orange/40 bg-orange/5;
+  }
+
+  /* Panel admina – bez zaokrągleń (sklep, lista produktów) */
+  .admin-panel {
+    @apply rounded-none border border-graphite-200 bg-white shadow-sm;
+  }
+
+  /* Wiersz listy w panelu admina */
+  .admin-list-item {
+    @apply flex flex-col gap-4 rounded-none border border-graphite-200 bg-white p-5 shadow-sm transition-colors sm:flex-row sm:items-center sm:justify-between;
+  }
+  .admin-list-item:hover {
+    @apply border-orange/30;
+  }
+  .admin-list-item.is-active {
+    @apply border-orange ring-1 ring-orange;
+  }
+
+  /* Panel CRUD admin (sklep, wydarzenia) – bez hover na wierszach listy */
+  .admin-crud .admin-list-item:hover {
+    @apply border-graphite-200;
+  }
+  .admin-crud .admin-list-item.is-active {
+    @apply border-blue ring-blue;
+  }
+  .admin-crud .field-input:focus {
+    @apply border-blue ring-blue/20;
+  }
+
+  /* Panel CRUD admin – przyciski akcji */
+  .admin-crud .btn-edit {
+    @apply border-blue bg-blue text-white;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 2px 6px -2px rgba(44, 94, 169, 0.3);
+  }
+  .admin-crud .btn-delete {
+    @apply border-red bg-red text-white;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+
+  /* Panel CRUD admin – bez animacji (zostaje drag & click) */
+  .admin-crud .btn,
+  .admin-crud .admin-list-item,
+  .admin-crud .field-input,
+  .admin-crud #dropzone {
+    transition: none !important;
+  }
+  .admin-crud .btn:hover {
+    transform: none !important;
+  }
+  .admin-crud .btn-edit:hover {
+    @apply border-blue bg-blue text-white;
+  }
+  .admin-crud .btn-delete:hover {
+    @apply border-red bg-red text-white;
+  }
+  .admin-crud .btn-orange:hover {
+    background-color: #2c5ea9;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 2px 6px -2px rgba(44, 94, 169, 0.3);
+  }
+  .admin-crud .btn-outline:hover {
+    @apply border-graphite-200 bg-white text-graphite;
+  }
+
+  .admin-main-static {
+    animation: none !important;
+  }
+
+  /* Panel CRUD admin – wspólna wysokość listy i formularza (5 wierszy) */
+  .admin-crud-body {
+    --admin-product-row-h: 7rem;
+    --admin-product-row-gap: 1rem;
+    --admin-crud-body-extra: 50px;
+    height: calc(var(--admin-product-row-h) * 5 + var(--admin-product-row-gap) * 4 + var(--admin-crud-body-extra));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  @media (max-width: 639px) {
+    .admin-crud-body {
+      --admin-product-row-h: 11rem;
+    }
+  }
+
   /* Maska „skrzydła” dla fotografii (clip-path oparty na logo) */
   .clip-wing {
     clip-path: path(

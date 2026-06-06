@@ -1,0 +1,86 @@
+---
+import { actions } from 'astro:actions';
+
+const result = Astro.getActionResult(actions.createEvent);
+---
+
+<form method="POST" action={actions.createEvent} class="space-y-5">
+  {result?.error && (
+    <div class="alert-error">
+      <span aria-hidden="true">⚠</span> Wystąpił błąd podczas zapisywania wydarzenia. Sprawdź poprawność danych.
+    </div>
+  )}
+  {result?.data?.success && (
+    <div class="alert-success">
+      <span aria-hidden="true">✓</span> Wydarzenie zostało dodane pomyślnie!
+    </div>
+  )}
+
+  <div class="space-y-1.5">
+    <label for="title" class="field-label">Tytuł wydarzenia</label>
+    <input type="text" id="title" name="title" required class="field-input" placeholder="np. Warsztaty parzenia kawy" />
+    {result?.error && 'title' in result.error.fields && (
+      <p class="mt-1 text-xs font-medium text-red">{result.error.fields.title?.[0]}</p>
+    )}
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+    <div class="space-y-1.5">
+      <label for="eventDate" class="field-label">Data i czas</label>
+      <input type="datetime-local" id="eventDate" name="eventDate" required class="field-input" />
+      {result?.error && 'eventDate' in result.error.fields && (
+        <p class="mt-1 text-xs font-medium text-red">{result.error.fields.eventDate?.[0]}</p>
+      )}
+    </div>
+    <div class="space-y-1.5">
+      <label for="status" class="field-label">Status</label>
+      <select id="status" name="status" class="field-input cursor-pointer appearance-none">
+        <option value="active">Aktywne</option>
+        <option value="completed">Zakończone</option>
+        <option value="cancelled">Odwołane</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="space-y-1.5">
+    <label for="shortDescription" class="field-label">Krótki opis</label>
+    <input type="text" id="shortDescription" name="shortDescription" class="field-input" placeholder="Zajawka wydarzenia (np. na stronę główną)" />
+  </div>
+
+  <div class="space-y-1.5">
+    <label for="longDescription" class="field-label">Pełny opis</label>
+    <textarea id="longDescription" name="longDescription" rows="4" class="field-input" placeholder="Szczegółowy opis, agenda, informacje dla uczestników..."></textarea>
+  </div>
+
+  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+    <div class="space-y-1.5">
+      <label for="ticketPrice" class="field-label">Cena biletu (grosze)</label>
+      <input type="number" id="ticketPrice" name="ticketPrice" required min="0" class="field-input" placeholder="np. 4500 (45,00 PLN)" />
+      {result?.error && 'ticketPrice' in result.error.fields && (
+        <p class="mt-1 text-xs font-medium text-red">{result.error.fields.ticketPrice?.[0]}</p>
+      )}
+    </div>
+    <div class="space-y-1.5">
+      <label for="seatLimit" class="field-label">Limit miejsc</label>
+      <input type="number" id="seatLimit" name="seatLimit" required min="1" class="field-input" placeholder="np. 20" />
+      {result?.error && 'seatLimit' in result.error.fields && (
+        <p class="mt-1 text-xs font-medium text-red">{result.error.fields.seatLimit?.[0]}</p>
+      )}
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-orange mt-8 w-full">
+    Zapisz wydarzenie
+  </button>
+</form>
+
+<script>
+  const eventForm = document.querySelector('form[action*="createEvent"]');
+  eventForm?.addEventListener('submit', () => {
+    const btn = eventForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+    if (btn) {
+      btn.innerHTML = '<span class="inline-block mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span> Przetwarzanie...';
+      btn.classList.add('opacity-70', 'cursor-not-allowed', 'pointer-events-none');
+    }
+  });
+</script>

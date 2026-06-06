@@ -1,0 +1,118 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import ProductForm from '../../components/admin/ProductForm.astro';
+import { db } from '../../db';
+import { products } from '../../db/schema';
+import { desc, eq } from 'drizzle-orm';
+import { actions } from 'astro:actions';
+
+const logoutResult = Astro.getActionResult(actions.logout);
+if (logoutResult?.data?.success) {
+  return Astro.redirect('/admin/login');
+}
+
+const resultDelete = Astro.getActionResult(actions.deleteProduct);
+if (resultDelete?.data?.success) {
+  return Astro.redirect('/admin/sklep');
+}
+
+const resultUpdate = Astro.getActionResult(actions.updateProduct);
+if (resultUpdate?.data?.success) {
+  return Astro.redirect('/admin/sklep');
+}
+
+const resultCreate = Astro.getActionResult(actions.createProduct);
+if (resultCreate?.data?.success) {
+  return Astro.redirect('/admin/sklep');
+}
+
+const allProducts = await db.select().from(products).orderBy(desc(products.createdAt));
+
+const editId = Astro.url.searchParams.get('edit');
+let editProduct = undefined;
+if (editId) {
+  const result = await db.select().from(products).where(eq(products.id, editId)).limit(1);
+  if (result.length > 0) {
+    editProduct = result[0];
+  }
+}
+---
+
+<AdminLayout title="Zarządzanie sklepem - Panel Admina" activeTab="sklep" noScroll>
+  <div class="admin-crud grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-hidden lg:grid-cols-12 lg:gap-8">
+    <div class="lg:col-span-4">
+      <div class="admin-panel flex flex-col p-6 md:p-8">
+        <header class="mb-6 shrink-0">
+          <h2 class="text-fluid-lg font-display font-bold leading-tighter tracking-tightest text-graphite">
+            {editProduct ? "Edytuj produkt" : "Dodaj produkt"}
+          </h2>
+        </header>
+        <div class="admin-crud-body">
+          <ProductForm product={editProduct} />
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-8">
+      <div class="admin-panel flex flex-col p-6 md:p-8">
+        <header class="mb-6 shrink-0">
+          <h2 class="text-fluid-lg font-display font-bold leading-tighter tracking-tightest text-graphite">
+            Lista produktów
+          </h2>
+        </header>
+        <div class="admin-crud-body space-y-4">
+          {allProducts.length === 0 ? (
+            <div class="border border-dashed border-graphite-200 bg-white/50 p-8 text-center">
+              <p class="text-graphite-muted italic">Brak produktów w bazie.</p>
+            </div>
+          ) : (
+            allProducts.map((product) => (
+              <div class:list={["admin-list-item", editId === product.id && "is-active"]}>
+                <div class="flex flex-1 items-center gap-4">
+                  {product.imageUrl && (
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      class="h-16 w-16 border border-graphite-200/50 bg-white object-cover"
+                    />
+                  )}
+                  <div>
+                    <h3 class="mb-1 text-fluid-lg font-bold text-graphite">{product.name}</h3>
+                    <div class="flex flex-wrap items-center gap-3">
+                      <span class="pill !rounded-none !border-none !bg-graphite/5 !px-3 !py-1 !text-sm text-graphite">
+                        {(product.price / 100).toFixed(2)} PLN
+                      </span>
+                      <span class:list={[
+                        "pill !rounded-none !border-none !px-3 !py-1 !text-sm",
+                        product.availabilityStatus === "available"
+                          ? "bg-green/10 text-green"
+                          : "bg-red/10 text-red",
+                      ]}>
+                        {product.availabilityStatus === "available" ? "Dostępny" : "Niedostępny"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <a href={`/admin/sklep?edit=${product.id}`} class="btn btn-edit px-4 py-2 text-[13px]">
+                    Edytuj
+                  </a>
+                  <form
+                    method="POST"
+                    action={actions.deleteProduct}
+                    onsubmit="return confirm('Czy na pewno chcesz usunąć ten produkt?');"
+                  >
+                    <input type="hidden" name="id" value={product.id} />
+                    <button type="submit" class="btn btn-delete px-4 py-2 text-[13px]">
+                      Usuń
+                    </button>
+                  </form>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>

@@ -11,16 +11,27 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/node": "^8.3.4",
     "@astrojs/react": "^3.6.2",
     "@astrojs/tailwind": "^5.1.2",
     "astro": "^4.16.7",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
     "framer-motion": "^11.11.17",
+    "postgres": "^3.4.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwindcss": "^3.4.14"
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.9.3",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/pg": "^8.20.0",
     "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1"
+    "@types/react-dom": "^18.3.1",
+    "drizzle-kit": "^0.31.10"
   }
 }
