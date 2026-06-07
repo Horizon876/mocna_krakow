@@ -7,6 +7,11 @@ interface ImportMetaEnv {
   readonly BLOB_READ_WRITE_TOKEN?: string;
   readonly RESEND_API_KEY?: string;
   readonly RESEND_FROM_EMAIL?: string;
+  readonly RESEND_TEST_TO?: string;
+  readonly STRIPE_SECRET_KEY?: string;
+  readonly INPOST_GEOWIDGET_TOKEN?: string;
+  readonly INPOST_GEOWIDGET_SANDBOX?: string;
+  readonly SITE?: string;
 }
 
 interface ImportMeta {

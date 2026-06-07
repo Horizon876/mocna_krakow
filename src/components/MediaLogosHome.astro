@@ -1,6 +1,8 @@
 ---
 import SectionHeading from "@components/SectionHeading.astro";
-import { MEDIA_LOGOS_HOME } from "@data/site";
+import { MEDIA_LOGOS_HOME, COLORS } from "@data/site";
+
+const TILE_ACCENTS = ["blue", "red", "green", "orange", "pink", "yellow"] as const;
 ---
 <section id="mocna-w-mediach" class="relative scroll-mt-16 py-20 sm:scroll-mt-[4.5rem] sm:py-28">
   <div class="shell">
@@ -9,23 +11,85 @@ import { MEDIA_LOGOS_HOME } from "@data/site";
       title="<span class='text-blue'>M</span><span class='text-red'>O</span><span class='text-yellow'>C</span><span class='text-green'>n</span><span class='text-pink'>a</span> <span class='text-orange'>w me</span><span class='text-green'>diach</span>"
     />
 
-    <ul class="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5 lg:gap-6" role="list">
-      {MEDIA_LOGOS_HOME.map((item) => (
-        <li>
-          <a
-            href={item.href ?? "/#mocna-w-mediach"}
-            class="media-logo-tile group grid aspect-square w-full place-items-center border border-graphite-200 bg-white px-5 transition-colors duration-300 hover:border-graphite-300"
-            aria-label={item.name}
-          >
-            <img
-              src={item.logo}
-              alt={item.name}
-              class="max-h-14 w-full max-w-[11rem] object-contain sm:max-h-16 lg:max-h-[4.5rem]"
-              loading="lazy"
-            />
-          </a>
-        </li>
-      ))}
+    <ul class="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 lg:gap-6" role="list">
+      {MEDIA_LOGOS_HOME.map((item, index) => {
+        const accentKey = TILE_ACCENTS[index % TILE_ACCENTS.length];
+        const color = COLORS[accentKey];
+        const hasLogo = !!item.logo;
+        
+        return (
+          <li>
+            {item.href ? (
+              <a
+                href={item.href}
+                target="_blank"
+                rel="noopener"
+                class:list={["media-logo-tile group grid aspect-square w-full place-items-center border px-5 transition-all duration-300 hover:-translate-y-1", hasLogo ? "has-logo" : "no-logo"]}
+                style={`--accent: ${color};`}
+                aria-label={item.name}
+              >
+                {item.logo ? (
+                  <img
+                    src={item.logo}
+                    alt={item.name}
+                    class="max-h-14 w-full max-w-[11rem] object-contain sm:max-h-16 lg:max-h-[4.5rem] transition-all duration-300"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div class="text-center font-display text-[16px] font-bold text-[color:var(--accent)] transition-colors">
+                    {item.name}
+                  </div>
+                )}
+              </a>
+            ) : (
+              <div
+                class:list={["media-logo-tile grid aspect-square w-full place-items-center border px-5", hasLogo ? "has-logo" : "no-logo"]}
+                style={`--accent: ${color};`}
+              >
+                {item.logo ? (
+                  <img
+                    src={item.logo}
+                    alt={item.name}
+                    class="max-h-14 w-full max-w-[11rem] object-contain sm:max-h-16 lg:max-h-[4.5rem]"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div class="text-center font-display text-[16px] font-bold text-[color:var(--accent)]">
+                    {item.name}
+                  </div>
+                )}
+              </div>
+            )}
+          </li>
+        );
+      })}
     </ul>
   </div>
 </section>
+
+<style>
+  .media-logo-tile {
+    --accent-border: color-mix(in srgb, var(--accent) 24%, transparent);
+    --accent-bg: color-mix(in srgb, var(--accent) 7%, transparent);
+    border-color: var(--accent-border);
+    background-color: var(--accent-bg);
+  }
+  
+  .media-logo-tile.has-logo {
+    --accent-bg: #ffffff;
+    border-color: rgba(51, 51, 51, 0.12);
+  }
+
+  .media-logo-tile:hover {
+    border-color: #2c5ea9;
+    box-shadow: 0 10px 24px -10px rgba(44, 94, 169, 0.35);
+  }
+  
+  .media-logo-tile.has-logo:hover {
+    border-color: #2c5ea9;
+  }
+
+  .media-logo-tile.no-logo:hover {
+    --accent-bg: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+</style>

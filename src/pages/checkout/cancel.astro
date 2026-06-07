@@ -1,0 +1,64 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import { db } from "../../db";
+import { orders } from "../../db/schema";
+import { and, eq } from "drizzle-orm";
+import { sendOrderEmail } from "../../lib/order-email";
+
+const orderId = Astro.url.searchParams.get("order_id");
+
+if (orderId) {
+  try {
+    const updated = await db
+      .update(orders)
+      .set({ status: "cancelled" })
+      .where(and(eq(orders.id, orderId), eq(orders.status, "pending")))
+      .returning();
+
+    if (updated.length > 0) {
+      const order = updated[0];
+      let items: Array<{ name: string; qty: number; price: string }> = [];
+      try { items = JSON.parse(order.items); } catch { /* ignoruj */ }
+
+      sendOrderEmail({
+        orderId: order.id,
+        firstName: order.firstName,
+        lastName: order.lastName,
+        email: order.email,
+        phone: order.phone,
+        address: order.address,
+        zipCode: order.zipCode,
+        city: order.city,
+        shippingMethod: order.shippingMethod,
+        paymentMethod: order.paymentMethod,
+        totalAmount: order.totalAmount,
+        items,
+        paczkomatPoint: order.paczkomatPoint,
+        status: "cancelled",
+      }, "cancelled").catch(err => console.error('[order-email] cancel page:', err));
+    }
+  } catch (e) {
+    // Cicho — nie blokuj wyświetlenia strony
+  }
+}
+---
+<BaseLayout title="Płatność anulowana — MOCna!">
+  <div class="checkout-page home-page pb-20 pt-16 sm:pb-28 sm:pt-24 min-h-screen flex flex-col items-center justify-center">
+    <div class="shell max-w-lg w-full">
+      <div class="border border-graphite-200 bg-white p-8 sm:p-10 text-center">
+        <div class="checkout-highlight-red mx-auto mb-6 flex h-16 w-16 items-center justify-center" aria-hidden="true">
+          <svg class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </div>
+
+        <h1 class="text-2xl font-bold text-graphite">Płatność nie powiodła się</h1>
+
+        <a href="/" class="btn-orange mt-8 inline-flex w-full sm:w-auto justify-center">
+          Powrót na stronę główną
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,15 +1,93 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import CafePhotoForm from '../../components/admin/CafePhotoForm.astro';
+import { db } from '../../db';
+import { cafePhotos } from '../../db/schema';
+import { asc } from 'drizzle-orm';
 import { actions } from 'astro:actions';
+import { ensureCafeGallerySeeded } from '../../lib/cafe-gallery';
 
 const logoutResult = Astro.getActionResult(actions.logout);
 if (logoutResult?.data?.success) {
   return Astro.redirect('/admin/login');
 }
+
+const resultDelete = Astro.getActionResult(actions.deleteCafePhoto);
+if (resultDelete?.data?.success) {
+  return Astro.redirect('/admin/kawiarnia');
+}
+
+const resultCreate = Astro.getActionResult(actions.createCafePhoto);
+if (resultCreate?.data?.success) {
+  return Astro.redirect('/admin/kawiarnia');
+}
+
+await ensureCafeGallerySeeded();
+const allPhotos = await db.select().from(cafePhotos).orderBy(asc(cafePhotos.createdAt));
 ---
 
-<AdminLayout title="Kawiarnia - Panel Admina" activeTab="kawiarnia">
-  <div class="admin-panel p-8 text-center">
-    <p class="text-graphite-muted">Zarządzanie kawiarnią — wkrótce.</p>
+<AdminLayout title="Kawiarnia - Panel Admina" activeTab="kawiarnia" noScroll>
+  <div class="admin-crud grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-hidden lg:grid-cols-12 lg:gap-8">
+    <div class="lg:col-span-4">
+      <div class="admin-panel flex flex-col p-6 md:p-8">
+        <header class="mb-6 shrink-0">
+          <h2 class="text-fluid-lg font-display font-bold leading-tighter tracking-tightest text-graphite">
+            Dodaj zdjęcie
+          </h2>
+          <p class="mt-1 text-sm text-graphite-muted">
+            Zdjęcia wyświetlają się w galerii na stronie <a href="/kawiarnia" target="_blank" class="text-blue hover:underline">/kawiarnia</a>.
+          </p>
+        </header>
+        <div class="admin-crud-body">
+          <CafePhotoForm />
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-8">
+      <div class="admin-panel flex flex-col p-6 md:p-8">
+        <header class="mb-6 shrink-0">
+          <h2 class="text-fluid-lg font-display font-bold leading-tighter tracking-tightest text-graphite">
+            Galeria ({allPhotos.length})
+          </h2>
+        </header>
+        <div class="admin-crud-body">
+          {allPhotos.length === 0 ? (
+            <div class="border border-dashed border-graphite-200 bg-white/50 p-8 text-center">
+              <p class="text-graphite-muted italic">Brak zdjęć w galerii.</p>
+              <p class="mt-2 text-sm text-graphite-muted">Dodaj pierwsze zdjęcie po lewej stronie.</p>
+            </div>
+          ) : (
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              {allPhotos.map((photo) => (
+                <div class="group relative overflow-hidden border border-graphite-200 bg-white">
+                  <img
+                    src={photo.imageUrl}
+                    alt={photo.alt || 'Zdjęcie z kawiarni'}
+                    class="aspect-[4/3] w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div class="border-t border-graphite-100 p-3">
+                    <p class="text-xs text-graphite-muted truncate" title={photo.alt || ''}>
+                      {photo.alt || 'Bez opisu'}
+                    </p>
+                    <form method="POST" action={actions.deleteCafePhoto} class="mt-2">
+                      <input type="hidden" name="id" value={photo.id} />
+                      <button
+                        type="submit"
+                        class="btn border border-red bg-red px-3 py-1.5 text-xs text-white hover:border-[#c42f35] hover:bg-[#c42f35] w-full justify-center"
+                        onclick="return confirm('Usunąć to zdjęcie z galerii?')"
+                      >
+                        Usuń
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   </div>
 </AdminLayout>

@@ -20,7 +20,7 @@ if (!existsSync(envPath)) {
 const envMap = {};
 for (const line of readFileSync(envPath, 'utf8').split('\n')) {
   const quoted = line.match(/^\s*([A-Z_]+)\s*=\s*"([^"]*)"\s*/);
-  const plain = line.match(/^\s*([A-Z_]+)\s*=\s*([^#\s]+)\s*/);
+  const plain = line.match(/^\s*([A-Z_]+)\s*=\s*(.+?)\s*$/);
   const m = quoted || plain;
   if (m) envMap[m[1]] = m[2].trim();
 }

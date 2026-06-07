@@ -1,0 +1,104 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import { db } from "../../db";
+import { orders } from "../../db/schema";
+import { eq } from "drizzle-orm";
+import { sendOrderEmail } from "../../lib/order-email";
+
+const orderId = Astro.url.searchParams.get("order_id");
+let updateError = false;
+let orderData: typeof orders.$inferSelect | null = null;
+
+if (orderId) {
+  try {
+    const [order] = await db.select().from(orders).where(eq(orders.id, orderId));
+    if (order) {
+      orderData = order;
+      const newStatus = order.paymentMethod === "online" ? "paid" : "confirmed";
+
+      if (order.status === "pending") {
+        await db
+          .update(orders)
+          .set({ status: newStatus })
+          .where(eq(orders.id, orderId));
+
+        let items: Array<{ name: string; qty: number; price: string }> = [];
+        try { items = JSON.parse(order.items); } catch { /* ignoruj */ }
+
+        await sendOrderEmail({
+          orderId: order.id,
+          firstName: order.firstName,
+          lastName: order.lastName,
+          email: order.email,
+          phone: order.phone,
+          address: order.address,
+          zipCode: order.zipCode,
+          city: order.city,
+          shippingMethod: order.shippingMethod,
+          paymentMethod: order.paymentMethod,
+          totalAmount: order.totalAmount,
+          items,
+          paczkomatPoint: order.paczkomatPoint,
+          status: newStatus,
+        }, newStatus);
+      }
+    }
+  } catch (e) {
+    updateError = true;
+  }
+}
+---
+<BaseLayout title="Płatność zakończona — MOCna!">
+  <div class="checkout-page home-page pb-20 pt-16 sm:pb-28 sm:pt-24 min-h-screen flex flex-col items-center justify-center">
+    <div class="shell max-w-lg w-full">
+      <div class="border border-graphite-200 bg-white p-8 sm:p-10 text-center">
+        <div class="checkout-highlight-green mx-auto mb-6 flex h-16 w-16 items-center justify-center" aria-hidden="true">
+          <svg class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        </div>
+
+        <h1 class="text-2xl font-bold text-graphite">Dziękujemy!</h1>
+        <p class="mt-4 text-base text-graphite-muted leading-relaxed">
+          Twoje zamówienie zostało złożone pomyślnie.<br>
+          Potwierdzenie wysłaliśmy na podany adres<br>
+          e-mail.
+        </p>
+
+        {orderData && (
+          <div class="mt-8 border border-graphite-200 bg-[#fff8f0] p-5 text-left text-sm">
+            <p class="text-xs font-semibold text-graphite-muted uppercase tracking-wide mb-3">Szczegóły zamówienia</p>
+            <div class="space-y-2">
+              <div class="flex justify-between gap-4">
+                <span class="text-graphite-muted">Nr zamówienia</span>
+                <span class="font-mono font-bold text-graphite">{orderData.id.split("-")[0]}</span>
+              </div>
+              <div class="flex justify-between gap-4">
+                <span class="text-graphite-muted">Status</span>
+                <span class="font-bold text-green">
+                  {orderData.paymentMethod === "online" ? "Opłacone" : "Potwierdzone"}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {updateError && (
+          <p class="mt-4 text-sm text-graphite-muted">Nie udało się automatycznie zaktualizować statusu — skontaktuj się z nami.</p>
+        )}
+
+        <a href="/" class="btn-orange mt-8 inline-flex w-full sm:w-auto justify-center">
+          Powrót na stronę główną
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { clearCheckoutDraft } from "../../scripts/checkout-draft";
+
+  localStorage.removeItem("mocna-cart");
+  clearCheckoutDraft();
+  window.dispatchEvent(new Event("storage"));
+</script>

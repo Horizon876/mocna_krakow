@@ -3,7 +3,7 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 import EventForm from '../../components/admin/EventForm.astro';
 import { db } from '../../db';
 import { events } from '../../db/schema';
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { actions } from 'astro:actions';
 
 const logoutResult = Astro.getActionResult(actions.logout);
@@ -11,30 +11,49 @@ if (logoutResult?.data?.success) {
   return Astro.redirect('/admin/login');
 }
 
+const resultDelete = Astro.getActionResult(actions.deleteEvent);
+if (resultDelete?.data?.success) {
+  return Astro.redirect('/admin/wydarzenia');
+}
+
+const resultCreate = Astro.getActionResult(actions.createEvent);
+if (resultCreate?.data?.success) {
+  return Astro.redirect('/admin/wydarzenia');
+}
+
+const resultUpdate = Astro.getActionResult(actions.updateEvent);
+if (resultUpdate?.data?.success) {
+  return Astro.redirect('/admin/wydarzenia');
+}
+
 const allEvents = await db.select().from(events).orderBy(desc(events.createdAt));
 
-const result = Astro.getActionResult(actions.deleteEvent);
-if (result?.data?.success) {
-  return Astro.redirect('/admin/wydarzenia');
+const editId = Astro.url.searchParams.get('edit');
+let editEvent = undefined;
+if (editId) {
+  const result = await db.select().from(events).where(eq(events.id, editId)).limit(1);
+  if (result.length > 0) {
+    editEvent = result[0];
+  }
 }
 ---
 
 <AdminLayout title="Zarządzanie wydarzeniami - Panel Admina" activeTab="wydarzenia" noScroll>
   <div class="admin-crud grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-hidden lg:grid-cols-12 lg:gap-8">
-    <div class="lg:col-span-4">
+    <div class="lg:col-span-6">
       <div class="admin-panel flex flex-col p-6 md:p-8">
         <header class="mb-6 shrink-0">
           <h2 class="text-fluid-lg font-display font-bold leading-tighter tracking-tightest text-graphite">
-            Dodaj wydarzenie
+            {editEvent ? "Edytuj wydarzenie" : "Dodaj wydarzenie"}
           </h2>
         </header>
         <div class="admin-crud-body">
-          <EventForm />
+          <EventForm event={editEvent} />
         </div>
       </div>
     </div>
 
-    <div class="lg:col-span-8">
+    <div class="lg:col-span-6">
       <div class="admin-panel flex flex-col p-6 md:p-8">
         <header class="mb-6 shrink-0">
           <h2 class="text-fluid-lg font-display font-bold leading-tighter tracking-tightest text-graphite">
@@ -48,10 +67,16 @@ if (result?.data?.success) {
             </div>
           ) : (
             allEvents.map((event) => (
-              <div class="admin-list-item">
+              <div class:list={["admin-list-item", editId === event.id && "is-active"]}>
+                {event.imageUrl && (
+                  <img src={event.imageUrl} alt="" class="h-16 w-24 object-cover border border-graphite-200 shrink-0 hidden sm:block" />
+                )}
                 <div class="flex-1">
                   <h3 class="mb-1 text-fluid-lg font-bold text-graphite">{event.title}</h3>
                   <div class="mb-2 flex flex-wrap items-center gap-3">
+                    <span class="text-xs font-bold uppercase tracking-wider text-white px-2 py-0.5" style={`background-color: var(--mocna-${event.color});`}>
+                      {event.kategoria}
+                    </span>
                     <span class="text-sm font-medium text-graphite-muted">
                       Data: {new Date(event.eventDate).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </span>
@@ -76,16 +101,21 @@ if (result?.data?.success) {
                     </span>
                   </div>
                 </div>
-                <form
-                  method="POST"
-                  action={actions.deleteEvent}
-                  onsubmit="return confirm('Czy na pewno chcesz usunąć to wydarzenie?');"
-                >
-                  <input type="hidden" name="id" value={event.id} />
-                  <button type="submit" class="btn btn-delete px-4 py-2 text-[13px]">
-                    Usuń
-                  </button>
-                </form>
+                <div class="flex items-center gap-2">
+                  <a href={`/admin/wydarzenia?edit=${event.id}`} class="btn btn-edit px-4 py-2 text-[13px]">
+                    Edytuj
+                  </a>
+                  <form
+                    method="POST"
+                    action={actions.deleteEvent}
+                    onsubmit="return confirm('Czy na pewno chcesz usunąć to wydarzenie?');"
+                  >
+                    <input type="hidden" name="id" value={event.id} />
+                    <button type="submit" class="btn btn-delete px-4 py-2 text-[13px]">
+                      Usuń
+                    </button>
+                  </form>
+                </div>
               </div>
             ))
           )}

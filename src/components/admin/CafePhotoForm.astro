@@ -1,0 +1,49 @@
+---
+import { actions } from 'astro:actions';
+
+const result = Astro.getActionResult(actions.createCafePhoto);
+---
+
+<form method="POST" action={actions.createCafePhoto} enctype="multipart/form-data" class="space-y-5">
+  {result?.error && (
+    <div class="alert-error">
+      <span aria-hidden="true">⚠</span> Nie udało się dodać zdjęcia. Wybierz plik graficzny i spróbuj ponownie.
+    </div>
+  )}
+  {result?.data?.success && (
+    <div class="alert-success">
+      <span aria-hidden="true">✓</span> Zdjęcie zostało dodane do galerii!
+    </div>
+  )}
+
+  <div class="space-y-1.5">
+    <label for="imageFile" class="field-label">Zdjęcie *</label>
+    <input
+      type="file"
+      id="imageFile"
+      name="imageFile"
+      accept="image/jpeg,image/png,image/webp,image/gif"
+      required
+      class="field-input file:mr-4 file:border-0 file:bg-graphite-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-graphite hover:file:bg-graphite-200"
+    />
+    <p class="text-xs text-graphite-muted">JPG, PNG, WebP lub GIF. Pojawi się na stronie /kawiarnia.</p>
+    {result?.error && 'imageFile' in result.error.fields && (
+      <p class="mt-1 text-xs font-medium text-red">{result.error.fields.imageFile?.[0]}</p>
+    )}
+  </div>
+
+  <div class="space-y-1.5">
+    <label for="alt" class="field-label">Opis zdjęcia (opcjonalnie)</label>
+    <input
+      type="text"
+      id="alt"
+      name="alt"
+      class="field-input"
+      placeholder="np. Wnętrze kawiarni MOCna!"
+    />
+  </div>
+
+  <button type="submit" class="btn-orange w-full justify-center py-3">
+    Dodaj zdjęcie
+  </button>
+</form>

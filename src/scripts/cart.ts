@@ -1,8 +1,4 @@
-import { PRODUCTS } from "@data/site";
-
 export const CART_KEY = "mocna-cart";
-
-const VALID_PRODUCT_IDS = new Set(PRODUCTS.map((product) => product.id));
 
 export type CartItem = {
   id: string;
@@ -43,7 +39,7 @@ function parseStoredCart(raw: string | null): CartItem[] {
 }
 
 function sanitizeCart(items: CartItem[]) {
-  return items.filter((item) => VALID_PRODUCT_IDS.has(item.id));
+  return items.filter(isCartItem);
 }
 
 function persistCart(items: CartItem[], notify = true) {

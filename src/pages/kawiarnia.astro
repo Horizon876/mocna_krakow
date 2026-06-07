@@ -2,13 +2,16 @@
 import BaseLayout from "@layouts/BaseLayout.astro";
 import SectionHeading from "@components/SectionHeading.astro";
 import CafeGallery from "@components/CafeGallery.astro";
+import { getCafeGalleryPhotos } from "../lib/cafe-gallery";
+
+const photos = await getCafeGalleryPhotos();
 ---
 <BaseLayout title="Nasza kawiarnia — MOCna!">
   <div class="home-page">
     <section class="relative scroll-mt-16 pt-10 pb-20 sm:scroll-mt-[4.5rem] sm:pt-12 sm:pb-28">
       <div class="shell">
         <SectionHeading title="Nasza kawiarnia" />
-        <CafeGallery />
+        <CafeGallery photos={photos} />
       </div>
     </section>
   </div>

@@ -1,0 +1,373 @@
+---
+import AdminLayout from "@layouts/AdminLayout.astro";
+import { db } from "../../db";
+import { tickets, ticketOrders, events } from "../../db/schema";
+import { eq, desc } from "drizzle-orm";
+
+// Pobierz ostatnie zamówienia biletów
+const recentOrders = await db.select()
+  .from(ticketOrders)
+  .orderBy(desc(ticketOrders.createdAt))
+  .limit(50);
+
+const eventIds = [...new Set(recentOrders.map(o => o.eventId))];
+const eventMap = new Map<string, string>();
+for (const eid of eventIds) {
+  const [ev] = await db.select({ id: events.id, title: events.title }).from(events).where(eq(events.id, eid));
+  if (ev) eventMap.set(ev.id, ev.title);
+}
+
+function formatDate(d: Date | string) {
+  return new Date(d).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+---
+
+<AdminLayout title="Bilety — MOCna! Admin" activeTab="bilety">
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-graphite">Weryfikacja biletów</h1>
+    <p class="text-sm text-graphite-muted mt-1">Wpisz lub zeskanuj 9-cyfrowy numer biletu.</p>
+  </div>
+
+  <!-- Skaner biletów -->
+  <div class="grid gap-8 lg:grid-cols-2 mb-12">
+
+    <!-- Panel wyszukiwania -->
+    <div class="border border-graphite-200 bg-white p-6 sm:p-8">
+      <h2 class="text-lg font-bold text-graphite mb-6">Sprawdź bilet</h2>
+
+      <form id="scan-form" class="space-y-4">
+        <div>
+          <label for="ticket-number" class="block text-sm font-medium text-graphite-muted mb-1.5">
+            Numer biletu (9 cyfr)
+          </label>
+          <input
+            type="text"
+            id="ticket-number"
+            name="ticketNumber"
+            maxlength="9"
+            pattern="[0-9]{9}"
+            inputmode="numeric"
+            placeholder="123 456 789"
+            class="field-input w-full text-2xl font-mono tracking-widest text-center"
+            autocomplete="off"
+          />
+        </div>
+
+        <button type="submit" class="btn-orange w-full justify-center py-3">
+          <svg class="mr-2 h-5 w-5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          Sprawdź bilet
+        </button>
+      </form>
+
+      <!-- Kamera QR -->
+      <div class="mt-6 border-t border-graphite-100 pt-6">
+        <button id="camera-btn" type="button" class="btn border border-graphite-200 bg-white text-graphite hover:bg-graphite-50 w-full justify-center py-3">
+          <svg class="mr-2 h-5 w-5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Skanuj kod QR kamerą
+        </button>
+        <div id="camera-container" class="hidden mt-4">
+          <video id="camera-video" class="w-full rounded border border-graphite-200" autoplay muted playsinline></video>
+          <p class="text-xs text-center text-graphite-muted mt-2">Nakieruj kamerę na kod QR biletu</p>
+          <button id="camera-stop" type="button" class="mt-3 btn border border-red bg-red text-white hover:bg-red/90 w-full justify-center py-2 text-sm">
+            Zatrzymaj kamerę
+          </button>
+        </div>
+        <canvas id="qr-canvas" class="hidden"></canvas>
+      </div>
+    </div>
+
+    <!-- Wynik weryfikacji -->
+    <div id="result-panel" class="hidden border border-graphite-200 bg-white p-6 sm:p-8">
+      <h2 class="text-lg font-bold text-graphite mb-4">Wynik weryfikacji</h2>
+      <div id="result-content"></div>
+    </div>
+
+    <div id="result-loading" class="hidden border border-graphite-200 bg-white p-6 sm:p-8 flex items-center justify-center">
+      <svg class="animate-spin h-8 w-8 text-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Lista zamówień biletów -->
+  <div class="border border-graphite-200 bg-white">
+    <div class="p-5 border-b border-graphite-200">
+      <h2 class="text-lg font-bold text-graphite">Zamówienia biletów</h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-graphite-100 bg-graphite-50 text-left">
+            <th class="px-4 py-3 font-semibold text-graphite-muted">Nr</th>
+            <th class="px-4 py-3 font-semibold text-graphite-muted">Wydarzenie</th>
+            <th class="px-4 py-3 font-semibold text-graphite-muted">Zamawiający</th>
+            <th class="px-4 py-3 font-semibold text-graphite-muted">Bilety</th>
+            <th class="px-4 py-3 font-semibold text-graphite-muted">Status</th>
+            <th class="px-4 py-3 font-semibold text-graphite-muted">Data</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-graphite-100">
+          {recentOrders.map(order => (
+            <tr class="hover:bg-graphite-50 transition-colors">
+              <td class="px-4 py-3 font-mono text-xs text-graphite-muted">{order.id.split('-')[0]}</td>
+              <td class="px-4 py-3 font-medium text-graphite">{eventMap.get(order.eventId) ?? '—'}</td>
+              <td class="px-4 py-3">
+                <div class="font-medium text-graphite">{order.firstName} {order.lastName}</div>
+                <div class="text-xs text-graphite-muted">{order.email}</div>
+              </td>
+              <td class="px-4 py-3 text-center font-bold text-graphite">{order.quantity}</td>
+              <td class="px-4 py-3">
+                <span class:list={[
+                  "inline-block px-2 py-0.5 text-xs font-bold uppercase tracking-wide",
+                  order.status === 'paid' ? "bg-green text-white border-2 border-green" :
+                  order.status === 'pending' ? "bg-orange/10 text-orange border border-orange/20" :
+                  "bg-red/10 text-red border border-red/20"
+                ]}>
+                  {order.status === 'paid' ? 'Opłacone' : order.status === 'pending' ? 'Oczekuje' : 'Anulowane'}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-xs text-graphite-muted whitespace-nowrap">
+                {formatDate(order.createdAt)}
+              </td>
+            </tr>
+          ))}
+          {recentOrders.length === 0 && (
+            <tr>
+              <td colspan="6" class="px-4 py-10 text-center text-graphite-muted">Brak zamówień biletów</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  import { actions } from "astro:actions";
+
+  function formatDatePl(iso: string | null) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('pl-PL', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  function showLoading(show: boolean) {
+    const panel = document.getElementById("result-panel");
+    const loading = document.getElementById("result-loading");
+    if (show) {
+      panel?.classList.add("hidden");
+      loading?.classList.remove("hidden");
+    } else {
+      loading?.classList.add("hidden");
+    }
+  }
+
+  function showResult(html: string) {
+    const panel = document.getElementById("result-panel");
+    const content = document.getElementById("result-content");
+    if (panel && content) {
+      content.innerHTML = html;
+      panel.classList.remove("hidden");
+    }
+  }
+
+  async function checkTicket(number: string) {
+    const clean = number.replace(/\s/g, '').trim();
+    if (clean.length !== 9 || !/^\d{9}$/.test(clean)) {
+      showResult(`<div class="text-center py-6 text-red font-bold">Nieprawidłowy format numeru.<br><span class="font-normal text-graphite-muted text-sm">Numer biletu to 9 cyfr.</span></div>`);
+      document.getElementById("result-panel")?.classList.remove("hidden");
+      document.getElementById("result-loading")?.classList.add("hidden");
+      return;
+    }
+
+    showLoading(true);
+
+    try {
+      const { data, error } = await actions.validateTicket({ ticketNumber: clean });
+      showLoading(false);
+
+      if (error || !data) {
+        showResult(`<div class="text-center py-6 text-red font-bold">Błąd weryfikacji.<br><span class="font-normal text-graphite-muted text-sm">${error?.message ?? 'Spróbuj ponownie.'}</span></div>`);
+        document.getElementById("result-panel")?.classList.remove("hidden");
+        return;
+      }
+
+      if (!data.found) {
+        showResult(`
+          <div class="text-center py-6">
+            <div class="text-5xl mb-3">❓</div>
+            <p class="text-xl font-bold text-red">Bilet nie istnieje</p>
+            <p class="text-graphite-muted text-sm mt-2">Numer <strong>${clean}</strong> nie został znaleziony w systemie.</p>
+          </div>`);
+        document.getElementById("result-panel")?.classList.remove("hidden");
+        return;
+      }
+
+      const t = data.ticket!;
+      const isActive = t.status === 'active';
+
+      const statusHtml = isActive
+        ? `<span class="inline-flex items-center gap-2 px-5 py-2.5 bg-green text-white border-2 border-green font-bold text-lg">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+            AKTYWNY
+           </span>`
+        : `<span class="inline-flex items-center gap-2 px-4 py-2 bg-red text-white font-bold text-lg">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            WYKORZYSTANY
+           </span>`;
+
+      const useBtn = isActive
+        ? `<button id="use-ticket-btn" data-ticket-id="${t.id}" data-ticket-number="${t.ticketNumber}" 
+            class="btn-orange w-full justify-center py-3 mt-4">
+            ✓ Oznacz jako wykorzystany
+           </button>`
+        : `<p class="text-sm text-graphite-muted mt-4 text-center">Bilet wykorzystano: <strong>${formatDatePl(t.usedAt)}</strong></p>`;
+
+      showResult(`
+        <div class="space-y-4">
+          <div class="text-center">
+            ${statusHtml}
+          </div>
+          <div class="border border-graphite-100 divide-y divide-graphite-100 text-sm">
+            <div class="flex justify-between px-4 py-3">
+              <span class="text-graphite-muted">Numer biletu</span>
+              <span class="font-mono font-bold tracking-widest">${t.ticketNumber}</span>
+            </div>
+            ${data.event ? `
+            <div class="flex justify-between px-4 py-3">
+              <span class="text-graphite-muted">Wydarzenie</span>
+              <span class="font-medium text-right">${data.event.title}</span>
+            </div>
+            <div class="flex justify-between px-4 py-3">
+              <span class="text-graphite-muted">Data wydarzenia</span>
+              <span class="font-medium">${formatDatePl(data.event.eventDate)}</span>
+            </div>` : ''}
+            ${data.order ? `
+            <div class="flex justify-between px-4 py-3">
+              <span class="text-graphite-muted">Właściciel</span>
+              <span class="font-medium">${data.order.firstName} ${data.order.lastName}</span>
+            </div>` : ''}
+            <div class="flex justify-between px-4 py-3">
+              <span class="text-graphite-muted">Wydano</span>
+              <span class="font-medium">${formatDatePl(t.createdAt)}</span>
+            </div>
+          </div>
+          ${useBtn}
+        </div>`);
+
+      document.getElementById("result-panel")?.classList.remove("hidden");
+
+      document.getElementById("use-ticket-btn")?.addEventListener("click", async function () {
+        const btn = this as HTMLButtonElement;
+        const ticketId = btn.dataset.ticketId!;
+        btn.disabled = true;
+        btn.textContent = "Przetwarzanie...";
+
+        try {
+          const { error } = await actions.markTicketUsed({ ticketId });
+          if (error) throw new Error(error.message);
+          // Odśwież wynik
+          await checkTicket(btn.dataset.ticketNumber!);
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = "✓ Oznacz jako wykorzystany";
+          alert("Błąd: " + (err as Error).message);
+        }
+      });
+
+    } catch (err) {
+      showLoading(false);
+      showResult(`<div class="text-center py-6 text-red font-bold">Błąd połączenia.<br><span class="font-normal text-graphite-muted text-sm">Sprawdź połączenie i spróbuj ponownie.</span></div>`);
+      document.getElementById("result-panel")?.classList.remove("hidden");
+    }
+  }
+
+  function init() {
+    const form = document.getElementById("scan-form") as HTMLFormElement | null;
+    const input = document.getElementById("ticket-number") as HTMLInputElement | null;
+
+    if (!form || !input) return;
+
+    // Automatyczne formatowanie - tylko cyfry
+    input.addEventListener("input", () => {
+      input.value = input.value.replace(/\D/g, '').slice(0, 9);
+    });
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      checkTicket(input.value);
+    });
+
+    // Kamera QR
+    const cameraBtn = document.getElementById("camera-btn") as HTMLButtonElement | null;
+    const cameraContainer = document.getElementById("camera-container");
+    const cameraStop = document.getElementById("camera-stop") as HTMLButtonElement | null;
+    const video = document.getElementById("camera-video") as HTMLVideoElement | null;
+    const canvas = document.getElementById("qr-canvas") as HTMLCanvasElement | null;
+    let stream: MediaStream | null = null;
+    let scanInterval: ReturnType<typeof setInterval> | null = null;
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        if (video) {
+          video.srcObject = stream;
+          cameraContainer?.classList.remove("hidden");
+          cameraBtn!.classList.add("hidden");
+        }
+
+        // Skanuj QR co 500ms
+        scanInterval = setInterval(async () => {
+          if (!video || !canvas) return;
+          if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          // Użyj jsQR jeśli dostępne
+          if (typeof (window as any).jsQR !== 'undefined') {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = (window as any).jsQR(imageData.data, imageData.width, imageData.height);
+            if (code && /^\d{9}$/.test(code.data.trim())) {
+              stopCamera();
+              if (input) input.value = code.data.trim();
+              checkTicket(code.data.trim());
+            }
+          }
+        }, 500);
+      } catch (err) {
+        alert("Nie można uzyskać dostępu do kamery. Sprawdź uprawnienia przeglądarki.");
+      }
+    }
+
+    function stopCamera() {
+      if (scanInterval) clearInterval(scanInterval);
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+      cameraContainer?.classList.add("hidden");
+      cameraBtn?.classList.remove("hidden");
+    }
+
+    cameraBtn?.addEventListener("click", startCamera);
+    cameraStop?.addEventListener("click", stopCamera);
+  }
+
+  document.addEventListener("astro:page-load", init);
+  if (document.readyState !== "loading") init();
+</script>
+
+<!-- jsQR do dekodowania kodów QR z kamery -->
+<script is:inline src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>

@@ -53,7 +53,6 @@ export const COLORS = {
   graphite: "#333333",
 } as const;
 
-/** Sekcje strony głównej linkowane z menu — własne przewinięcie zamiast domyślnej kotwicy. */
 export const HOME_SECTION_SCROLL = {
   poznajMocna: {
     id: "poznaj-mocna",
@@ -62,10 +61,6 @@ export const HOME_SECTION_SCROLL = {
   },
   mocnaWMediach: {
     id: "mocna-w-mediach",
-    extraOffset: 0,
-  },
-  wesprzyjNas: {
-    id: "wesprzyj-nas",
     extraOffset: 0,
   },
 } as const;
@@ -85,7 +80,7 @@ export const NAV: NavItem[] = [
   { label: "W mediach", href: "/#mocna-w-mediach" },
   { label: "Wolontariat", href: "/wolontariat" },
   { label: "Projekty", href: "/projekty" },
-  { label: "Wesprzyj", href: "/#wesprzyj-nas" },
+  { label: "Wesprzyj", href: "/wesprzyj" },
   { label: "Kontakt", href: "/kontakt" },
 ];
 
@@ -118,7 +113,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
   {
     title: "Informacje",
     links: [
-      { label: "Wesprzyj", href: "/#wesprzyj-nas" },
+      { label: "Wesprzyj", href: "/wesprzyj" },
       { label: "Kontakt", href: "/kontakt" },
       { label: "Polityka prywatności", href: "/polityka-prywatnosci" },
       { label: "Regulamin", href: "/regulamin" },
@@ -327,22 +322,39 @@ export const CAFE_GALLERY: CafePhoto[] = [
 export type MediaLogo = { name: string; logo: string; href?: string };
 
 export const MEDIA_LOGOS_HOME: MediaLogo[] = [
-  { name: "TVP Kraków", logo: "/photos/logo_tvp.jpg", href: "/#mocna-w-mediach" },
-  { name: "Integracja", logo: "/photos/integracja.png", href: "/#mocna-w-mediach" },
-  { name: "Radio", logo: "/media/logos/radio.svg", href: "/#mocna-w-mediach" },
-  { name: "portale miejskie", logo: "/media/logos/portale-miejskie.svg", href: "/#mocna-w-mediach" },
-  { name: "artykuły prasowe", logo: "/media/logos/artykuly-prasowe.svg", href: "/#mocna-w-mediach" },
+  { name: "TVP 3 Kraków", logo: "/photos/logo_tvp.jpg", href: "https://www.youtube.com/watch?v=2JFTrlK3lbQ" },
+  { name: "Integracja", logo: "/photos/integracja.png", href: "https://niepelnosprawni.pl/artykuly/moja-piekna-corka" },
+  { name: "Kraków.pl", logo: "/media/logos/krakow.png", href: "https://krakow.pl/dzielnica_v_krowodrza/299043,2318,komunikat,zajrzyj_do_kawiarni_mocna_i_wspieraj_osoby_z_niepelnosprawnosciami.html" },
+  { name: "Onet", logo: "/media/logos/onet.png", href: "https://www.onet.pl/styl-zycia/krakowdlawas/po-wypadku-corki-w-krakowie-stworzyli-miejsce-pelne-zycia/fzcfm2v,0666d3f1" },
+  { name: "PFRON", logo: "/media/logos/pfron.jpg", href: "https://www.pfron.org.pl/komunikaty-z-regionu/szczegoly-komunikatu/news/symboliczne-otwarcie-kawiarni-mocna/" },
+  { name: "Radio Wnet", logo: "/media/logos/radiownet.png", href: "https://wnet.fm/2025/07/11/mocna-wyjatkowa-kawiarnia-na-krakowskiej-krowodrzy" },
+  { name: "Radio Eska", logo: "/media/logos/eska.png", href: "https://krakow.eska.pl/nowe-wyjatkowe-miejsce-na-mapie-krakowa-kawiarnia-mocna-zatrudnia-osoby-z-niepelnosprawnoscia-galeria-aa-sx38-GkYm-YZPa.html" },
+  { name: "Gość Niedzielny", logo: "/media/logos/gosc.jpg", href: "https://krakow.gosc.pl/doc/9485232.Kawiarnia-MOCna-Miejsce-ze-smakiem-ze-sztuka-i-z-sercem#google_vignette" },
+  { name: "Razem z Tobą", logo: "/media/logos/razemztoba.jpg", href: "https://razemztoba.pl/__trashed-5/" },
+  { name: "Facebook", logo: "/media/logos/facebook.png", href: "https://www.facebook.com/watch/?v=1987932185382868" },
+  { name: "Instagram", logo: "/media/logos/instagram.jpg", href: "https://www.instagram.com/reels/DRuxAdNjdNG/" },
+  { name: "Małopolskie24", logo: "/media/logos/malopolskie.png", href: "https://www.malopolskie24info.pl/2025/09/25/kawiarnia-mocna-w-krakowie-miejsce-pracy-i-wsparcia-dla-osob-z-niepelnosprawnosciami/" },
+  { name: "Kraków.pl (Otofoto)", logo: "/media/logos/krakow.png", href: "https://www.krakow.pl/otofotokronika/245508,1313,562039,3260,otofoto.html" },
+  { name: "Orły Gastronomii", logo: "/media/logos/orly.png", href: "https://www.orlygastronomii.pl/profile-748465-mocna-krakow" },
 ];
 
 export type MediaItem = { outlet: string; title: string; href: string; accent: keyof typeof COLORS };
 
 export const MEDIA: MediaItem[] = [
-  { outlet: "TVP Kraków", title: "Kawiarnia, która zatrudnia i zmienia życie", href: "#", accent: "blue" },
-  { outlet: "Integracja", title: "MOCna! — godność przez pracę", href: "#", accent: "orange" },
-  { outlet: "Radio Kraków", title: "Specialty z misją w sercu miasta", href: "#", accent: "red" },
-  { outlet: "Magiczny Kraków", title: "Miejsce, które warto odwiedzić", href: "#", accent: "green" },
-  { outlet: "Gazeta Krakowska", title: "Tu kawa spotyka człowieka", href: "#", accent: "pink" },
-  { outlet: "Onet", title: "Ekonomia społeczna od kuchni", href: "#", accent: "yellow" },
+  { outlet: "Integracja", title: "Moja piękna córka", href: "https://niepelnosprawni.pl/artykuly/moja-piekna-corka", accent: "orange" },
+  { outlet: "Kraków.pl", title: "Zajrzyj do kawiarni MOCna i wspieraj osoby z niepełnosprawnościami", href: "https://krakow.pl/dzielnica_v_krowodrza/299043,2318,komunikat,zajrzyj_do_kawiarni_mocna_i_wspieraj_osoby_z_niepelnosprawnosciami.html", accent: "blue" },
+  { outlet: "Onet", title: "Po wypadku córki stworzyli miejsce pełne życia", href: "https://www.onet.pl/styl-zycia/krakowdlawas/po-wypadku-corki-w-krakowie-stworzyli-miejsce-pelne-zycia/fzcfm2v,0666d3f1", accent: "yellow" },
+  { outlet: "PFRON", title: "Symboliczne otwarcie kawiarni MOCna", href: "https://www.pfron.org.pl/komunikaty-z-regionu/szczegoly-komunikatu/news/symboliczne-otwarcie-kawiarni-mocna/", accent: "green" },
+  { outlet: "Radio Wnet", title: "MOCna – wyjątkowa kawiarnia na krakowskiej Krowodrzy", href: "https://wnet.fm/2025/07/11/mocna-wyjatkowa-kawiarnia-na-krakowskiej-krowodrzy", accent: "red" },
+  { outlet: "Radio Eska", title: "Nowe, wyjątkowe miejsce na mapie Krakowa", href: "https://krakow.eska.pl/nowe-wyjatkowe-miejsce-na-mapie-krakowa-kawiarnia-mocna-zatrudnia-osoby-z-niepelnosprawnoscia-galeria-aa-sx38-GkYm-YZPa.html", accent: "pink" },
+  { outlet: "Gość Niedzielny", title: "Kawiarnia MOCna. Miejsce ze smakiem, sztuką i sercem", href: "https://krakow.gosc.pl/doc/9485232.Kawiarnia-MOCna-Miejsce-ze-smakiem-ze-sztuka-i-z-sercem#google_vignette", accent: "blue" },
+  { outlet: "Razem z Tobą", title: "Artykuł o kawiarni", href: "https://razemztoba.pl/__trashed-5/", accent: "orange" },
+  { outlet: "TVP 3 Kraków", title: "Reportaż o MOCnej", href: "https://www.youtube.com/watch?v=2JFTrlK3lbQ", accent: "red" },
+  { outlet: "Facebook", title: "Kraków.pl - materiał wideo", href: "https://www.facebook.com/watch/?v=1987932185382868", accent: "blue" },
+  { outlet: "Instagram", title: "Kraków się wydarza", href: "https://www.instagram.com/reels/DRuxAdNjdNG/", accent: "pink" },
+  { outlet: "Kraków.pl", title: "Otofoto kronika", href: "https://www.krakow.pl/otofotokronika/245508,1313,562039,3260,otofoto.html", accent: "blue" },
+  { outlet: "Małopolskie24", title: "Kawiarnia MOCna – miejsce pracy i wsparcia", href: "https://www.malopolskie24info.pl/2025/09/25/kawiarnia-mocna-w-krakowie-miejsce-pracy-i-wsparcia-dla-osob-z-niepelnosprawnosciami/", accent: "green" },
+  { outlet: "Orły Gastronomii", title: "Profil kawiarni MOCna", href: "https://www.orlygastronomii.pl/profile-748465-mocna-krakow", accent: "yellow" }
 ];
 
 export type Product = {

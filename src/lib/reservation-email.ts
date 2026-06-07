@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { BRAND, COLORS } from '../data/site';
+import { getResendConfig, resolveEmailRecipient } from './resend-config';
 
 /** Kolorowy nagłówek MOCna! — jak na stronie głównej */
 const BRAND_HEADING = `
@@ -210,19 +211,28 @@ function buildCancellationText(data: ReservationEmailData) {
 }
 
 async function sendEmail(to: string, subject: string, html: string, text: string) {
-  const apiKey = import.meta.env.RESEND_API_KEY;
+  const { apiKey, from, testTo } = getResendConfig();
   if (!apiKey) {
     console.warn('[reservation-email] Brak RESEND_API_KEY — e-mail pominięty.');
     return { ok: false, skipped: true as const };
   }
 
-  const from = import.meta.env.RESEND_FROM_EMAIL ?? 'MOCna! <onboarding@resend.dev>';
-  const resend = new Resend(apiKey);
+  const { to: recipient, subjectPrefix } = resolveEmailRecipient(to, from, testTo);
+  if (subjectPrefix) {
+    console.info(`[reservation-email] DEV: wysyłka przekierowana ${to} → ${recipient}`);
+  }
 
-  const { error } = await resend.emails.send({ from, to, subject, html, text });
+  const resend = new Resend(apiKey);
+  const { error } = await resend.emails.send({
+    from,
+    to: recipient,
+    subject: subjectPrefix + subject,
+    html,
+    text: subjectPrefix ? `${subjectPrefix}${text}` : text,
+  });
 
   if (error) {
-    console.error('[reservation-email] Błąd wysyłki:', error);
+    console.error('[reservation-email] Błąd wysyłki:', JSON.stringify(error));
     return { ok: false, skipped: false as const, error };
   }
 

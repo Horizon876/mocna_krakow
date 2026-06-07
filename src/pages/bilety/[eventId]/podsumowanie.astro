@@ -1,0 +1,177 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import { db } from "../../../db";
+import { events } from "../../../db/schema";
+import { eq } from "drizzle-orm";
+
+const { eventId } = Astro.params;
+
+const [event] = await db.select().from(events).where(eq(events.id, eventId!));
+
+if (!event || event.status !== 'active') {
+  return Astro.redirect('/wydarzenia');
+}
+
+const dateObj = new Date(event.eventDate);
+const dataStr = dateObj.toLocaleDateString('pl-PL', { day: '2-digit', month: 'long', year: 'numeric' });
+const godzinaStr = dateObj.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+---
+
+<BaseLayout title={`Podsumowanie — ${event.title} — MOCna!`}>
+  <div class="checkout-page home-page pb-20 pt-16 sm:pb-28 sm:pt-24 min-h-screen">
+    <div class="shell max-w-3xl">
+
+      <div id="summary-empty" class="hidden text-center mt-12 border border-graphite-200 bg-white p-10">
+        <p class="text-xl text-graphite-muted">Brak danych zamówienia.</p>
+        <a href={`/bilety/${eventId}`} class="btn-orange mt-6 inline-flex">Wróć do wyboru biletów</a>
+      </div>
+
+      <div id="summary-content" class="hidden border border-graphite-200 bg-white">
+        <div class="p-6 sm:p-8 border-b border-graphite-200">
+          <h1 class="text-2xl font-bold text-graphite">Podsumowanie</h1>
+          <p class="mt-1 text-sm text-graphite-muted">Sprawdź dane przed płatnością.</p>
+        </div>
+
+        <div class="p-6 sm:p-8 space-y-6">
+          <div id="ticket-meta" class="hidden" data-unit-price={event.ticketPrice}></div>
+
+          <!-- Wydarzenie -->
+          <section>
+            <h2 class="text-sm font-bold text-graphite-muted uppercase tracking-wider mb-3">Wydarzenie</h2>
+            <div class="border border-graphite-100 p-4 bg-[#f8f9ff]">
+              <p class="font-bold text-graphite">{event.title}</p>
+              <p class="text-sm text-graphite-muted mt-1">{dataStr} o {godzinaStr}</p>
+            </div>
+          </section>
+
+          <!-- Bilety -->
+          <section>
+            <h2 class="text-sm font-bold text-graphite-muted uppercase tracking-wider mb-3">Zamówienie</h2>
+            <div id="summary-tickets" class="border border-graphite-100 divide-y divide-graphite-100"></div>
+          </section>
+
+          <!-- Dane -->
+          <section>
+            <h2 class="text-sm font-bold text-graphite-muted uppercase tracking-wider mb-3">Dane zamawiającego</h2>
+            <dl id="summary-customer" class="grid gap-2 text-sm sm:grid-cols-2 border border-graphite-100 p-4"></dl>
+          </section>
+
+          <!-- Total -->
+          <div class="border-t border-graphite-200 pt-4">
+            <div class="flex justify-between items-end">
+              <span class="text-lg font-bold text-graphite">Do zapłaty</span>
+              <span id="summary-total" class="text-3xl font-black tracking-tight text-blue"></span>
+            </div>
+          </div>
+
+          <div id="summary-error" class="checkout-error hidden"></div>
+
+          <div class="flex flex-col-reverse sm:flex-row gap-3">
+            <a href={`/bilety/${eventId}/dane`} class="btn border border-graphite-200 bg-white text-graphite hover:bg-graphite-50 justify-center py-4 text-center">
+              Wróć
+            </a>
+            <button type="button" id="pay-btn" class="btn-orange flex-1 justify-center py-4 text-lg">
+              Zamawiam i płacę przez Stripe
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+
+  import { actions } from "astro:actions";
+  import { readTicketDraft, isTicketDraftComplete, clearTicketDraft } from "../../../scripts/ticket-draft";
+
+  function dlRow(label: string, value: string) {
+    return `<div><dt class="text-graphite-muted">${label}</dt><dd class="font-medium text-graphite mt-0.5">${value}</dd></div>`;
+  }
+
+  function formatPln(grosze: number) {
+    if (grosze === 0) return "Bezpłatne";
+    return (grosze / 100).toFixed(0) + " zł";
+  }
+
+  function init() {
+    const emptyView = document.getElementById("summary-empty");
+    const contentView = document.getElementById("summary-content");
+    const payBtn = document.getElementById("pay-btn") as HTMLButtonElement | null;
+    const errorEl = document.getElementById("summary-error");
+
+    const draft = readTicketDraft();
+    const eventId = window.location.pathname.split("/")[2];
+
+    if (!isTicketDraftComplete(draft) || draft.eventId !== eventId) {
+      emptyView?.classList.remove("hidden");
+      contentView?.classList.add("hidden");
+      return;
+    }
+
+    emptyView?.classList.add("hidden");
+    contentView?.classList.remove("hidden");
+
+    const unitPrice = parseInt((document.getElementById("ticket-meta") as HTMLElement | null)?.dataset.unitPrice || "0");
+    const total = unitPrice * draft.quantity;
+
+    const ticketsEl = document.getElementById("summary-tickets");
+    if (ticketsEl) {
+      ticketsEl.innerHTML = `
+        <div class="p-4 flex justify-between text-sm">
+          <span class="text-graphite">${draft.quantity} × bilet</span>
+          <span class="font-bold text-graphite">${formatPln(total)}</span>
+        </div>`;
+    }
+
+    const customerEl = document.getElementById("summary-customer");
+    if (customerEl) {
+      customerEl.innerHTML = [
+        dlRow("Imię i nazwisko", `${draft.firstName} ${draft.lastName}`),
+        dlRow("E-mail", draft.email),
+        dlRow("Telefon", draft.phone),
+      ].join("");
+    }
+
+    const totalEl = document.getElementById("summary-total");
+    if (totalEl) totalEl.textContent = formatPln(total);
+
+    if (!payBtn || payBtn.dataset.bound === "true") return;
+    payBtn.dataset.bound = "true";
+
+    payBtn.addEventListener("click", async () => {
+      payBtn.disabled = true;
+      payBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-5 w-5 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Przetwarzanie...`;
+      errorEl?.classList.add("hidden");
+
+      try {
+        const { data: resData, error } = await actions.createTicketOrder({
+          eventId: draft.eventId,
+          firstName: draft.firstName,
+          lastName: draft.lastName,
+          email: draft.email,
+          phone: draft.phone,
+          quantity: draft.quantity,
+        });
+
+        if (error) throw new Error(error.message);
+        clearTicketDraft();
+
+        if (resData?.redirectUrl) {
+          window.location.href = resData.redirectUrl;
+        }
+      } catch (err) {
+        if (errorEl) {
+          errorEl.textContent = (err as Error).message || "Wystąpił nieoczekiwany błąd.";
+          errorEl.classList.remove("hidden");
+        }
+        payBtn.disabled = false;
+        payBtn.textContent = "Zamawiam i płacę przez Stripe";
+      }
+    });
+  }
+
+  document.addEventListener("astro:page-load", init);
+  if (document.readyState !== "loading") init();
+</script>

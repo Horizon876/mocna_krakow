@@ -7,7 +7,7 @@ import { actions } from "astro:actions";
 
 interface Props {
   title?: string;
-  activeTab?: "dashboard" | "sklep" | "wydarzenia" | "kawiarnia" | "rezerwacje";
+  activeTab?: "dashboard" | "sklep" | "zamowienia" | "wydarzenia" | "kawiarnia" | "rezerwacje" | "bilety";
   noScroll?: boolean;
   centered?: boolean;
 }
@@ -21,7 +21,9 @@ const {
 const tabs = [
   { id: "dashboard" as const, label: "Pulpit", href: "/admin/dashboard" },
   { id: "sklep" as const, label: "Sklep", href: "/admin/sklep" },
+  { id: "zamowienia" as const, label: "Zamówienia", href: "/admin/zamowienia" },
   { id: "wydarzenia" as const, label: "Wydarzenia", href: "/admin/wydarzenia" },
+  { id: "bilety" as const, label: "Bilety", href: "/admin/bilety" },
   { id: "kawiarnia" as const, label: "Kawiarnia", href: "/admin/kawiarnia" },
   { id: "rezerwacje" as const, label: "Rezerwacje", href: "/admin/rezerwacje" },
 ];
@@ -43,7 +45,7 @@ const navUnderlineClass = (active: boolean) =>
 
 const mobileTabClass = (active: boolean) =>
   [
-    "shrink-0 rounded-[16px] px-4 py-2.5 text-[13px] font-semibold leading-tight transition-colors",
+    "shrink-0 rounded-none px-4 py-2.5 text-[13px] font-semibold leading-tight transition-colors",
     active
       ? "bg-blue/10 text-blue"
       : "bg-graphite-100 text-graphite hover:bg-graphite-200",
@@ -84,7 +86,7 @@ const mobileTabClass = (active: boolean) =>
             class="logo-anchor group relative block shrink-0"
             aria-label="Panel administratora MOCna!"
           >
-            <span class="block h-16 w-[8.5rem] sm:h-[4.5rem] sm:w-[11.5rem]" aria-hidden="true"></span>
+            <span class="block h-16 w-[7.5rem] sm:h-[4.5rem] sm:w-[11.5rem]" aria-hidden="true"></span>
             <img
               src="/brand/logo-kolor.svg"
               alt="MOCna!"
@@ -109,10 +111,10 @@ const mobileTabClass = (active: boolean) =>
             }
           </ul>
 
-          <form method="POST" action={actions.logout}>
+          <form method="POST" action={actions.logout} class="ml-auto shrink-0">
             <button
               type="submit"
-              class="btn border-red bg-red px-4 py-2 text-[13px] text-white hover:border-[#c42f35] hover:bg-[#c42f35]"
+              class="btn rounded-none border-red bg-red px-4 py-2 text-[13px] text-white hover:border-[#c42f35] hover:bg-[#c42f35]"
             >
               Wyloguj
             </button>

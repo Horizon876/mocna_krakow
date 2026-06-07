@@ -1,0 +1,102 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Płatność — MOCna!">
+  <div class="checkout-page home-page pb-20 pt-16 sm:pb-28 sm:pt-24 min-h-screen">
+    <div class="shell max-w-3xl">
+
+      <div id="payment-empty" class="hidden text-center mt-12 border border-graphite-200 bg-white p-10">
+        <p class="text-xl text-graphite-muted">Najpierw wybierz metodę dostawy.</p>
+        <a href="/checkout" class="btn-orange mt-6 inline-flex">Wróć do dostawy</a>
+      </div>
+
+      <div id="payment-content" class="hidden border border-graphite-200 bg-white">
+        <div class="p-6 sm:p-8 border-b border-graphite-200">
+          <h1 class="text-2xl font-bold text-graphite">Wybierz metodę płatności</h1>
+        </div>
+
+        <form id="payment-form" class="p-6 sm:p-8 space-y-6">
+          <div class="space-y-3">
+            <label class="checkout-option flex items-center justify-between p-4 border-2 border-graphite-200 cursor-pointer">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="paymentMethod" value="cod" class="checkout-radio w-5 h-5 border-graphite-300" />
+                <div>
+                  <span class="option-title font-bold text-graphite block">Za pobraniem</span>
+                  <span class="option-desc text-sm text-graphite-muted">Płatność gotówką przy odbiorze paczki</span>
+                </div>
+              </div>
+              <span class="option-price font-bold text-graphite">5,00 zł</span>
+            </label>
+
+            <label class="checkout-option flex items-center justify-between p-4 border-2 border-graphite-200 cursor-pointer">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="paymentMethod" value="online" checked class="checkout-radio w-5 h-5 border-graphite-300" />
+                <div>
+                  <span class="option-title font-bold text-graphite block">Płatność online</span>
+                  <span class="option-desc text-sm text-graphite-muted">Przelewy24 / Blik / Karta (Stripe)</span>
+                </div>
+              </div>
+              <span class="option-price font-bold text-graphite">0,00 zł</span>
+            </label>
+          </div>
+
+          <div class="flex flex-col-reverse sm:flex-row gap-3">
+            <a href="/checkout" class="btn border border-graphite-200 bg-white text-graphite hover:bg-graphite-50 justify-center py-4 text-center">
+              Wróć
+            </a>
+            <button type="submit" class="btn-orange flex-1 justify-center py-4 text-lg">
+              Przejdź do uzupełnienia danych
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { readCart } from "../../scripts/cart";
+  import { patchCheckoutDraft, readCheckoutDraft } from "../../scripts/checkout-draft";
+
+  function init() {
+    const emptyView = document.getElementById("payment-empty");
+    const contentView = document.getElementById("payment-content");
+    const form = document.getElementById("payment-form") as HTMLFormElement | null;
+    if (!form) return;
+
+    const draft = readCheckoutDraft();
+    if (readCart().length === 0 || !draft?.shippingMethod) {
+      emptyView?.classList.remove("hidden");
+      contentView?.classList.add("hidden");
+      return;
+    }
+
+    emptyView?.classList.add("hidden");
+    contentView?.classList.remove("hidden");
+
+    if (draft.paymentMethod) {
+      const radio = form.querySelector(
+        `input[name="paymentMethod"][value="${draft.paymentMethod}"]`,
+      ) as HTMLInputElement | null;
+      if (radio) radio.checked = true;
+    }
+
+    if (form.dataset.bound === "true") return;
+    form.dataset.bound = "true";
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const paymentMethod = new FormData(form).get("paymentMethod") as string;
+      patchCheckoutDraft({ paymentMethod: paymentMethod as "online" | "cod" });
+      window.location.href = "/checkout/dane";
+    });
+  }
+
+  document.addEventListener("astro:page-load", init);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+</script>

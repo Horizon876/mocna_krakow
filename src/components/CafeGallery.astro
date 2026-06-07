@@ -1,19 +1,27 @@
 ---
-import { CAFE_GALLERY } from "@data/site";
+interface Props {
+  photos: Array<{ src: string; alt: string }>;
+}
+
+const { photos } = Astro.props;
 ---
-<ul class="mt-12 grid list-none gap-4 sm:grid-cols-2 lg:grid-cols-3">
-  {
-    CAFE_GALLERY.map((photo) => (
-      <li>
-        <figure class="overflow-hidden border border-graphite-200 bg-white">
-          <img
-            src={photo.src}
-            alt={photo.alt}
-            class="aspect-[4/3] h-full w-full object-cover"
-            loading="lazy"
-          />
-        </figure>
-      </li>
-    ))
-  }
-</ul>
+{photos.length === 0 ? (
+  <p class="mt-12 text-center text-graphite-muted">Galeria wkrótce.</p>
+) : (
+  <ul class="mt-12 grid list-none gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {
+      photos.map((photo) => (
+        <li>
+          <figure class="overflow-hidden border border-graphite-200 bg-white">
+            <img
+              src={photo.src}
+              alt={photo.alt}
+              class="aspect-[4/3] h-full w-full object-cover"
+              loading="lazy"
+            />
+          </figure>
+        </li>
+      ))
+    }
+  </ul>
+)}

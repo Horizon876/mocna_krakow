@@ -1,10 +1,43 @@
 ---
 import { actions } from 'astro:actions';
 
-const result = Astro.getActionResult(actions.createEvent);
+interface Props {
+  event?: {
+    id: string;
+    title: string;
+    kategoria: string;
+    longDescription: string | null;
+    eventDate: Date;
+    ticketPrice: number;
+    seatLimit: number;
+    status: string | null;
+    imageUrl: string | null;
+    color: string;
+  };
+}
+
+const { event } = Astro.props;
+const isEdit = !!event;
+
+const resultCreate = Astro.getActionResult(actions.createEvent);
+const resultUpdate = Astro.getActionResult(actions.updateEvent);
+const result = isEdit ? resultUpdate : resultCreate;
+
+const action = isEdit ? actions.updateEvent : actions.createEvent;
+
+const formatDateTimeLocal = (date: Date | string | null | undefined) => {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const pad = (num: number) => String(num).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
 ---
 
-<form method="POST" action={actions.createEvent} class="space-y-5">
+<form method="POST" action={action} enctype="multipart/form-data" class="space-y-5" id="event-form">
+  {isEdit && <input type="hidden" name="id" value={event.id} />}
+  {isEdit && event.imageUrl && <input type="hidden" name="existingImageUrl" value={event.imageUrl} />}
+
   {result?.error && (
     <div class="alert-error">
       <span aria-hidden="true">⚠</span> Wystąpił błąd podczas zapisywania wydarzenia. Sprawdź poprawność danych.
@@ -12,75 +45,111 @@ const result = Astro.getActionResult(actions.createEvent);
   )}
   {result?.data?.success && (
     <div class="alert-success">
-      <span aria-hidden="true">✓</span> Wydarzenie zostało dodane pomyślnie!
+      <span aria-hidden="true">✓</span> Wydarzenie zostało pomyślnie zapisane!
     </div>
   )}
 
-  <div class="space-y-1.5">
-    <label for="title" class="field-label">Tytuł wydarzenia</label>
-    <input type="text" id="title" name="title" required class="field-input" placeholder="np. Warsztaty parzenia kawy" />
-    {result?.error && 'title' in result.error.fields && (
-      <p class="mt-1 text-xs font-medium text-red">{result.error.fields.title?.[0]}</p>
-    )}
+  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+    <div class="space-y-1.5">
+      <label for="title" class="field-label">Tytuł wydarzenia</label>
+      <input type="text" id="title" name="title" value={event?.title || ''} required class="field-input" placeholder="np. Warsztaty parzenia kawy" />
+      {result?.error && 'title' in result.error.fields && (
+        <p class="mt-1 text-xs font-medium text-red">{result.error.fields.title?.[0]}</p>
+      )}
+    </div>
+    <div class="space-y-1.5">
+      <label for="kategoria" class="field-label">Kategoria</label>
+      <input type="text" id="kategoria" name="kategoria" class="field-input" placeholder="np. Koncert" value={event?.kategoria || "Wydarzenie"} />
+    </div>
   </div>
 
   <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
     <div class="space-y-1.5">
       <label for="eventDate" class="field-label">Data i czas</label>
-      <input type="datetime-local" id="eventDate" name="eventDate" required class="field-input" />
+      <input type="datetime-local" id="eventDate" name="eventDate" value={formatDateTimeLocal(event?.eventDate)} required class="field-input" />
       {result?.error && 'eventDate' in result.error.fields && (
         <p class="mt-1 text-xs font-medium text-red">{result.error.fields.eventDate?.[0]}</p>
       )}
     </div>
     <div class="space-y-1.5">
-      <label for="status" class="field-label">Status</label>
-      <select id="status" name="status" class="field-input cursor-pointer appearance-none">
-        <option value="active">Aktywne</option>
-        <option value="completed">Zakończone</option>
-        <option value="cancelled">Odwołane</option>
+      <label for="color" class="field-label">Kolor (motyw)</label>
+      <select id="color" name="color" class="field-input cursor-pointer appearance-none">
+        <option value="orange" selected={event?.color === 'orange'}>Pomarańczowy (Orange)</option>
+        <option value="red" selected={event?.color === 'red'}>Czerwony (Red)</option>
+        <option value="yellow" selected={event?.color === 'yellow'}>Żółty (Yellow)</option>
+        <option value="blue" selected={event?.color === 'blue'}>Niebieski (Blue)</option>
+        <option value="green" selected={event?.color === 'green'}>Zielony (Green)</option>
+        <option value="pink" selected={event?.color === 'pink'}>Różowy (Pink)</option>
+        <option value="graphite" selected={event?.color === 'graphite'}>Grafitowy (Graphite)</option>
       </select>
     </div>
   </div>
 
   <div class="space-y-1.5">
-    <label for="shortDescription" class="field-label">Krótki opis</label>
-    <input type="text" id="shortDescription" name="shortDescription" class="field-input" placeholder="Zajawka wydarzenia (np. na stronę główną)" />
-  </div>
-
-  <div class="space-y-1.5">
     <label for="longDescription" class="field-label">Pełny opis</label>
-    <textarea id="longDescription" name="longDescription" rows="4" class="field-input" placeholder="Szczegółowy opis, agenda, informacje dla uczestników..."></textarea>
+    <textarea id="longDescription" name="longDescription" rows="4" class="field-input" placeholder="Szczegółowy opis, agenda, informacje dla uczestników...">{event?.longDescription || ''}</textarea>
   </div>
 
-  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+  <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
     <div class="space-y-1.5">
       <label for="ticketPrice" class="field-label">Cena biletu (grosze)</label>
-      <input type="number" id="ticketPrice" name="ticketPrice" required min="0" class="field-input" placeholder="np. 4500 (45,00 PLN)" />
+      <input type="number" id="ticketPrice" name="ticketPrice" value={event?.ticketPrice !== undefined ? event.ticketPrice : ''} required min="0" class="field-input" placeholder="np. 4500 (45,00 PLN)" />
       {result?.error && 'ticketPrice' in result.error.fields && (
         <p class="mt-1 text-xs font-medium text-red">{result.error.fields.ticketPrice?.[0]}</p>
       )}
     </div>
     <div class="space-y-1.5">
       <label for="seatLimit" class="field-label">Limit miejsc</label>
-      <input type="number" id="seatLimit" name="seatLimit" required min="1" class="field-input" placeholder="np. 20" />
+      <input type="number" id="seatLimit" name="seatLimit" value={event?.seatLimit !== undefined ? event.seatLimit : ''} required min="1" class="field-input" placeholder="np. 20" />
       {result?.error && 'seatLimit' in result.error.fields && (
         <p class="mt-1 text-xs font-medium text-red">{result.error.fields.seatLimit?.[0]}</p>
       )}
     </div>
+    <div class="space-y-1.5">
+      <label for="status" class="field-label">Status</label>
+      <select id="status" name="status" class="field-input cursor-pointer appearance-none">
+        <option value="active" selected={event?.status === 'active'}>Aktywne</option>
+        <option value="completed" selected={event?.status === 'completed'}>Zakończone</option>
+        <option value="cancelled" selected={event?.status === 'cancelled'}>Odwołane</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="space-y-1.5">
+    <label for="imageFile" class="field-label">Plakat / Zdjęcie</label>
+    {event?.imageUrl && (
+      <div class="mb-2 text-xs text-graphite-muted flex items-center gap-2">
+        <span>Aktualne zdjęcie:</span>
+        <a href={event.imageUrl} target="_blank" class="text-blue underline hover:text-blue/80 font-medium">ZOBACZ</a>
+      </div>
+    )}
+    <input type="file" id="imageFile" name="imageFile" accept="image/*" class="field-input" />
   </div>
 
   <button type="submit" class="btn btn-orange mt-8 w-full">
-    Zapisz wydarzenie
+    {isEdit ? 'Zapisz zmiany' : 'Zapisz wydarzenie'}
   </button>
+  {isEdit && (
+    <a href="/admin/wydarzenia" class="btn btn-outline mt-3 block w-full justify-center text-center">
+      Anuluj edycję
+    </a>
+  )}
 </form>
 
 <script>
-  const eventForm = document.querySelector('form[action*="createEvent"]');
-  eventForm?.addEventListener('submit', () => {
-    const btn = eventForm.querySelector('button[type="submit"]') as HTMLButtonElement;
-    if (btn) {
-      btn.innerHTML = '<span class="inline-block mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span> Przetwarzanie...';
-      btn.classList.add('opacity-70', 'cursor-not-allowed', 'pointer-events-none');
-    }
-  });
+  function setupForm() {
+    const eventForm = document.getElementById('event-form');
+    if (!eventForm) return;
+
+    eventForm.addEventListener('submit', () => {
+      const btn = eventForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+      if (btn) {
+        btn.innerHTML = '<span class="inline-block mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span> Przetwarzanie...';
+        btn.classList.add('opacity-70', 'cursor-not-allowed', 'pointer-events-none');
+      }
+    });
+  }
+
+  setupForm();
+  document.addEventListener('astro:page-load', setupForm);
 </script>

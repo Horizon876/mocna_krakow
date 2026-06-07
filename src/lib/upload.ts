@@ -6,7 +6,7 @@ import path from 'node:path';
  * Produkcja (Vercel): Vercel Blob gdy ustawiony BLOB_READ_WRITE_TOKEN.
  * Dev: katalog public/uploads.
  */
-export async function saveProductImage(file: File): Promise<string> {
+export async function saveImage(file: File): Promise<string> {
   const ext = file.name.split('.').pop() || 'jpg';
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
 

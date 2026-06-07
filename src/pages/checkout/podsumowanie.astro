@@ -1,0 +1,224 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Podsumowanie zamówienia — MOCna!">
+  <div class="checkout-page home-page pb-20 pt-16 sm:pb-28 sm:pt-24 min-h-screen">
+    <div class="shell max-w-3xl">
+
+      <div id="summary-empty" class="hidden text-center mt-12 border border-graphite-200 bg-white p-10">
+        <p class="text-xl text-graphite-muted">Brak danych zamówienia.</p>
+        <a id="summary-empty-link" href="/checkout" class="btn-orange mt-6 inline-flex">Wróć do zamówienia</a>
+      </div>
+
+      <div id="summary-content" class="hidden border border-graphite-200 bg-white">
+        <div class="p-6 sm:p-8 border-b border-graphite-200">
+          <h1 class="text-2xl font-bold text-graphite">Podsumowanie zamówienia</h1>
+          <p class="mt-1 text-sm text-graphite-muted">Sprawdź dane przed płatnością.</p>
+        </div>
+
+        <div class="p-6 sm:p-8 space-y-8">
+          <section>
+            <h2 class="text-lg font-bold text-graphite mb-4">Produkty</h2>
+            <ul id="summary-items" class="space-y-4"></ul>
+          </section>
+
+          <section>
+            <h2 class="text-lg font-bold text-graphite mb-4">Dane zamawiającego</h2>
+            <dl id="summary-customer" class="grid gap-2 text-sm sm:grid-cols-2"></dl>
+          </section>
+
+          <section>
+            <h2 class="text-lg font-bold text-graphite mb-4">Dostawa i płatność</h2>
+            <dl id="summary-delivery" class="grid gap-2 text-sm"></dl>
+          </section>
+
+          <div class="border-t border-graphite-200 pt-6 space-y-3 text-sm font-medium text-graphite-muted">
+            <div class="flex justify-between">
+              <span>Wartość koszyka</span>
+              <span id="summary-subtotal" class="text-graphite font-bold"></span>
+            </div>
+            <div class="flex justify-between">
+              <span id="summary-shipping-label">Wysyłka</span>
+              <span id="summary-shipping" class="text-graphite font-bold"></span>
+            </div>
+            <div class="flex justify-between">
+              <span>Płatność</span>
+              <span id="summary-payment" class="text-graphite font-bold"></span>
+            </div>
+            <div class="flex justify-between items-end pt-3 border-t border-graphite-100">
+              <span class="text-lg font-bold text-graphite">Do zapłaty</span>
+              <span id="summary-total" class="text-3xl font-black tracking-tight text-blue"></span>
+            </div>
+          </div>
+
+          <div class="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+            <a href="/checkout/dane" class="btn border border-graphite-200 bg-white text-graphite hover:bg-graphite-50 justify-center py-4 text-center">
+              Wróć
+            </a>
+            <button type="button" id="submit-order-btn" class="btn-orange flex-1 justify-center py-4 text-lg">
+              Zamawiam i płacę
+            </button>
+          </div>
+
+          <div id="summary-error" class="checkout-error hidden"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { actions } from "astro:actions";
+  import { readCart, cartTotal, formatPln } from "../../scripts/cart";
+  import {
+    readCheckoutDraft,
+    clearCheckoutDraft,
+    shippingCostFor,
+    paymentCostFor,
+    isCheckoutDraftComplete,
+    checkoutResumeUrl,
+  } from "../../scripts/checkout-draft";
+
+  const SHIPPING_LABELS = {
+    courier: "Kurier",
+    paczkomat: "Paczkomat InPost",
+  };
+
+  const PAYMENT_LABELS = {
+    online: "Płatność online (Stripe)",
+    cod: "Za pobraniem",
+  };
+
+  function dlRow(label: string, value: string) {
+    return `<div><dt class="text-graphite-muted">${label}</dt><dd class="font-medium text-graphite mt-0.5">${value}</dd></div>`;
+  }
+
+  function init() {
+    const emptyView = document.getElementById("summary-empty");
+    const contentView = document.getElementById("summary-content");
+    const submitBtn = document.getElementById("submit-order-btn") as HTMLButtonElement | null;
+    const errorEl = document.getElementById("summary-error");
+
+    const draft = readCheckoutDraft();
+    const items = readCart();
+
+    if (items.length === 0 || !isCheckoutDraftComplete(draft)) {
+      emptyView?.classList.remove("hidden");
+      contentView?.classList.add("hidden");
+      const emptyLink = document.getElementById("summary-empty-link") as HTMLAnchorElement | null;
+      if (emptyLink) emptyLink.href = checkoutResumeUrl(draft);
+      return;
+    }
+
+    emptyView?.classList.add("hidden");
+    contentView?.classList.remove("hidden");
+
+    const itemsEl = document.getElementById("summary-items");
+    if (itemsEl) {
+      itemsEl.innerHTML = items.map((item) => `
+        <li class="flex items-center gap-4 pb-4 border-b border-graphite-100 last:border-0 last:pb-0">
+          ${item.image
+            ? `<img src="${item.image}" alt="" class="w-14 h-14 object-cover bg-white shrink-0 border border-graphite-200" />`
+            : `<div class="w-14 h-14 bg-graphite-100 shrink-0 border border-graphite-200"></div>`}
+          <div class="flex-1 min-w-0">
+            <h3 class="font-bold text-graphite">${item.name}</h3>
+            <p class="text-sm text-graphite-muted">${item.qty} szt. × ${item.price}</p>
+          </div>
+        </li>
+      `).join("");
+    }
+
+    const customerEl = document.getElementById("summary-customer");
+    if (customerEl) {
+      customerEl.innerHTML = [
+        dlRow("Imię i nazwisko", `${draft.firstName} ${draft.lastName}`),
+        dlRow("E-mail", draft.email),
+        dlRow("Telefon", draft.phone),
+      ].join("");
+    }
+
+    let paczkomatHtml = "";
+    if (draft.shippingMethod === "paczkomat" && draft.paczkomatPoint) {
+      try {
+        const p = JSON.parse(draft.paczkomatPoint);
+        const name = p.display_name ?? p.name ?? "";
+        const addr = [p.address?.line1, p.address?.city].filter(Boolean).join(", ");
+        paczkomatHtml = dlRow("Paczkomat", `${name}${addr ? `<br><span class="font-normal text-graphite-muted">${addr}</span>` : ""}`);
+      } catch { /* ignoruj */ }
+    }
+
+    const deliveryEl = document.getElementById("summary-delivery");
+    if (deliveryEl) {
+      deliveryEl.innerHTML = [
+        dlRow("Dostawa", SHIPPING_LABELS[draft.shippingMethod] ?? draft.shippingMethod),
+        draft.shippingMethod === "courier"
+          ? dlRow("Adres", `${draft.address}<br>${draft.zipCode} ${draft.city}`)
+          : paczkomatHtml,
+        dlRow("Płatność", PAYMENT_LABELS[draft.paymentMethod] ?? draft.paymentMethod),
+      ].filter(Boolean).join("");
+    }
+
+    const subtotal = cartTotal(items);
+    const shipping = shippingCostFor(draft.shippingMethod);
+    const payment = paymentCostFor(draft.paymentMethod);
+    const total = subtotal + shipping + payment;
+
+    document.getElementById("summary-subtotal")!.textContent = formatPln(subtotal);
+    document.getElementById("summary-shipping-label")!.textContent =
+      draft.shippingMethod === "paczkomat" ? "Wysyłka (Paczkomat)" : "Wysyłka (Kurier)";
+    document.getElementById("summary-shipping")!.textContent = formatPln(shipping);
+    document.getElementById("summary-payment")!.textContent = formatPln(payment);
+    document.getElementById("summary-total")!.textContent = formatPln(total);
+
+    if (!submitBtn || submitBtn.dataset.bound === "true") return;
+    submitBtn.dataset.bound = "true";
+
+    submitBtn.addEventListener("click", async () => {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-5 w-5 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Przetwarzanie...`;
+      errorEl?.classList.add("hidden");
+
+      try {
+        const { data: resData, error } = await actions.createOrder({
+          firstName: draft.firstName,
+          lastName: draft.lastName,
+          email: draft.email,
+          phone: draft.phone,
+          address: draft.address,
+          zipCode: draft.zipCode,
+          city: draft.city,
+          shippingMethod: draft.shippingMethod,
+          paymentMethod: draft.paymentMethod,
+          paczkomatPoint: draft.paczkomatPoint,
+          items,
+          totalAmount: subtotal,
+        });
+
+        if (error) throw new Error(error.message);
+
+        clearCheckoutDraft();
+
+        if (resData?.redirectUrl) {
+          window.location.href = resData.redirectUrl;
+        } else if (resData?.orderId) {
+          window.location.href = `/checkout/success?order_id=${resData.orderId}`;
+        }
+      } catch (err) {
+        if (errorEl) {
+          errorEl.textContent = (err as Error).message || "Wystąpił nieoczekiwany błąd.";
+          errorEl.classList.remove("hidden");
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Zamawiam i płacę";
+      }
+    });
+  }
+
+  document.addEventListener("astro:page-load", init);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+</script>

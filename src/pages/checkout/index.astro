@@ -1,0 +1,365 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+
+const inpostToken = import.meta.env.INPOST_GEOWIDGET_TOKEN ?? "";
+const inpostSandbox = import.meta.env.INPOST_GEOWIDGET_SANDBOX === "true";
+const geowidgetBase = inpostSandbox
+  ? "https://sandbox-easy-geowidget-sdk.easypack24.net"
+  : "https://geowidget.inpost.pl";
+const useGeowidget = Boolean(inpostToken);
+---
+
+<BaseLayout title="Dostawa — MOCna!">
+  {useGeowidget && (
+    <>
+      <link slot="head" rel="stylesheet" href={`${geowidgetBase}/inpost-geowidget.css`} />
+      <script slot="head" is:inline src={`${geowidgetBase}/inpost-geowidget.js`} defer></script>
+    </>
+  )}
+
+  <div class="checkout-page home-page pb-20 pt-16 sm:pb-28 sm:pt-24 min-h-screen">
+    <div class="shell max-w-3xl" data-use-geowidget={useGeowidget ? "1" : "0"}>
+
+      <div id="checkout-empty" class="text-center mt-12 border border-graphite-200 bg-white p-10">
+        <p class="text-xl text-graphite-muted">Twój koszyk jest pusty.</p>
+        <a href="/sklep" class="btn-orange mt-6 inline-flex">Wróć do sklepu</a>
+      </div>
+
+      <div id="checkout-content" class="hidden border border-graphite-200 bg-white">
+        <div class="p-6 sm:p-8 border-b border-graphite-200">
+          <h1 class="text-2xl font-bold text-graphite">Wybierz metodę dostawy</h1>
+        </div>
+
+        <form id="shipping-form" class="p-6 sm:p-8 space-y-6">
+          <div class="space-y-3">
+            <label class="checkout-option flex items-center justify-between p-4 border-2 border-graphite-200 cursor-pointer">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="shippingMethod" value="courier" checked class="checkout-radio w-5 h-5 border-graphite-300" />
+                <div>
+                  <span class="option-title font-bold text-graphite block">Kurier</span>
+                  <span class="option-desc text-sm text-graphite-muted">Dostawa na adres domowy (1–2 dni robocze)</span>
+                </div>
+              </div>
+              <span class="option-price font-bold text-graphite">20,00 zł</span>
+            </label>
+
+            <label class="checkout-option flex items-center justify-between p-4 border-2 border-graphite-200 cursor-pointer">
+              <div class="flex items-center gap-3">
+                <input type="radio" name="shippingMethod" value="paczkomat" class="checkout-radio w-5 h-5 border-graphite-300" />
+                <div>
+                  <span class="option-title font-bold text-graphite block">Paczkomat InPost</span>
+                  <span class="option-desc text-sm text-graphite-muted">Odbierz w wybranym paczkomacie (1–2 dni robocze)</span>
+                </div>
+              </div>
+              <span class="option-price font-bold text-graphite">15,00 zł</span>
+            </label>
+          </div>
+
+          <div id="paczkomat-section" class="hidden">
+            <p class="text-sm font-medium text-graphite-muted mb-3">
+              {useGeowidget ? "Wybierz paczkomat na mapie" : "Wyszukaj paczkomat po miejscowości i/lub kodzie pocztowym"}
+            </p>
+
+            <div id="selected-paczkomat" class="checkout-highlight-green hidden mb-4 p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-xs font-semibold text-white uppercase tracking-wide mb-0.5">Wybrany paczkomat</p>
+                  <p id="paczkomat-name" class="font-bold text-white text-base"></p>
+                  <p id="paczkomat-address" class="text-sm text-white mt-0.5"></p>
+                </div>
+                <button type="button" id="change-paczkomat-btn" class="shrink-0 text-xs text-white font-semibold underline hover:no-underline mt-1">Zmień</button>
+              </div>
+            </div>
+
+            {useGeowidget ? (
+              <div id="geowidget-wrapper" class="overflow-hidden border border-graphite-200">
+                <inpost-geowidget
+                  id="inpost-geowidget"
+                  token={inpostToken}
+                  language="pl"
+                  config="parcelCollect"
+                  onpoint="inpostPointSelected"
+                ></inpost-geowidget>
+              </div>
+            ) : (
+              <div id="paczkomat-fallback" class="space-y-3">
+                <div class="grid gap-2 sm:grid-cols-2">
+                  <input
+                    type="text"
+                    id="paczkomat-search-city"
+                    placeholder="Miejscowość, np. Kraków"
+                    class="field-input w-full"
+                  />
+                  <input
+                    type="text"
+                    id="paczkomat-search-zip"
+                    placeholder="Kod pocztowy, np. 31-801"
+                    class="field-input w-full"
+                    inputmode="numeric"
+                  />
+                </div>
+                <button type="button" id="paczkomat-search-btn" class="btn-orange w-full justify-center py-3 text-sm">
+                  Szukaj
+                </button>
+                <ul id="paczkomat-results" class="space-y-2 max-h-64 overflow-y-auto"></ul>
+              </div>
+            )}
+          </div>
+
+          <div id="checkout-error" class="checkout-error hidden"></div>
+
+          <button type="submit" class="btn-orange w-full justify-center py-4 text-lg">
+            Przejdź do wyboru płatności
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { readCart } from "../../scripts/cart";
+  import { parseInPostPointAddress } from "../../lib/inpost-point";
+  import { patchCheckoutDraft, readCheckoutDraft } from "../../scripts/checkout-draft";
+
+  function getUseGeowidget() {
+    return document.querySelector("[data-use-geowidget]")?.getAttribute("data-use-geowidget") === "1";
+  }
+
+  let selectedPoint: unknown = null;
+  let abortController: AbortController | null = null;
+
+  function applySelectedPoint(point: Record<string, unknown>) {
+    selectedPoint = point;
+    const parsed = parseInPostPointAddress(point);
+    const nameEl = document.getElementById("paczkomat-name");
+    const addrEl = document.getElementById("paczkomat-address");
+    const preview = document.getElementById("selected-paczkomat");
+    const widget = document.getElementById("geowidget-wrapper");
+    const fallback = document.getElementById("paczkomat-fallback");
+
+    if (nameEl) nameEl.textContent = String(point.display_name ?? point.name ?? "");
+    if (addrEl) {
+      const parts = [parsed.address, parsed.zipCode, parsed.city].filter(Boolean);
+      addrEl.textContent = parts.join(", ");
+    }
+    preview?.classList.remove("hidden");
+    widget?.classList.add("hidden");
+    fallback?.classList.add("hidden");
+  }
+
+  (window as unknown as { inpostPointSelected: (point: Record<string, unknown>) => void }).inpostPointSelected =
+    function (point) {
+      applySelectedPoint(point);
+    };
+
+  function updateShippingUI(method: string) {
+    const paczkomatSection = document.getElementById("paczkomat-section");
+    if (method === "paczkomat") {
+      paczkomatSection?.classList.remove("hidden");
+    } else {
+      paczkomatSection?.classList.add("hidden");
+    }
+  }
+
+  function init() {
+    if (abortController) abortController.abort();
+    abortController = new AbortController();
+    const { signal } = abortController;
+
+    const emptyView = document.getElementById("checkout-empty");
+    const contentView = document.getElementById("checkout-content");
+    const form = document.getElementById("shipping-form") as HTMLFormElement | null;
+    const errorEl = document.getElementById("checkout-error");
+    if (!form) return;
+
+    if (readCart().length === 0) {
+      emptyView?.classList.remove("hidden");
+      contentView?.classList.add("hidden");
+      return;
+    }
+
+    emptyView?.classList.add("hidden");
+    contentView?.classList.remove("hidden");
+
+    const draft = readCheckoutDraft();
+    if (draft?.shippingMethod) {
+      const radio = form.querySelector(
+        `input[name="shippingMethod"][value="${draft.shippingMethod}"]`,
+      ) as HTMLInputElement | null;
+      if (radio) radio.checked = true;
+      updateShippingUI(draft.shippingMethod);
+      if (draft.paczkomatPoint) {
+        try {
+          selectedPoint = JSON.parse(draft.paczkomatPoint);
+          applySelectedPoint(selectedPoint as Record<string, unknown>);
+        } catch { /* ignoruj */ }
+      }
+    } else {
+      updateShippingUI("courier");
+    }
+
+    form.querySelectorAll('input[name="shippingMethod"]').forEach((radio) => {
+      radio.addEventListener(
+        "change",
+        () => {
+          const method = new FormData(form).get("shippingMethod") as string;
+          updateShippingUI(method);
+          errorEl?.classList.add("hidden");
+        },
+        { signal },
+      );
+    });
+
+    document.getElementById("change-paczkomat-btn")?.addEventListener(
+      "click",
+      () => {
+        selectedPoint = null;
+        document.getElementById("selected-paczkomat")?.classList.add("hidden");
+        if (getUseGeowidget()) {
+          document.getElementById("geowidget-wrapper")?.classList.remove("hidden");
+        } else {
+          document.getElementById("paczkomat-fallback")?.classList.remove("hidden");
+        }
+      },
+      { signal },
+    );
+
+    if (!getUseGeowidget()) {
+      const cityInput = document.getElementById("paczkomat-search-city") as HTMLInputElement | null;
+      const zipInput = document.getElementById("paczkomat-search-zip") as HTMLInputElement | null;
+      const searchBtn = document.getElementById("paczkomat-search-btn");
+      const resultsEl = document.getElementById("paczkomat-results");
+
+      function normalizePostCode(value: string) {
+        const digits = value.replace(/\D/g, "");
+        if (digits.length === 5) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+        return value.trim();
+      }
+
+      async function searchPaczkomat() {
+        const city = (cityInput?.value ?? "").trim();
+        const zip = normalizePostCode(zipInput?.value ?? "");
+        if ((!city && !zip) || !resultsEl) return;
+
+        resultsEl.innerHTML = `<li class="text-sm text-graphite-muted p-2">Szukam...</li>`;
+
+        const params = new URLSearchParams();
+        if (city) params.set("city", city);
+        if (zip) params.set("post_code", zip);
+
+        const label = [city, zip].filter(Boolean).join(", ");
+
+        try {
+          const res = await fetch(`/api/inpost/points?${params}`);
+          const data = await res.json();
+
+          if (!res.ok || data.error) {
+            resultsEl.innerHTML = `<li class="text-sm text-red p-2">${data.error ?? "Błąd wyszukiwania."}</li>`;
+            return;
+          }
+
+          if (!data.items?.length) {
+            resultsEl.innerHTML = `<li class="text-sm text-red p-2">Nie znaleziono paczkomatów dla: ${label}. Sprawdź dane, np. Kraków, 31-801.</li>`;
+            return;
+          }
+
+          resultsEl.innerHTML = data.items
+            .map((p: Record<string, unknown>) => {
+              const addr = [(p.address as { line1?: string })?.line1, (p.address as { city?: string })?.city]
+                .filter(Boolean)
+                .join(", ");
+              const status = p.status === "Operating" ? "" : ` <span class="text-red">(${p.status})</span>`;
+              const location = p.location_description
+                ? `<span class="block text-xs text-graphite-muted">${p.location_description}</span>`
+                : "";
+              return `
+              <li>
+                <button type="button" class="paczkomat-pick w-full text-left p-3 border-2 border-graphite-200"
+                  data-point='${JSON.stringify(p).replace(/'/g, "&#39;")}'>
+                  <span class="font-bold text-graphite text-sm">${p.display_name ?? p.name}${status}</span>
+                  <span class="block text-xs text-graphite-muted mt-0.5">${addr}</span>
+                  ${location}
+                </button>
+              </li>`;
+            })
+            .join("");
+
+          resultsEl.querySelectorAll(".paczkomat-pick").forEach((btn) => {
+            btn.addEventListener(
+              "click",
+              () => {
+                const point = JSON.parse(btn.getAttribute("data-point") ?? "{}");
+                applySelectedPoint(point);
+              },
+              { signal },
+            );
+          });
+        } catch {
+          resultsEl.innerHTML = `<li class="text-sm text-red p-2">Błąd wyszukiwania. Sprawdź połączenie.</li>`;
+        }
+      }
+
+      searchBtn?.addEventListener("click", searchPaczkomat, { signal });
+      [cityInput, zipInput].forEach((input) => {
+        input?.addEventListener(
+          "keydown",
+          (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              searchPaczkomat();
+            }
+          },
+          { signal },
+        );
+      });
+    }
+
+    form.addEventListener(
+      "submit",
+      (e) => {
+        e.preventDefault();
+        if (readCart().length === 0) return;
+
+        const shippingMethod = new FormData(form).get("shippingMethod") as string;
+
+        if (shippingMethod === "paczkomat" && !selectedPoint) {
+          if (errorEl) {
+            errorEl.textContent = "Wybierz paczkomat przed przejściem dalej.";
+            errorEl.classList.remove("hidden");
+          }
+          document.getElementById("paczkomat-section")?.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+
+        errorEl?.classList.add("hidden");
+
+        patchCheckoutDraft({
+          shippingMethod: shippingMethod as "courier" | "paczkomat",
+          paczkomatPoint:
+            shippingMethod === "paczkomat" && selectedPoint
+              ? JSON.stringify(selectedPoint)
+              : undefined,
+        });
+
+        window.location.href = "/checkout/platnosc";
+      },
+      { signal },
+    );
+  }
+
+  document.addEventListener("astro:page-load", init);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+</script>
+
+<style>
+  inpost-geowidget {
+    display: block;
+    width: 100%;
+    height: 480px;
+  }
+</style>

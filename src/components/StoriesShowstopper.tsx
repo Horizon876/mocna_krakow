@@ -150,7 +150,7 @@ export default function StoriesShowstopper({ stories }: Props) {
               </p>
               <p className="mt-5 text-lg leading-relaxed text-graphite-soft">{active.body}</p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <a href="/#wesprzyj-nas" className="btn-orange">Wesprzyj takie historie</a>
+                <a href="/wesprzyj" className="btn-orange">Wesprzyj takie historie</a>
                 <a href="/ludziemocnej" className="btn-outline">Poznaj cały zespół</a>
               </div>
             </motion.div>

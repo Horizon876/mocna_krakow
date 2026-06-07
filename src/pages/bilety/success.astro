@@ -1,0 +1,149 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import { db } from "../../db";
+import { ticketOrders, events, tickets } from "../../db/schema";
+import { eq } from "drizzle-orm";
+import { generateTicketNumber, generateTicketQR } from "../../lib/ticket-generator";
+import { sendTicketEmail } from "../../lib/ticket-email";
+
+const orderId = Astro.url.searchParams.get("order_id");
+let processed = false;
+let alreadyDone = false;
+let orderData: typeof ticketOrders.$inferSelect | null = null;
+let eventData: typeof events.$inferSelect | null = null;
+let serverError = false;
+
+if (orderId) {
+  try {
+    const [order] = await db.select().from(ticketOrders).where(eq(ticketOrders.id, orderId));
+    if (order) {
+      orderData = order;
+      const [event] = await db.select().from(events).where(eq(events.id, order.eventId));
+      eventData = event ?? null;
+
+      if (order.status === 'paid') {
+        alreadyDone = true;
+      } else if (order.status === 'pending') {
+        // Oznacz jako opłacone
+        await db.update(ticketOrders).set({ status: 'paid' }).where(eq(ticketOrders.id, order.id));
+
+        // Aktualizuj licznik zapisanych
+        if (event) {
+          await db.update(events)
+            .set({ enrolledCount: event.enrolledCount + order.quantity })
+            .where(eq(events.id, event.id));
+        }
+
+        // Generuj bilety
+        const generatedTickets: Array<{ ticketNumber: string; qrDataUrl: string }> = [];
+        for (let i = 0; i < order.quantity; i++) {
+          const ticketNumber = await generateTicketNumber();
+          const qrDataUrl = await generateTicketQR(ticketNumber);
+          await db.insert(tickets).values({
+            ticketOrderId: order.id,
+            eventId: order.eventId,
+            ticketNumber,
+            status: 'active',
+          });
+          generatedTickets.push({ ticketNumber, qrDataUrl });
+        }
+
+        // Wyślij email z biletami
+        await sendTicketEmail({
+          orderId: order.id,
+          firstName: order.firstName,
+          lastName: order.lastName,
+          email: order.email,
+          eventTitle: event?.title ?? 'Wydarzenie',
+          eventDate: event?.eventDate ?? new Date(),
+          quantity: order.quantity,
+          totalAmount: order.totalAmount,
+          tickets: generatedTickets,
+        });
+
+        processed = true;
+      }
+    }
+  } catch (e) {
+    console.error('[bilety/success]', e);
+    serverError = true;
+  }
+}
+---
+
+<BaseLayout title="Bilety zakupione — MOCna!">
+  <div class="checkout-page home-page pb-20 pt-16 sm:pb-28 sm:pt-24 min-h-screen flex flex-col items-center justify-center">
+    <div class="shell max-w-lg w-full">
+      <div class="border border-graphite-200 bg-white p-8 sm:p-10 text-center">
+
+        {(processed || alreadyDone) && (
+          <>
+            <div class="checkout-highlight-green mx-auto mb-6 flex h-16 w-16 items-center justify-center" aria-hidden="true">
+              <svg class="h-8 w-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </div>
+
+            <h1 class="text-2xl font-bold text-graphite">
+              {alreadyDone ? "Bilety już wysłane!" : "Dziękujemy!"}
+            </h1>
+            <p class="mt-4 text-base text-graphite-muted leading-relaxed">
+              {alreadyDone
+                ? "Twoje bilety zostały już wcześniej wysłane na podany adres e-mail."
+                : "Twoje bilety zostały wysłane na podany adres e-mail. Każdy bilet zawiera kod QR."}
+            </p>
+
+            {orderData && (
+              <div class="mt-8 border border-graphite-200 bg-[#fff8f0] p-5 text-left text-sm">
+                <p class="text-xs font-semibold text-graphite-muted uppercase tracking-wide mb-3">Szczegóły zamówienia</p>
+                <div class="space-y-2">
+                  {eventData && (
+                    <div class="flex justify-between gap-4">
+                      <span class="text-graphite-muted">Wydarzenie</span>
+                      <span class="font-bold text-graphite text-right">{eventData.title}</span>
+                    </div>
+                  )}
+                  <div class="flex justify-between gap-4">
+                    <span class="text-graphite-muted">Liczba biletów</span>
+                    <span class="font-bold text-graphite">{orderData.quantity}</span>
+                  </div>
+                  <div class="flex justify-between gap-4">
+                    <span class="text-graphite-muted">Nr zamówienia</span>
+                    <span class="font-mono font-bold text-graphite">{orderData.id.split("-")[0]}</span>
+                  </div>
+                  <div class="flex justify-between gap-4">
+                    <span class="text-graphite-muted">Status</span>
+                    <span class="font-bold text-green">Opłacone ✓</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <a href="/" class="btn-orange mt-8 inline-flex w-full sm:w-auto justify-center">
+              Powrót na stronę główną
+            </a>
+          </>
+        )}
+
+        {serverError && (
+          <>
+            <h1 class="text-2xl font-bold text-graphite">Coś poszło nie tak</h1>
+            <p class="mt-4 text-base text-graphite-muted">
+              Wystąpił błąd podczas przetwarzania zamówienia. Skontaktuj się z nami podając numer zamówienia.
+            </p>
+            <a href="/kontakt" class="btn-orange mt-6 inline-flex">Kontakt</a>
+          </>
+        )}
+
+        {!processed && !alreadyDone && !serverError && (
+          <>
+            <h1 class="text-2xl font-bold text-graphite">Brak danych zamówienia</h1>
+            <p class="mt-4 text-base text-graphite-muted">Nie znaleziono zamówienia do potwierdzenia.</p>
+            <a href="/wydarzenia" class="btn-orange mt-6 inline-flex">Zobacz wydarzenia</a>
+          </>
+        )}
+
+      </div>
+    </div>
+  </div>
+</BaseLayout>

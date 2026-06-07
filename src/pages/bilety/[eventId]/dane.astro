@@ -1,0 +1,117 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import { db } from "../../../db";
+import { events } from "../../../db/schema";
+import { eq } from "drizzle-orm";
+
+const { eventId } = Astro.params;
+
+const [event] = await db.select().from(events).where(eq(events.id, eventId!));
+
+if (!event || event.status !== 'active') {
+  return Astro.redirect('/wydarzenia');
+}
+---
+
+<BaseLayout title={`Dane — ${event.title} — MOCna!`}>
+  <div class="checkout-page home-page pb-20 pt-16 sm:pb-28 sm:pt-24 min-h-screen">
+    <div class="shell max-w-3xl">
+
+      <div id="data-empty" class="hidden text-center mt-12 border border-graphite-200 bg-white p-10">
+        <p class="text-xl text-graphite-muted">Wróć do poprzedniego kroku i wybierz bilety.</p>
+        <a href={`/bilety/${eventId}`} class="btn-orange mt-6 inline-flex">Wróć do wyboru biletów</a>
+      </div>
+
+      <div id="data-content" class="hidden border border-graphite-200 bg-white">
+        <div class="p-6 sm:p-8 border-b border-graphite-200">
+          <h1 class="text-2xl font-bold text-graphite">Dane zamawiającego</h1>
+          <p class="mt-1 text-sm text-graphite-muted">Bilety wyślemy na podany adres e-mail.</p>
+        </div>
+
+        <form id="data-form" class="p-6 sm:p-8 space-y-5">
+          <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+              <label for="firstName" class="block text-sm font-medium text-graphite-muted mb-1.5">Imię *</label>
+              <input type="text" id="firstName" name="firstName" required autocomplete="given-name" class="field-input w-full" />
+            </div>
+            <div>
+              <label for="lastName" class="block text-sm font-medium text-graphite-muted mb-1.5">Nazwisko *</label>
+              <input type="text" id="lastName" name="lastName" required autocomplete="family-name" class="field-input w-full" />
+            </div>
+            <div class="sm:col-span-2">
+              <label for="email" class="block text-sm font-medium text-graphite-muted mb-1.5">E-mail *</label>
+              <input type="email" id="email" name="email" required autocomplete="email" class="field-input w-full" />
+              <p class="mt-1 text-xs text-graphite-muted">Na ten adres wyślemy bilety z kodami QR.</p>
+            </div>
+            <div class="sm:col-span-2">
+              <label for="phone" class="block text-sm font-medium text-graphite-muted mb-1.5">Telefon *</label>
+              <input type="tel" id="phone" name="phone" required autocomplete="tel" class="field-input w-full" />
+            </div>
+          </div>
+
+          <div id="data-error" class="checkout-error hidden"></div>
+
+          <div class="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+            <a id="back-link" href={`/bilety/${eventId}`} class="btn border border-graphite-200 bg-white text-graphite hover:bg-graphite-50 justify-center py-4 text-center">
+              Wróć
+            </a>
+            <button type="submit" class="btn-orange flex-1 justify-center py-4 text-lg">
+              Przejdź do podsumowania
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { readTicketDraft, patchTicketDraft } from "../../../scripts/ticket-draft";
+
+  function init() {
+    const emptyView = document.getElementById("data-empty");
+    const contentView = document.getElementById("data-content");
+    const form = document.getElementById("data-form") as HTMLFormElement | null;
+    const errorEl = document.getElementById("data-error");
+    if (!form) return;
+
+    const draft = readTicketDraft();
+    const eventId = window.location.pathname.split("/")[2];
+
+    if (!draft.eventId || draft.eventId !== eventId || !draft.quantity) {
+      emptyView?.classList.remove("hidden");
+      contentView?.classList.add("hidden");
+      return;
+    }
+
+    emptyView?.classList.add("hidden");
+    contentView?.classList.remove("hidden");
+
+    if (draft.firstName) (form.elements.namedItem("firstName") as HTMLInputElement).value = draft.firstName;
+    if (draft.lastName) (form.elements.namedItem("lastName") as HTMLInputElement).value = draft.lastName;
+    if (draft.email) (form.elements.namedItem("email") as HTMLInputElement).value = draft.email;
+    if (draft.phone) (form.elements.namedItem("phone") as HTMLInputElement).value = draft.phone;
+
+    if (form.dataset.bound === "true") return;
+    form.dataset.bound = "true";
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      errorEl?.classList.add("hidden");
+
+      const fd = new FormData(form);
+      patchTicketDraft({
+        firstName: fd.get("firstName") as string,
+        lastName: fd.get("lastName") as string,
+        email: fd.get("email") as string,
+        phone: fd.get("phone") as string,
+      });
+
+      window.location.href = `/bilety/${eventId}/podsumowanie`;
+    });
+  }
+
+  document.addEventListener("astro:page-load", init);
+  if (document.readyState !== "loading") init();
+</script>
