@@ -24,7 +24,8 @@ export const server = {
       imageFile: z.any().optional(),
       availabilityStatus: z.enum(['available', 'unavailable']).default('available'),
     }),
-    handler: async (input) => {
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== 'admin') throw new ActionError({ code: 'FORBIDDEN', message: 'Brak uprawnień.' });
       try {
         let imageUrl = null;
         if (input.imageFile && input.imageFile instanceof File && input.imageFile.size > 0) {
@@ -56,7 +57,8 @@ export const server = {
       existingImageUrl: z.string().optional(),
       availabilityStatus: z.enum(['available', 'unavailable']).default('available'),
     }),
-    handler: async (input) => {
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== 'admin') throw new ActionError({ code: 'FORBIDDEN', message: 'Brak uprawnień.' });
       try {
         let imageUrl = input.existingImageUrl || null;
         if (input.imageFile && input.imageFile instanceof File && input.imageFile.size > 0) {
@@ -82,7 +84,8 @@ export const server = {
     input: z.object({
       id: z.string().min(1),
     }),
-    handler: async (input) => {
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== 'admin') throw new ActionError({ code: 'FORBIDDEN', message: 'Brak uprawnień.' });
       try {
         await db.delete(products).where(eq(products.id, input.id));
         return { success: true };
@@ -108,7 +111,8 @@ export const server = {
       color: z.enum(['orange', 'red', 'yellow', 'blue', 'green', 'pink', 'graphite']).default('orange'),
       link: z.string().optional(),
     }),
-    handler: async (input) => {
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== 'admin') throw new ActionError({ code: 'FORBIDDEN', message: 'Brak uprawnień.' });
       try {
         let imageUrl = null;
         if (input.imageFile && input.imageFile instanceof File && input.imageFile.size > 0) {
@@ -154,7 +158,8 @@ export const server = {
       color: z.enum(['orange', 'red', 'yellow', 'blue', 'green', 'pink', 'graphite']).default('orange'),
       link: z.string().optional(),
     }),
-    handler: async (input) => {
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== 'admin') throw new ActionError({ code: 'FORBIDDEN', message: 'Brak uprawnień.' });
       try {
         let imageUrl = input.existingImageUrl || null;
         if (input.imageFile && input.imageFile instanceof File && input.imageFile.size > 0) {
@@ -187,7 +192,8 @@ export const server = {
     input: z.object({
       id: z.string().min(1),
     }),
-    handler: async (input) => {
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== 'admin') throw new ActionError({ code: 'FORBIDDEN', message: 'Brak uprawnień.' });
       try {
         await db.delete(events).where(eq(events.id, input.id));
         return { success: true };
@@ -436,7 +442,8 @@ export const server = {
         'Zdjęcie jest wymagane',
       ),
     }),
-    handler: async (input) => {
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== 'admin') throw new ActionError({ code: 'FORBIDDEN', message: 'Brak uprawnień.' });
       try {
         const imageUrl = await saveImage(input.imageFile);
         const result = await db.insert(cafePhotos).values({
@@ -455,7 +462,8 @@ export const server = {
     input: z.object({
       id: z.string().min(1),
     }),
-    handler: async (input) => {
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== 'admin') throw new ActionError({ code: 'FORBIDDEN', message: 'Brak uprawnień.' });
       try {
         await db.delete(cafePhotos).where(eq(cafePhotos.id, input.id));
         return { success: true };
@@ -739,21 +747,32 @@ export const server = {
     }),
     handler: async (input, context) => {
       // Hash przechowywany jako base64 aby uniknąć interpolacji $ przez Vite
-      const hashB64 = import.meta.env.ADMIN_PASSWORD_HASH_B64;
-      if (!hashB64) {
+      const hashAdminB64 = import.meta.env.ADMIN_PASSWORD_HASH_B64;
+      const hashPracownikB64 = import.meta.env.PRACOWNIK_PASSWORD_HASH_B64;
+
+      if (!hashAdminB64) {
         throw new ActionError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Konfiguracja serwera jest nieprawidłowa.',
         });
       }
 
-      // Dekoduj base64 → oryginalny hash bcrypt
-      const storedHash = Buffer.from(hashB64, 'base64').toString('utf8');
+      let role: 'admin' | 'pracownik' | null = null;
 
-      // Bezpieczne porównanie hasła z hashem (timing-safe)
-      const isValid = await bcrypt.compare(input.password, storedHash);
+      // Sprawdź hasło administratora
+      const storedAdminHash = Buffer.from(hashAdminB64, 'base64').toString('utf8');
+      if (await bcrypt.compare(input.password, storedAdminHash)) {
+        role = 'admin';
+      } 
+      // Sprawdź hasło pracownika (jeśli jest skonfigurowane)
+      else if (hashPracownikB64) {
+        const storedPracownikHash = Buffer.from(hashPracownikB64, 'base64').toString('utf8');
+        if (await bcrypt.compare(input.password, storedPracownikHash)) {
+          role = 'pracownik';
+        }
+      }
 
-      if (!isValid) {
+      if (!role) {
         // Celowe opóźnienie 500ms — ochrona przed brute-force
         await new Promise((r) => setTimeout(r, 500));
         throw new ActionError({
@@ -763,7 +782,7 @@ export const server = {
       }
 
       // Generuj podpisany token sesji
-      const token = await createSessionToken();
+      const token = await createSessionToken(role);
 
       // Ustaw HttpOnly cookie — niedostępne z JS po stronie klienta (XSS safe)
       context.cookies.set(COOKIE_NAME_EXPORT, token, {

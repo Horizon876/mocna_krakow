@@ -3,7 +3,7 @@ import type { StatAccent, StatTileSize } from "@data/site";
 
 const tileAccent = {
   orange: {
-    btn: "border-orange bg-orange",
+    btn: "border-orange-ink bg-orange-ink",
     value: "text-white",
     label: "text-white",
   },

@@ -5,8 +5,81 @@ import SectionHeading from "@components/SectionHeading.astro";
 <BaseLayout title="Polityka prywatności — MOCna!">
   <div class="home-page">
     <section class="relative scroll-mt-16 pt-10 pb-20 sm:scroll-mt-[4.5rem] sm:pt-12 sm:pb-28">
-      <div class="shell">
+      <div class="shell max-w-4xl">
         <SectionHeading title="Polityka prywatności" />
+        
+        <div class="prose mt-8 text-graphite max-w-none space-y-6 font-sans">
+          <p class="text-lg leading-relaxed text-graphite-muted">
+            Niniejsza Polityka prywatności określa zasady przetwarzania i ochrony danych osobowych użytkowników korzystających z serwisu internetowego oraz usług kawiarni <strong>MOCna!</strong>, prowadzonej przez Fundację MOCna!.
+          </p>
+          
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">1. Administrator danych osobowych</h3>
+          <p class="leading-relaxed">
+            Administratorem Twoich danych osobowych jest <strong>Fundacja MOCna!</strong> z siedzibą w Krakowie, ul. Rzeczna 11A, 30-021 Kraków. W sprawach związanych z przetwarzaniem danych osobowych możesz skontaktować się z nami za pośrednictwem poczty elektronicznej: <a href="mailto:kawiarniamocna@gmail.com" class="text-blue hover:underline font-semibold">kawiarniamocna@gmail.com</a> lub telefonicznie: <a href="tel:+48786507513" class="text-blue hover:underline font-semibold">+48 786 507 513</a>.
+          </p>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">2. Cele i podstawy prawne przetwarzania danych</h3>
+          <p class="leading-relaxed">Przetwarzamy Twoje dane osobowe w następujących celach:</p>
+          <ul class="list-disc pl-5 space-y-2">
+            <li><strong>Realizacja zamówień w sklepie internetowym:</strong> w celu zawarcia i wykonania umowy sprzedaży towarów (art. 6 ust. 1 lit. b RODO).</li>
+            <li><strong>Rejestracja i obsługa biletów na wydarzenia:</strong> w celu sprzedaży biletów oraz organizacji wydarzeń (art. 6 ust. 1 lit. b RODO).</li>
+            <li><strong>Obsługa rezerwacji stolików:</strong> w celu rezerwacji stolika w kawiarni (art. 6 ust. 1 lit. b RODO).</li>
+            <li><strong>Obsługa formularza kontaktowego:</strong> w celu udzielenia odpowiedzi na Twoje zapytania (art. 6 ust. 1 lit. f RODO – prawnie uzasadniony interes).</li>
+            <li><strong>Obsługa płatności:</strong> dane płatnicze są przetwarzane przez operatora Stripe w celu procesowania płatności (art. 6 ust. 1 lit. b RODO).</li>
+            <li><strong>Wypełnienie obowiązków prawnych:</strong> w szczególności podatkowych i księgowych związanych z realizacją transakcji (art. 6 ust. 1 lit. c RODO).</li>
+          </ul>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">3. Rodzaje przetwarzanych danych</h3>
+          <p class="leading-relaxed">W zależności od sposobu korzystania z serwisu, zbieramy i przetwarzamy następujące dane osobowe:</p>
+          <ul class="list-disc pl-5 space-y-2">
+            <li>Imię i nazwisko</li>
+            <li>Adres e-mail</li>
+            <li>Numer telefonu</li>
+            <li>Adres dostawy (ulica, numer domu/mieszkania, kod pocztowy, miasto)</li>
+            <li>Szczegóły wybranego Paczkomatu InPost (jeśli dotyczy)</li>
+            <li>Dane dotyczące zamówienia (zakupione towary, bilety, data rezerwacji)</li>
+          </ul>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">4. Okres przechowywania danych</h3>
+          <p class="leading-relaxed">Twoje dane osobowe będą przechowywane przez okres niezbędny do realizacji celów, dla których zostały zebrane:</p>
+          <ul class="list-disc pl-5 space-y-2">
+            <li>Dane związane z zamówieniami i zakupem biletów: przez okres wymagany przepisami prawa podatkowego i księgowego (5 lat od końca roku podatkowego w którym nastąpiła transakcja).</li>
+            <li>Dane rezerwacji stolików: do czasu zrealizowania rezerwacji lub jej anulowania, nie dłużej niż przez 30 dni od terminu rezerwacji.</li>
+            <li>Dane kontaktowe: do czasu zakończenia korespondencji lub wniesienia sprzeciwu wobec przetwarzania.</li>
+          </ul>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">5. Odbiorcy danych osobowych</h3>
+          <p class="leading-relaxed">W celu prawidłowego funkcjonowania serwisu i realizacji usług, Twoje dane mogą być przekazywane zaufanym podmiotom zewnętrznym:</p>
+          <ul class="list-disc pl-5 space-y-2">
+            <li>Dostawcom usług płatniczych (Stripe, w celu realizacji płatności online).</li>
+            <li>Dostawcom usług logistycznych (InPost, firmy kurierskie w celu dostawy zamówień).</li>
+            <li>Dostawcom usług hostingowych, pocztowych i systemów mailingowych (Resend do wysyłania potwierdzeń).</li>
+            <li>Podmiotom świadczącym usługi księgowe i prawne na rzecz Fundacji.</li>
+          </ul>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">6. Twoje prawa</h3>
+          <p class="leading-relaxed">W związku z przetwarzaniem Twoich danych osobowych przysługują Ci następujące prawa:</p>
+          <ul class="list-disc pl-5 space-y-2">
+            <li>Prawo dostępu do treści swoich danych oraz otrzymania ich kopii.</li>
+            <li>Prawo do sprostowania (poprawiania) swoich danych.</li>
+            <li>Prawo do usunięcia danych („prawo do bycia zapomnianym”) w przypadkach przewidzianych prawem.</li>
+            <li>Prawo do ograniczenia przetwarzania danych.</li>
+            <li>Prawo do przenoszenia danych.</li>
+            <li>Prawo do wniesienia sprzeciwu wobec przetwarzania danych.</li>
+            <li>Prawo do wniesienia skargi do organu nadzorczego – Prezesa Urzędu Ochrony Danych Osobowych (UODO).</li>
+          </ul>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">7. Pliki cookies</h3>
+          <p class="leading-relaxed">
+            Serwis korzysta z niezbędnych plików cookies w celu utrzymania sesji użytkownika, zapamiętania zawartości koszyka zakupowego oraz poprawnego działania panelu administracyjnego. Większość przeglądarek internetowych pozwala na zarządzanie plikami cookies w ustawieniach przeglądarki.
+          </p>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">8. Zmiany polityki prywatności</h3>
+          <p class="leading-relaxed">
+            Zastrzegamy sobie prawo do wprowadzania zmian w Polityce prywatności, jeśli będą tego wymagały przepisy prawa lub zmiany w funkcjonalnościach serwisu. Aktualna wersja Polityki prywatności jest zawsze dostępna na tej podstronie.
+          </p>
+          <p class="text-xs text-graphite-muted pt-6 border-t border-graphite-100 mt-8">Ostatnia aktualizacja: 19.06.2026 r.</p>
+        </div>
       </div>
     </section>
   </div>

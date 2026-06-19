@@ -5,8 +5,73 @@ import SectionHeading from "@components/SectionHeading.astro";
 <BaseLayout title="Regulamin — MOCna!">
   <div class="home-page">
     <section class="relative scroll-mt-16 pt-10 pb-20 sm:scroll-mt-[4.5rem] sm:pt-12 sm:pb-28">
-      <div class="shell">
-        <SectionHeading title="Regulamin" />
+      <div class="shell max-w-4xl">
+        <SectionHeading title="Regulamin sklepu i usług" />
+        
+        <div class="prose mt-8 text-graphite max-w-none space-y-6 font-sans">
+          <p class="text-lg leading-relaxed text-graphite-muted">
+            Niniejszy Regulamin określa zasady korzystania ze sklepu internetowego, zakupu biletów na wydarzenia oraz rezerwacji stolików za pośrednictwem serwisu internetowego <strong>MOCna!</strong>, prowadzonej przez Fundację MOCna!.
+          </p>
+          
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">1. Postanowienia ogólne</h3>
+          <p class="leading-relaxed">
+            Właścicielem serwisu oraz sprzedawcą jest <strong>Fundacja MOCna!</strong> z siedzibą w Krakowie przy ul. Rzeczna 11A, 30-021 Kraków. Dane kontaktowe: e-mail: <a href="mailto:kawiarniamocna@gmail.com" class="text-blue hover:underline font-semibold">kawiarniamocna@gmail.com</a>, telefon: <a href="tel:+48786507513" class="text-blue hover:underline font-semibold">+48 786 507 513</a>.
+          </p>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">2. Definicje</h3>
+          <ul class="list-disc pl-5 space-y-2">
+            <li><strong>Klient</strong> – osoba fizyczna, osoba prawna lub jednostka organizacyjna nieposiadająca osobowości prawnej, składająca zamówienie w sklepie lub dokonująca rezerwacji.</li>
+            <li><strong>Sklep</strong> – sklep internetowy działający w witrynie pod adresem /sklep.</li>
+            <li><strong>Bilet</strong> – dokument uprawniający do udziału w wybranym wydarzeniu organizowanym przez kawiarnię MOCna!.</li>
+            <li><strong>Rezerwacja</strong> – usługa bezpłatnej rezerwacji stolika w określonym terminie.</li>
+          </ul>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">3. Składanie i realizacja zamówień (Sklep)</h3>
+          <p class="leading-relaxed">
+            W sklepie internetowym Klient może zakupić towary i vouchery prezentowe. Ceny podane w sklepie są cenami brutto (zawierają podatek VAT) i są wyrażone w złotych polskich (PLN). Do ceny produktów doliczany jest koszt wybranej dostawy.
+          </p>
+          <p class="leading-relaxed">Procedura złożenia zamówienia w sklepie składa się z następujących kroków:</p>
+          <ol class="list-decimal pl-5 space-y-2">
+            <li>Dodanie produktów do koszyka.</li>
+            <li>Wybór metody dostawy (kurier lub Paczkomat InPost) oraz metody płatności.</li>
+            <li>Wpisanie danych osobowych oraz teleadresowych zamawiającego.</li>
+            <li>Zaakceptowanie niniejszego Regulaminu oraz Polityki prywatności.</li>
+            <li>Potwierdzenie zamówienia poprzez kliknięcie „Zamawiam i płacę” oraz dokonanie zapłaty (chyba że wybrano płatność za pobraniem).</li>
+          </ol>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">4. Zakup biletów na wydarzenia</h3>
+          <p class="leading-relaxed">
+            Bilety na wydarzenia sprzedawane są drogą elektroniczną. Po złożeniu zamówienia i pomyślnym opłaceniu przez Stripe, bilet w formacie PDF jest wysyłany na adres e-mail Klienta. Liczba biletów na wydarzenia jest ograniczona. Bilet uprawnia do wstępu 1 osoby na konkretne wydarzenie. Zwrot biletu jest możliwy najpóźniej na 48 godzin przed planowanym rozpoczęciem wydarzenia.
+          </p>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">5. Rezerwacje stolików</h3>
+          <p class="leading-relaxed">
+            Rezerwacja stolika w kawiarni MOCna! jest dobrowolna i bezpłatna. Dokonanie rezerwacji następuje przez formularz rezerwacyjny na stronie internetowej. Potwierdzenie rezerwacji jest wysyłane na podany adres e-mail. W przypadku spóźnienia dłuższego niż 15 minut i braku kontaktu telefonicznego, rezerwacja zostaje anulowana.
+          </p>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">6. Formy płatności</h3>
+          <p class="leading-relaxed">Klient może wybrać następujące formy płatności za zamówione towary lub bilety:</p>
+          <ul class="list-disc pl-5 space-y-2">
+            <li><strong>Płatność online (Stripe):</strong> szybka płatność kartą lub metodami mobilnymi (np. BLIK / Apple Pay / Google Pay).</li>
+            <li><strong>Płatność za pobraniem (COD):</strong> płatność gotówką lub kartą u kuriera przy odbiorze przesyłki (dostępne wyłącznie dla produktów fizycznych ze sklepu).</li>
+          </ul>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">7. Prawo do odstąpienia od umowy i zwroty</h3>
+          <p class="leading-relaxed">
+            Konsument, który zawarł umowę na odległość, ma prawo odstąpić od niej bez podawania przyczyny w terminie 14 dni od dnia objęcia rzeczy w posiadanie. Aby dokonać zwrotu zakupionych produktów fizycznych, prosimy o kontakt mailowy: <a href="mailto:kawiarniamocna@gmail.com" class="text-blue hover:underline font-semibold">kawiarniamocna@gmail.com</a>. Koszt zwrotnej wysyłki towaru ponosi Klient. Prawo do odstąpienia nie przysługuje w stosunku do towarów ulegających szybkiemu zepsuciu lub mających krótki termin przydatności do użycia (np. świeże wypieki).
+          </p>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">8. Reklamacje</h3>
+          <p class="leading-relaxed">
+            W przypadku wadliwości zakupionego towaru, Klientowi przysługuje prawo do złożenia reklamacji na podstawie rękojmi. Reklamacje można zgłaszać pisemnie na adres kawiarni lub mailowo na adres: <a href="mailto:kawiarniamocna@gmail.com" class="text-blue hover:underline font-semibold">kawiarniamocna@gmail.com</a>. Rozpatrzenie reklamacji następuje w ciągu 14 dni od momentu jej otrzymania.
+          </p>
+
+          <h3 class="text-xl font-bold mt-8 border-b border-graphite-200 pb-2 text-graphite">9. Postanowienia końcowe</h3>
+          <p class="leading-relaxed">
+            W sprawach nieuregulowanych niniejszym Regulaminem mają zastosowanie przepisy Kodeksu cywilnego, ustawy o świadczeniu usług drogą elektroniczną oraz ustawy o prawach konsumenta. Wszelkie spory będą rozstrzygane przez właściwe polskie sądy powszechne.
+          </p>
+          <p class="text-xs text-graphite-muted pt-6 border-t border-graphite-100 mt-8">Ostatnia aktualizacja: 19.06.2026 r.</p>
+        </div>
       </div>
     </section>
   </div>

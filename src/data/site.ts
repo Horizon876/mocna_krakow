@@ -230,6 +230,8 @@ export type TeamMember = {
   desc: string;
   /** Ścieżka w public, np. /photos/ludzie/karolina.jpg */
   photo?: string;
+  /** Kadrowanie zdjęcia w kafelku, np. "center 15%" */
+  photoPosition?: string;
   accent: keyof typeof COLORS;
 };
 
@@ -238,76 +240,88 @@ export const TEAM: TeamMember[] = [
     slug: "kasia-kubicka",
     name: "Kasia Kubicka",
     desc: "Założycielka Fundacji MOCna!, trenerka, coachka i liderka społeczna. Od lat działa na rzecz osób z niepełnosprawnościami, tworząc miejsca, które dają szansę na rozwój, pracę i budowanie niezależności.",
-    photo: "/photos/kubicka.jpeg",
+    photo: "/photos/Kasia%20Prezeska%20Fundacji.jpg",
     accent: "orange",
   },
   {
     slug: "tadeusz",
     name: "Tadeusz",
     desc: "Współtwórca MOCnej! i cicha siła stojącą za wieloma działaniami Fundacji. Wspiera organizację od strony technicznej, logistycznej i organizacyjnej, zawsze gotowy do działania tam, gdzie jest potrzebny.",
-    photo: "/photos/tadeusz.jpeg",
+    photo: "/photos/Tadeusz%20fundator%20Fundacji.jpg",
     accent: "blue",
   },
   {
     slug: "michal-menadzer",
     name: "Michał",
     desc: "Menadżer. Wspiera rozwój przedsiębiorstwa społecznego, organizację pracy zespołu oraz realizację nowych przedsięwzięć. Dba o to, aby misja społeczna szła w parze z profesjonalnym zarządzaniem.",
-    photo: "/photos/michal.jpeg",
+    photo: "/photos/Micha%C5%82%20menad%C5%BCer.jpg",
+    photoPosition: "center 8%",
     accent: "red",
   },
   {
     slug: "kasia-b",
     name: "Kasia B",
     desc: "Koordynatorka ds. reintegracji i trenerka pracy. Wspiera pracowników w rozwoju zawodowym.",
-    photo: "/photos/kasia.jpeg",
+    photo: "/photos/Kasia.jpg",
     accent: "yellow",
   },
   {
     slug: "maja",
     name: "Maja",
     desc: "Lorem ipsum",
+    photo: "/photos/Maja.jpg",
+    photoPosition: "center 14%",
     accent: "green",
   },
   {
     slug: "karolina",
     name: "Karolina",
     desc: "Od uczestniczki rehabilitacji do pracy w kawiarni.",
+    photo: "/photos/Karolina.jpg",
     accent: "pink",
   },
   {
     slug: "wiktor",
     name: "Wiktor",
     desc: "Koordynator wydarzeń i ambasador samodzielności.",
+    photo: "/photos/Wiktor.jpg",
     accent: "blue",
   },
   {
     slug: "adam",
     name: "Adam",
     desc: "Buduje swoje doświadczenie zawodowe każdego dnia.",
+    photo: "/photos/Adam.jpg",
     accent: "orange",
   },
   {
     slug: "klaudia",
     name: "Klaudia",
     desc: "Łączy pracę z organizacją szkoleń i działań Fundacji. Wspiera rozwój MOCnej i budowanie relacji z uczestnikami oraz partnerami.",
+    photo: "/photos/Klaudia.jpg",
     accent: "green",
   },
   {
     slug: "michal-barista",
     name: "Michał",
     desc: "Barista, kelner i pasjonat wypieków. W MOCnej! łączy pracę z ludźmi z zamiłowaniem do tworzenia domowych słodkości.",
+    photo: "/photos/Micha%C5%82%20kelner.jpg",
+    photoPosition: "center 18%",
     accent: "pink",
   },
   {
     slug: "szymon",
     name: "Szymon",
     desc: "Odpowiada za działania promocyjne i wspiera organizację wydarzeń. Wnosi kreatywność, energię i świeże spojrzenie na komunikację.",
+    photo: "/photos/Szymon.jpg",
+    photoPosition: "center 16%",
     accent: "red",
   },
   {
     slug: "magda",
     name: "Magda",
     desc: "Współtworzy atmosferę MOCnej, dbając o obsługę gości i codzienne funkcjonowanie kawiarni. Jej otwartość i serdeczność sprawiają, że każdy czuje się mile widziany.",
+    photo: "/photos/Magda.jpg",
     accent: "yellow",
   },
 ];

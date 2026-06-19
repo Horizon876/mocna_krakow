@@ -152,78 +152,76 @@ export default function TableMapPicker({ onConfirm }: TableMapPickerProps) {
       </div>
 
       {step === "date" ? (
-        <div className="date-calendar border border-[#e7e6e4] bg-gradient-to-b from-white to-[#fffaf5] p-5 pb-4 shadow-[0_8px_32px_-20px_rgba(51,51,51,0.28)]">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              className="grid h-9 w-9 place-items-center border border-[#e7e6e4] bg-white text-[#2c5ea9] transition-colors hover:border-[#2c5ea9]/35 hover:bg-[#2c5ea9]/5 disabled:opacity-35 disabled:cursor-not-allowed"
-              onClick={handlePrevMonth}
-              disabled={new Date(viewYear, viewMonth, 1) <= new Date(minDate.getFullYear(), minDate.getMonth(), 1)}
-            >
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                <path d="M10 3L5 8l5 5" />
-              </svg>
-            </button>
-            <p className="flex-1 text-center font-display text-[1.05rem] font-bold tracking-[-0.02em] text-[#333333] capitalize">
-              {MONTH_NAMES[viewMonth]} {viewYear}
-            </p>
-            <button
-              type="button"
-              className="grid h-9 w-9 place-items-center border border-[#e7e6e4] bg-white text-[#2c5ea9] transition-colors hover:border-[#2c5ea9]/35 hover:bg-[#2c5ea9]/5 disabled:opacity-35 disabled:cursor-not-allowed"
-              onClick={handleNextMonth}
-              disabled={new Date(viewYear, viewMonth + 1, 0) >= maxDate}
-            >
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                <path d="M6 3l5 5-5 5" />
-              </svg>
-            </button>
-          </div>
+        <div className="bg-[#faf8f4] p-4 sm:p-6">
+          <div className="date-calendar border border-[#dddddd] bg-white px-5 py-5 sm:px-8 sm:py-6">
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <button
+                type="button"
+                className="grid h-10 w-10 shrink-0 place-items-center border border-[#dddddd] bg-white text-[#2c5ea9] transition-colors hover:border-[#2c5ea9]/40 disabled:cursor-not-allowed disabled:opacity-35"
+                onClick={handlePrevMonth}
+                disabled={new Date(viewYear, viewMonth, 1) <= new Date(minDate.getFullYear(), minDate.getMonth(), 1)}
+                aria-label="Poprzedni miesiąc"
+              >
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                  <path d="M10 3L5 8l5 5" />
+                </svg>
+              </button>
+              <p className="flex-1 text-center font-display text-[1.35rem] font-bold tracking-[-0.02em] text-[#333333] sm:text-[1.5rem]">
+                {MONTH_NAMES[viewMonth].charAt(0).toUpperCase() + MONTH_NAMES[viewMonth].slice(1)} {viewYear}
+              </p>
+              <button
+                type="button"
+                className="grid h-10 w-10 shrink-0 place-items-center border border-[#dddddd] bg-white text-[#2c5ea9] transition-colors hover:border-[#2c5ea9]/40 disabled:cursor-not-allowed disabled:opacity-35"
+                onClick={handleNextMonth}
+                disabled={new Date(viewYear, viewMonth + 1, 0) >= maxDate}
+                aria-label="Następny miesiąc"
+              >
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                  <path d="M6 3l5 5-5 5" />
+                </svg>
+              </button>
+            </div>
 
-          <div className="mb-2 grid grid-cols-7 gap-1">
-            {WEEKDAY_NAMES.map((day) => (
-              <span key={day} className="text-center text-[0.7rem] font-bold uppercase tracking-[0.08em] text-[#6b6b6b] pb-1">
-                {day}
-              </span>
-            ))}
-          </div>
+            <div className="mb-3 grid grid-cols-7">
+              {WEEKDAY_NAMES.map((day) => (
+                <span key={day} className="text-center text-[0.75rem] font-semibold uppercase tracking-[0.04em] text-[#888888]">
+                  {day}
+                </span>
+              ))}
+            </div>
 
-          <div className="grid grid-cols-7 gap-[0.35rem]">
-            {calendarDays.map((day, idx) => {
-              if (!day) return <span key={`spacer-${idx}`} className="aspect-square" />;
-              
-              let baseClass = "aspect-square grid place-items-center border border-transparent bg-white text-[0.9rem] transition-all ";
-              if (day.isDisabled) {
-                baseClass += "cursor-not-allowed pointer-events-none ";
-                if (day.isPast || !TIME_SLOTS.some((slot) => isSlotAvailable(slot, day.iso))) {
-                  baseClass += "text-[#c4c4c4] font-normal !bg-transparent ";
+            <div className="grid grid-cols-7 gap-y-1">
+              {calendarDays.map((day, idx) => {
+                if (!day) return <span key={`spacer-${idx}`} className="h-10" aria-hidden="true" />;
+
+                let baseClass = "h-10 w-full text-center text-[0.95rem] leading-10 transition-colors ";
+                if (day.isDisabled) {
+                  baseClass += "cursor-not-allowed pointer-events-none font-normal text-[#c8c8c8] ";
                 } else {
-                  baseClass += "text-[#d1d5db] font-normal !bg-transparent ";
+                  baseClass += "cursor-pointer font-medium text-[#333333] hover:text-[#2c5ea9] ";
                 }
-              } else {
-                baseClass += "font-bold text-[#333333] cursor-pointer hover:bg-[#2c5ea9]/[0.08] hover:border-[#2c5ea9]/20 hover:-translate-y-[1px] ";
-              }
 
-              if (day.isToday && !day.isDisabled) {
-                baseClass += "border-[#2c5ea9]/45 shadow-[inset_0_0_0_1px_rgba(44,94,169,0.15)] ";
-              }
+                if (selectedDate === day.iso) {
+                  baseClass = "h-10 w-full text-center text-[0.95rem] leading-10 font-bold text-[#2c5ea9] cursor-pointer ";
+                } else if (day.isToday && !day.isDisabled) {
+                  baseClass += "font-bold ";
+                }
 
-              if (selectedDate === day.iso) {
-                baseClass = "aspect-square grid place-items-center border border-[#2c5ea9] bg-[#2c5ea9] text-white font-bold cursor-pointer transition-all shadow-[0_6px_18px_-8px_rgba(44,94,169,0.65)]";
-              }
-
-              return (
-                <button
-                  key={day.iso}
-                  type="button"
-                  className={baseClass}
-                  onClick={() => !day.isDisabled && handleDayClick(day.iso)}
-                  disabled={day.isDisabled}
-                  aria-label={formatDateLabel(day.iso)}
-                >
-                  {day.date.getDate()}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={day.iso}
+                    type="button"
+                    className={baseClass}
+                    onClick={() => !day.isDisabled && handleDayClick(day.iso)}
+                    disabled={day.isDisabled}
+                    aria-label={formatDateLabel(day.iso)}
+                    aria-pressed={selectedDate === day.iso}
+                  >
+                    {day.date.getDate()}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       ) : (
@@ -239,6 +237,7 @@ export default function TableMapPicker({ onConfirm }: TableMapPickerProps) {
               onClick={() => {
                 setStep("date");
                 setSelectedTime(null);
+                document.dispatchEvent(new CustomEvent("bookingReset", { bubbles: true }));
               }}
             >
               ← Zmień datę
@@ -250,13 +249,13 @@ export default function TableMapPicker({ onConfirm }: TableMapPickerProps) {
               const available = isSlotAvailable(slot, selectedDate);
               const isSelected = selectedTime === slot;
 
-              let btnClass = "border border-[#e7e6e4] bg-white px-2 py-2.5 text-[0.875rem] transition-colors ";
+              let btnClass = "border px-2 py-2.5 text-[0.875rem] transition-colors ";
               if (!available) {
-                btnClass += "text-[#8a8a8a] font-normal cursor-not-allowed opacity-60 bg-transparent border-transparent";
+                btnClass += "cursor-not-allowed border-transparent bg-transparent font-normal text-[#8a8a8a] opacity-60";
               } else if (isSelected) {
-                btnClass += "text-white font-bold bg-[#2c5ea9] border-[#2c5ea9]";
+                btnClass += "cursor-pointer border-[#2c5ea9] bg-[#2c5ea9] font-bold text-white";
               } else {
-                btnClass += "text-[#333333] font-bold cursor-pointer hover:bg-[#2c5ea9]/[0.06] hover:border-[#2c5ea9]/35 hover:text-[#2c5ea9]";
+                btnClass += "cursor-pointer border-[#e7e6e4] bg-white font-bold text-[#333333] hover:border-[#2c5ea9]/35 hover:bg-[#2c5ea9]/[0.06] hover:text-[#2c5ea9]";
               }
 
               return (

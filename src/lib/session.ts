@@ -8,14 +8,14 @@ const COOKIE_NAME = 'admin_session';
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 8; // 8 godzin
 
 /**
- * Tworzy podpisany token sesji: timestamp.HMAC
+ * Tworzy podpisany token sesji: role:timestamp.HMAC
  */
-export async function createSessionToken(): Promise<string> {
+export async function createSessionToken(role: 'admin' | 'pracownik'): Promise<string> {
   const secret = import.meta.env.SESSION_SECRET;
   if (!secret) throw new Error('SESSION_SECRET nie jest ustawiony w .env');
 
   const expires = Date.now() + SESSION_DURATION_MS;
-  const payload = `admin:${expires}`;
+  const payload = `${role}:${expires}`;
 
   const key = await crypto.subtle.importKey(
     'raw',
@@ -40,24 +40,26 @@ export async function createSessionToken(): Promise<string> {
 
 /**
  * Weryfikuje podpisany token sesji.
- * Zwraca true jeśli token jest prawidłowy i nie wygasł.
+ * Zwraca obiekt z flagą valid i odczytaną rolą.
  */
-export async function verifySessionToken(token: string): Promise<boolean> {
+export async function verifySessionToken(token: string): Promise<{ valid: boolean; role?: 'admin' | 'pracownik' }> {
   try {
     const secret = import.meta.env.SESSION_SECRET;
-    if (!secret) return false;
+    if (!secret) return { valid: false };
 
     const lastDot = token.lastIndexOf('.');
-    if (lastDot === -1) return false;
+    if (lastDot === -1) return { valid: false };
 
     const payload = token.substring(0, lastDot);
     const sigHex = token.substring(lastDot + 1);
 
     // Sprawdź wygaśnięcie
     const parts = payload.split(':');
-    if (parts.length !== 2 || parts[0] !== 'admin') return false;
+    if (parts.length !== 2) return { valid: false };
+    const role = parts[0] as 'admin' | 'pracownik';
+    if (role !== 'admin' && role !== 'pracownik') return { valid: false };
     const expires = parseInt(parts[1], 10);
-    if (isNaN(expires) || Date.now() > expires) return false;
+    if (isNaN(expires) || Date.now() > expires) return { valid: false };
 
     // Weryfikuj podpis HMAC
     const key = await crypto.subtle.importKey(
@@ -79,9 +81,9 @@ export async function verifySessionToken(token: string): Promise<boolean> {
       new TextEncoder().encode(payload)
     );
 
-    return valid;
+    return { valid, role: valid ? role : undefined };
   } catch {
-    return false;
+    return { valid: false };
   }
 }
 

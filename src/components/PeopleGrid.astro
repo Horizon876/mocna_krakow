@@ -45,6 +45,7 @@ const TILE_ACCENTS = ["blue", "red", "green", "orange"] as const;
                       src={person.photo}
                       alt={person.name}
                       class="h-full w-full object-cover"
+                      style={person.photoPosition ? `object-position: ${person.photoPosition}` : undefined}
                       loading="lazy"
                     />
                   ) : (

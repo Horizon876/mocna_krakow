@@ -15,12 +15,21 @@ const {
   title = `${BRAND.name} — ${BRAND.tagline}`,
   description = "Społeczna kawiarnia specialty MOCna!. Tworzymy miejsca pracy dla osób z niepełnosprawnościami, organizujemy wydarzenia, szkolenia i budujemy społeczność.",
 } = Astro.props;
+
+const FONTSHARE_CSS =
+  "https://api.fontshare.com/v2/css?f[]=clash-display@600,700&f[]=satoshi@300,400,500,700&display=swap";
 ---
 <!doctype html>
 <html lang="pl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+    <link rel="preload" href={FONTSHARE_CSS} as="style" />
+    <link rel="stylesheet" href={FONTSHARE_CSS} media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href={FONTSHARE_CSS} /></noscript>
+    <link rel="preload" href="/brand/logo-kolor.svg" as="image" type="image/svg+xml" fetchpriority="high" />
     <link rel="icon" type="image/svg+xml" href="/brand/logo-kolor.svg" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#f39200" />

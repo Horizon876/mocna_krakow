@@ -1,5 +1,5 @@
 ---
-import BaseLayout from "@layouts/BaseLayout.astro";
+import CheckoutLayout from "@layouts/CheckoutLayout.astro";
 
 const inpostToken = import.meta.env.INPOST_GEOWIDGET_TOKEN ?? "";
 const inpostSandbox = import.meta.env.INPOST_GEOWIDGET_SANDBOX === "true";
@@ -9,7 +9,7 @@ const geowidgetBase = inpostSandbox
 const useGeowidget = Boolean(inpostToken);
 ---
 
-<BaseLayout title="Dostawa — MOCna!">
+<CheckoutLayout title="Dostawa — MOCna!">
   {useGeowidget && (
     <>
       <link slot="head" rel="stylesheet" href={`${geowidgetBase}/inpost-geowidget.css`} />
@@ -115,7 +115,7 @@ const useGeowidget = Boolean(inpostToken);
       </div>
     </div>
   </div>
-</BaseLayout>
+</CheckoutLayout>
 
 <script>
   import { readCart } from "../../scripts/cart";

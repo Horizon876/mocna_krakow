@@ -46,22 +46,46 @@ export default function FlyingNavReact() {
   const isSklepPage = currentPath === "/sklep" || currentPath.startsWith("/sklep/");
   const shopCtaLabel = isSklepPage ? "Koszyk" : "Sklep";
 
-  const updateScroll = useCallback(() => {
-    setIsScrolled(window.scrollY > 8);
+  const scrollRafRef = useRef<number | null>(null);
+  const dropdownCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    if (normalizePath(window.location.pathname) === "/") {
-      let active: string | null = null;
-      for (const { id, extraOffset } of HOME_SECTIONS) {
-        const section = document.getElementById(id);
-        if (!section) continue;
-        if (section.getBoundingClientRect().top <= NAV_OFFSET_PX - (extraOffset as number) + 48) {
-          active = id;
-        }
-      }
-      setActiveHomeSection(active);
-    } else {
-      setActiveHomeSection(null);
+  const openDropdownMenu = useCallback((key: string) => {
+    if (dropdownCloseTimerRef.current) {
+      clearTimeout(dropdownCloseTimerRef.current);
+      dropdownCloseTimerRef.current = null;
     }
+    setOpenDropdown(key);
+  }, []);
+
+  const scheduleCloseDropdown = useCallback(() => {
+    if (dropdownCloseTimerRef.current) clearTimeout(dropdownCloseTimerRef.current);
+    dropdownCloseTimerRef.current = setTimeout(() => setOpenDropdown(null), 180);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (dropdownCloseTimerRef.current) clearTimeout(dropdownCloseTimerRef.current);
+    };
+  }, []);
+
+  const updateScroll = useCallback(() => {
+    const scrolled = window.scrollY > 8;
+    setIsScrolled((prev) => (prev === scrolled ? prev : scrolled));
+
+    if (normalizePath(window.location.pathname) !== "/") {
+      setActiveHomeSection((prev) => (prev === null ? prev : null));
+      return;
+    }
+
+    let active: string | null = null;
+    for (const { id, extraOffset } of HOME_SECTIONS) {
+      const section = document.getElementById(id);
+      if (!section) continue;
+      if (section.getBoundingClientRect().top <= NAV_OFFSET_PX - (extraOffset as number) + 48) {
+        active = id;
+      }
+    }
+    setActiveHomeSection((prev) => (prev === active ? prev : active));
   }, []);
 
   useEffect(() => {
@@ -69,7 +93,13 @@ export default function FlyingNavReact() {
     setCurrentHash(window.location.hash);
     updateScroll();
 
-    const handleScroll = () => updateScroll();
+    const handleScroll = () => {
+      if (scrollRafRef.current !== null) return;
+      scrollRafRef.current = requestAnimationFrame(() => {
+        scrollRafRef.current = null;
+        updateScroll();
+      });
+    };
     const handleHashChange = () => {
       setCurrentPath(normalizePath(window.location.pathname));
       setCurrentHash(window.location.hash);
@@ -83,6 +113,10 @@ export default function FlyingNavReact() {
     document.addEventListener("astro:after-swap", handleHashChange);
 
     return () => {
+      if (scrollRafRef.current !== null) {
+        cancelAnimationFrame(scrollRafRef.current);
+        scrollRafRef.current = null;
+      }
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("hashchange", handleHashChange);
       document.removeEventListener("astro:after-swap", handleHashChange);
@@ -196,6 +230,10 @@ export default function FlyingNavReact() {
                 <img
                   src="/brand/logo-kolor.svg"
                   alt="MOCna!"
+                  width={184}
+                  height={104}
+                  decoding="async"
+                  fetchPriority="high"
                   className="absolute left-0 top-1/2 w-auto max-w-none transition-opacity duration-300 group-hover:opacity-85 h-[6.5rem] sm:h-[8rem] -translate-y-[calc(50%-5px)] sm:-translate-y-[calc(50%-6px)] scale-x-110 origin-left"
                 />
               </a>
@@ -208,13 +246,16 @@ export default function FlyingNavReact() {
                     {navUnderline(navLinkIsActive("/"))}
                   </a>
                 </li>
-                <li className="relative" onMouseLeave={() => setOpenDropdown(null)}>
+                <li
+                  className="relative"
+                  onMouseEnter={() => openDropdownMenu("onas")}
+                  onMouseLeave={scheduleCloseDropdown}
+                >
                   <button
                     type="button"
                     aria-expanded={openDropdown === "onas"}
                     className={navGroupTriggerClass(isGroupActive(oNas))}
                     onClick={() => setOpenDropdown(openDropdown === "onas" ? null : "onas")}
-                    onMouseEnter={() => setOpenDropdown("onas")}
                   >
                     O nas
                     {navUnderline(isGroupActive(oNas))}
@@ -222,24 +263,33 @@ export default function FlyingNavReact() {
                       <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
-                  <div className={`absolute left-0 top-full z-50 min-w-[12rem] border border-[#333]/[0.07] bg-white py-1 transition-all duration-200 shadow-[0_18px_48px_-14px_rgba(51,51,51,0.2)] ${openDropdown === "onas" ? "opacity-100 pointer-events-auto mt-[6px]" : "opacity-0 pointer-events-none mt-2"}`} role="menu">
-                    {oNas.map((item) => {
-                      const active = navLinkIsActive(item.href);
-                      return (
-                        <a key={item.href} href={item.href} role="menuitem" className={`block px-3.5 py-2.5 text-[13px] font-medium tracking-[-0.01em] transition-colors duration-150 border-l-2 ${active ? "text-[#2c5ea9] border-[#2c5ea9] bg-[#2c5ea9]/[0.07]" : "text-[#333333] border-transparent hover:bg-[#f4f4f3] hover:border-[#2c5ea9] hover:pl-[0.875rem]"}`}>
-                          {item.label}
-                        </a>
-                      );
-                    })}
+                  <div
+                    className={`absolute left-0 top-full z-50 min-w-[12rem] pt-1.5 transition-all duration-200 ${openDropdown === "onas" ? "pointer-events-auto" : "pointer-events-none"}`}
+                    onMouseEnter={() => openDropdownMenu("onas")}
+                    onMouseLeave={scheduleCloseDropdown}
+                  >
+                    <div className={`border border-[#333]/[0.07] bg-white py-1 shadow-[0_18px_48px_-14px_rgba(51,51,51,0.2)] transition-opacity duration-200 ${openDropdown === "onas" ? "opacity-100" : "opacity-0"}`} role="menu">
+                      {oNas.map((item) => {
+                        const active = navLinkIsActive(item.href);
+                        return (
+                          <a key={item.href} href={item.href} role="menuitem" className={`block px-3.5 py-2.5 text-[13px] font-medium tracking-[-0.01em] transition-colors duration-150 border-l-2 ${active ? "text-[#2c5ea9] border-[#2c5ea9] bg-[#2c5ea9]/[0.07]" : "text-[#333333] border-transparent hover:bg-[#f4f4f3] hover:border-[#2c5ea9] hover:pl-[0.875rem]"}`}>
+                            {item.label}
+                          </a>
+                        );
+                      })}
+                    </div>
                   </div>
                 </li>
-                <li className="relative" onMouseLeave={() => setOpenDropdown(null)}>
+                <li
+                  className="relative"
+                  onMouseEnter={() => openDropdownMenu("oferta")}
+                  onMouseLeave={scheduleCloseDropdown}
+                >
                   <button
                     type="button"
                     aria-expanded={openDropdown === "oferta"}
                     className={navGroupTriggerClass(isGroupActive(oferta))}
                     onClick={() => setOpenDropdown(openDropdown === "oferta" ? null : "oferta")}
-                    onMouseEnter={() => setOpenDropdown("oferta")}
                   >
                     Oferta
                     {navUnderline(isGroupActive(oferta))}
@@ -247,15 +297,21 @@ export default function FlyingNavReact() {
                       <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </button>
-                  <div className={`absolute left-0 top-full z-50 min-w-[12rem] border border-[#333]/[0.07] bg-white py-1 transition-all duration-200 shadow-[0_18px_48px_-14px_rgba(51,51,51,0.2)] ${openDropdown === "oferta" ? "opacity-100 pointer-events-auto mt-[6px]" : "opacity-0 pointer-events-none mt-2"}`} role="menu">
-                    {oferta.map((item) => {
-                      const active = navLinkIsActive(item.href);
-                      return (
-                        <a key={item.href} href={item.href} role="menuitem" className={`block px-3.5 py-2.5 text-[13px] font-medium tracking-[-0.01em] transition-colors duration-150 border-l-2 ${active ? "text-[#2c5ea9] border-[#2c5ea9] bg-[#2c5ea9]/[0.07]" : "text-[#333333] border-transparent hover:bg-[#f4f4f3] hover:border-[#2c5ea9] hover:pl-[0.875rem]"}`}>
-                          {item.label}
-                        </a>
-                      );
-                    })}
+                  <div
+                    className={`absolute left-0 top-full z-50 min-w-[12rem] pt-1.5 transition-all duration-200 ${openDropdown === "oferta" ? "pointer-events-auto" : "pointer-events-none"}`}
+                    onMouseEnter={() => openDropdownMenu("oferta")}
+                    onMouseLeave={scheduleCloseDropdown}
+                  >
+                    <div className={`border border-[#333]/[0.07] bg-white py-1 shadow-[0_18px_48px_-14px_rgba(51,51,51,0.2)] transition-opacity duration-200 ${openDropdown === "oferta" ? "opacity-100" : "opacity-0"}`} role="menu">
+                      {oferta.map((item) => {
+                        const active = navLinkIsActive(item.href);
+                        return (
+                          <a key={item.href} href={item.href} role="menuitem" className={`block px-3.5 py-2.5 text-[13px] font-medium tracking-[-0.01em] transition-colors duration-150 border-l-2 ${active ? "text-[#2c5ea9] border-[#2c5ea9] bg-[#2c5ea9]/[0.07]" : "text-[#333333] border-transparent hover:bg-[#f4f4f3] hover:border-[#2c5ea9] hover:pl-[0.875rem]"}`}>
+                            {item.label}
+                          </a>
+                        );
+                      })}
+                    </div>
                   </div>
                 </li>
                 <li>
@@ -275,7 +331,7 @@ export default function FlyingNavReact() {
                 </li>
               </ul>
 
-              <div className="flex items-center gap-1.5">
+              <div className="relative z-20 flex shrink-0 items-center gap-1.5">
                 <div className="hidden items-center gap-1.5 sm:flex">
                   <a
                     href="/sklep"
@@ -354,9 +410,9 @@ export default function FlyingNavReact() {
                   style={isDrawerOpen ? { backgroundColor: "#333333", color: "#ffffff", borderColor: "#333333" } : {}}
                 >
                   <span className="flex flex-col items-center gap-[5px]" aria-hidden="true">
-                    <span className={`block h-[2px] w-[20px] bg-currentColor rounded-none transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] ${isDrawerOpen ? "translate-y-[7px] rotate-45" : ""}`}></span>
-                    <span className={`block h-[2px] w-[20px] bg-currentColor rounded-none transition-all duration-200 ${isDrawerOpen ? "opacity-0 scale-x-0" : ""}`}></span>
-                    <span className={`block h-[2px] w-[20px] bg-currentColor rounded-none transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] ${isDrawerOpen ? "-translate-y-[7px] -rotate-45" : ""}`}></span>
+                    <span className={`block h-[2px] w-[20px] bg-current rounded-none transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] ${isDrawerOpen ? "translate-y-[7px] rotate-45" : ""}`}></span>
+                    <span className={`block h-[2px] w-[20px] bg-current rounded-none transition-all duration-200 ${isDrawerOpen ? "opacity-0 scale-x-0" : ""}`}></span>
+                    <span className={`block h-[2px] w-[20px] bg-current rounded-none transition-all duration-400 ease-[cubic-bezier(0.22,1,0.36,1)] ${isDrawerOpen ? "-translate-y-[7px] -rotate-45" : ""}`}></span>
                   </span>
                 </button>
               </div>
@@ -376,7 +432,15 @@ export default function FlyingNavReact() {
           <div className="relative flex h-16 shrink-0 items-center justify-between border-b border-[#333]/[0.07] bg-transparent sm:h-[4.5rem]">
             <a href="/" onClick={() => setIsDrawerOpen(false)} className="group relative block shrink-0" aria-label="MOCna! – strona główna">
               <span className="block h-16 w-[8.5rem] sm:h-[4.5rem] sm:w-[11.5rem]" aria-hidden="true"></span>
-              <img src="/brand/logo-kolor.svg" alt="MOCna!" className="absolute left-0 top-1/2 w-auto max-w-none transition-opacity duration-300 group-hover:opacity-85 h-[6.5rem] sm:h-[8rem] -translate-y-[calc(50%-5px)] sm:-translate-y-[calc(50%-6px)] scale-x-110 origin-left" />
+              <img
+                src="/brand/logo-kolor.svg"
+                alt="MOCna!"
+                width={184}
+                height={104}
+                decoding="async"
+                fetchPriority="high"
+                className="absolute left-0 top-1/2 w-auto max-w-none transition-opacity duration-300 group-hover:opacity-85 h-[6.5rem] sm:h-[8rem] -translate-y-[calc(50%-5px)] sm:-translate-y-[calc(50%-6px)] scale-x-110 origin-left"
+              />
             </a>
             <button
               type="button"

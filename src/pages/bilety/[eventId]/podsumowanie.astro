@@ -1,5 +1,5 @@
 ---
-import BaseLayout from "@layouts/BaseLayout.astro";
+import CheckoutLayout from "@layouts/CheckoutLayout.astro";
 import { db } from "../../../db";
 import { events } from "../../../db/schema";
 import { eq } from "drizzle-orm";
@@ -17,7 +17,7 @@ const dataStr = dateObj.toLocaleDateString('pl-PL', { day: '2-digit', month: 'lo
 const godzinaStr = dateObj.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
 ---
 
-<BaseLayout title={`Podsumowanie — ${event.title} — MOCna!`}>
+<CheckoutLayout title={`Podsumowanie — ${event.title} — MOCna!`}>
   <div class="checkout-page home-page pb-20 pt-16 sm:pb-28 sm:pt-24 min-h-screen">
     <div class="shell max-w-3xl">
 
@@ -64,9 +64,23 @@ const godzinaStr = dateObj.toLocaleTimeString('pl-PL', { hour: '2-digit', minute
             </div>
           </div>
 
+          <!-- Zgody formalne -->
+          <div class="checkout-agreements border-t border-graphite-200 pt-6 mt-6">
+            <label class="flex items-start gap-3 cursor-pointer text-sm text-graphite-muted select-none">
+              <input type="checkbox" id="accept-terms-checkbox" class="mt-1 h-4 w-4 rounded border-graphite-300 text-blue focus:ring-blue cursor-pointer" required />
+              <span>
+                Akceptuję <a href="/regulamin" target="_blank" class="text-blue hover:underline font-bold">Regulamin</a> oraz 
+                <a href="/polityka-prywatnosci" target="_blank" class="text-blue hover:underline font-bold">Politykę prywatności</a> kawiarni MOCna! *
+              </span>
+            </label>
+            <p id="agreement-error" class="text-red text-xs font-semibold mt-2 hidden" role="alert">
+              Musisz zaakceptować regulamin i politykę prywatności, aby złożyć zamówienie.
+            </p>
+          </div>
+
           <div id="summary-error" class="checkout-error hidden"></div>
 
-          <div class="flex flex-col-reverse sm:flex-row gap-3">
+          <div class="flex flex-col-reverse sm:flex-row gap-3 pt-4">
             <a href={`/bilety/${eventId}/dane`} class="btn border border-graphite-200 bg-white text-graphite hover:bg-graphite-50 justify-center py-4 text-center">
               Wróć
             </a>
@@ -79,7 +93,7 @@ const godzinaStr = dateObj.toLocaleTimeString('pl-PL', { hour: '2-digit', minute
 
     </div>
   </div>
-</BaseLayout>
+</CheckoutLayout>
 
 <script>
 
@@ -140,7 +154,25 @@ const godzinaStr = dateObj.toLocaleTimeString('pl-PL', { hour: '2-digit', minute
     if (!payBtn || payBtn.dataset.bound === "true") return;
     payBtn.dataset.bound = "true";
 
+    const checkbox = document.getElementById("accept-terms-checkbox") as HTMLInputElement | null;
+    const agreementErrorEl = document.getElementById("agreement-error");
+
+    if (checkbox) {
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          agreementErrorEl?.classList.add("hidden");
+        }
+      });
+    }
+
     payBtn.addEventListener("click", async () => {
+      if (checkbox && !checkbox.checked) {
+        agreementErrorEl?.classList.remove("hidden");
+        checkbox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        return;
+      }
+      agreementErrorEl?.classList.add("hidden");
+
       payBtn.disabled = true;
       payBtn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-5 w-5 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Przetwarzanie...`;
       errorEl?.classList.add("hidden");

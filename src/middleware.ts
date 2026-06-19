@@ -15,11 +15,20 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       return context.redirect('/admin/login');
     }
 
-    const isValid = await verifySessionToken(token);
-    if (!isValid) {
+    const session = await verifySessionToken(token);
+    if (!session.valid || !session.role) {
       // Usuń przeterminowane/nieprawidłowe ciasteczko
       context.cookies.delete(COOKIE_NAME_EXPORT, { path: '/' });
       return context.redirect('/admin/login?expired=1');
+    }
+
+    context.locals.adminRole = session.role;
+
+    if (session.role === 'pracownik') {
+      const restrictedRoutes = ['/admin/sklep', '/admin/wydarzenia', '/admin/kawiarnia'];
+      if (restrictedRoutes.some(route => pathname.startsWith(route))) {
+        return context.redirect('/admin/dashboard?forbidden=1');
+      }
     }
   }
 

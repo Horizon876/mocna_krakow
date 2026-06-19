@@ -1,0 +1,108 @@
+.checkout-page .checkout-option {
+  border-radius: 0;
+  background: #fff;
+}
+.checkout-page .checkout-option:hover {
+  border-color: #2c5ea9;
+}
+.checkout-page .checkout-option:has(:checked) {
+  border-color: #2c5ea9;
+  background: #2c5ea9;
+}
+.checkout-page .checkout-option:has(:checked) .option-title,
+.checkout-page .checkout-option:has(:checked) .option-desc,
+.checkout-page .checkout-option:has(:checked) .option-price {
+  color: #fff;
+}
+.checkout-page .checkout-radio {
+  accent-color: #2c5ea9;
+}
+.checkout-page .checkout-error {
+  padding: 1rem;
+  background: #de3c42;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+  border: 2px solid #de3c42;
+  border-radius: 0;
+}
+.checkout-page .checkout-highlight-green {
+  border: 2px solid #00955e;
+  background: #00955e;
+  color: #fff;
+  border-radius: 0;
+}
+.checkout-page .checkout-highlight-red {
+  border: 2px solid #de3c42;
+  background: #de3c42;
+  color: #fff;
+  border-radius: 0;
+}
+.checkout-page .checkout-total-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  background: #00955e;
+  border: 2px solid #00955e;
+  color: #fff;
+  border-radius: 0;
+}
+.checkout-page .checkout-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.checkout-page .checkout-total-row span:last-child {
+  font-weight: 700;
+}
+.checkout-page .checkout-total-final {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.35);
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+.checkout-page .checkout-total-final span:last-child {
+  font-size: 1.75rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+.checkout-page .field-input {
+  appearance: none;
+  border: 1.5px solid #dcd7cf;
+  border-radius: 0;
+  padding: 0.85rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #1c1c1c;
+  background-color: #fff;
+  height: auto;
+  box-shadow: none;
+}
+.checkout-page .field-input:focus {
+  outline: none;
+  border-color: #2c5ea9;
+  box-shadow: 0 0 0 2px rgba(44, 94, 169, 0.15);
+}
+.checkout-page .paczkomat-pick {
+  border-radius: 0;
+  background: #fff;
+  cursor: pointer;
+}
+.checkout-page .paczkomat-pick:hover {
+  border-color: #2c5ea9;
+  background: #2c5ea9;
+  color: #fff;
+}
+.checkout-page .paczkomat-pick:hover .text-graphite,
+.checkout-page .paczkomat-pick:hover .text-graphite-muted {
+  color: #fff;
+}

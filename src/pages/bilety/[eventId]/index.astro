@@ -1,5 +1,5 @@
 ---
-import BaseLayout from "@layouts/BaseLayout.astro";
+import CheckoutLayout from "@layouts/CheckoutLayout.astro";
 import { db } from "../../../db";
 import { events } from "../../../db/schema";
 import { eq } from "drizzle-orm";
@@ -21,7 +21,7 @@ const dostepneMiejsca = event.seatLimit - event.enrolledCount;
 const isBezplatne = event.ticketPrice === 0;
 ---
 
-<BaseLayout title={`Kup bilet: ${event.title} — MOCna!`}>
+<CheckoutLayout title={`Kup bilet: ${event.title} — MOCna!`}>
   <div class="checkout-page home-page pb-20 pt-16 sm:pb-28 sm:pt-24 min-h-screen">
     <div class="shell max-w-3xl">
 
@@ -129,7 +129,7 @@ const isBezplatne = event.ticketPrice === 0;
 
     </div>
   </div>
-</BaseLayout>
+</CheckoutLayout>
 
 <script>
   import { patchTicketDraft } from "../../../scripts/ticket-draft";

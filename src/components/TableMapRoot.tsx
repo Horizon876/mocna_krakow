@@ -48,6 +48,7 @@ export default function TableMapRoot({ initialOccupiedTables = [] }: TableMapRoo
   const handleBackToPicker = () => {
     setStep("picker");
     setSelectedTableId(null);
+    document.dispatchEvent(new CustomEvent("bookingReset", { bubbles: true }));
   };
 
   const handleTableSelect = (id: string) => {

@@ -27,4 +27,4 @@ export const MONTH_NAMES = [
   "styczeń", "luty", "marzec", "kwiecień", "maj", "czerwiec",
   "lipiec", "sierpień", "wrzesień", "październik", "listopad", "grudzień",
 ];
-export const WEEKDAY_NAMES = ["Pon", "Wt", "Śr", "Cz", "Pt", "So", "Nd"];
+export const WEEKDAY_NAMES = ["PON", "WT", "ŚR", "CZ", "PT", "SO", "ND"];

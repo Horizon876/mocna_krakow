@@ -7,7 +7,10 @@ if (logoutResult?.data?.success) {
   return Astro.redirect('/admin/login');
 }
 
-const tiles = [
+const role = Astro.locals.adminRole;
+const forbidden = Astro.url.searchParams.get('forbidden');
+
+const allTiles = [
   {
     label: "Sklep",
     href: "/admin/sklep",
@@ -45,9 +48,18 @@ const tiles = [
     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-10 w-10" aria-hidden="true"><rect x="3" y="5" width="18" height="14"/><path d="M7 15h4"/><path d="M7 11h10"/><path d="M3 9h18"/></svg>`,
   },
 ];
+
+const tiles = role === 'pracownik'
+  ? allTiles.filter(t => !['Sklep', 'Wydarzenia', 'Kawiarnia'].includes(t.label))
+  : allTiles;
 ---
 
 <AdminLayout title="Panel Administratora - MOCna" activeTab="dashboard" centered>
+  {forbidden && (
+    <div class="mb-8 w-full max-w-5xl rounded-lg bg-red/10 p-4 text-center text-sm text-red lg:max-w-6xl">
+      <strong>Brak dostępu.</strong> Twoje konto nie posiada uprawnień do przeglądania tej sekcji.
+    </div>
+  )}
   <div class="admin-dashboard-grid grid w-full max-w-5xl grid-cols-1 gap-5 xs:grid-cols-2 sm:gap-6 sm:grid-cols-3 lg:max-w-6xl">
     {
       tiles.map((tile) => (

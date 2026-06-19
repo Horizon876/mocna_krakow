@@ -28,7 +28,10 @@ export default defineConfig({
     react(),
   ],
   prefetch: {
-    prefetchAll: true,
-    defaultStrategy: "viewport",
+    prefetchAll: false,
+    defaultStrategy: "hover",
+  },
+  build: {
+    inlineStylesheets: "auto",
   },
 });

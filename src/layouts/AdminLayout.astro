@@ -18,7 +18,9 @@ const {
   centered = false,
 } = Astro.props;
 
-const tabs = [
+const role = Astro.locals.adminRole;
+
+const allTabs = [
   { id: "dashboard" as const, label: "Pulpit", href: "/admin/dashboard" },
   { id: "sklep" as const, label: "Sklep", href: "/admin/sklep" },
   { id: "zamowienia" as const, label: "Zamówienia", href: "/admin/zamowienia" },
@@ -27,6 +29,10 @@ const tabs = [
   { id: "kawiarnia" as const, label: "Kawiarnia", href: "/admin/kawiarnia" },
   { id: "rezerwacje" as const, label: "Rezerwacje", href: "/admin/rezerwacje" },
 ];
+
+const tabs = role === 'pracownik'
+  ? allTabs.filter(t => !['sklep', 'wydarzenia', 'kawiarnia'].includes(t.id))
+  : allTabs;
 
 const navLinkBase =
   "nav-link relative inline-flex items-center px-3 py-1.5 text-[13px] font-medium leading-none tracking-[-0.01em] transition-colors duration-200";
@@ -50,12 +56,20 @@ const mobileTabClass = (active: boolean) =>
       ? "bg-blue/10 text-blue"
       : "bg-graphite-100 text-graphite hover:bg-graphite-200",
   ] as const;
+
+const FONTSHARE_CSS =
+  "https://api.fontshare.com/v2/css?f[]=clash-display@600,700&f[]=satoshi@300,400,500,700&display=swap";
 ---
 <!doctype html>
 <html lang="pl" class:list={[noScroll && "h-full overflow-hidden"]}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+    <link rel="preload" href={FONTSHARE_CSS} as="style" />
+    <link rel="stylesheet" href={FONTSHARE_CSS} media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href={FONTSHARE_CSS} /></noscript>
     <link rel="icon" type="image/svg+xml" href="/brand/logo-kolor.svg" />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="theme-color" content="#f39200" />
