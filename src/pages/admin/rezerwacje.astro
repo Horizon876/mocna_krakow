@@ -12,13 +12,15 @@ if (logoutResult?.data?.success) {
 
 const cancelResult = Astro.getActionResult(actions.cancelReservation);
 const deleteResult = Astro.getActionResult(actions.deleteReservation);
-if (cancelResult?.data?.success || deleteResult?.data?.success) {
+const anonResult = Astro.getActionResult(actions.anonymizeReservations);
+if (cancelResult?.data?.success || deleteResult?.data?.success || anonResult?.data?.success) {
   return Astro.redirect('/admin/rezerwacje');
 }
 
 // Filtry
 const filterStatus = Astro.url.searchParams.get('status') ?? 'all';
 const filterDate   = Astro.url.searchParams.get('date')   ?? '';
+const searchQuery  = Astro.url.searchParams.get('search')?.toLowerCase() ?? '';
 
 const allReservations = await db
   .select()
@@ -28,7 +30,21 @@ const allReservations = await db
 const filtered = allReservations.filter((r) => {
   if (filterStatus !== 'all' && r.status !== filterStatus) return false;
   if (filterDate && r.reservationDate !== filterDate) return false;
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      r.firstName.toLowerCase().includes(q) ||
+      r.lastName.toLowerCase().includes(q) ||
+      (r.phone || '').toLowerCase().includes(q) ||
+      (r.email || '').toLowerCase().includes(q) ||
+      r.id.toLowerCase().includes(q);
+    if (!matchesSearch) return false;
+  }
   return true;
+}).sort((a, b) => {
+  if (a.status === b.status) return 0;
+  if (a.status === 'confirmed') return -1;
+  return 1;
 });
 
 const TABLE_LABELS: Record<string, string> = {
@@ -76,10 +92,21 @@ function formatDate(d: string) {
         />
       </div>
       <div class="w-44">
-        <span class="field-label mb-1 block invisible" aria-hidden="true">Filtruj</span>
-        <button type="submit" class="btn btn-orange filter-control w-full text-sm">Filtruj</button>
+        <label class="field-label mb-1 block" for="f-search">Wyszukaj</label>
+        <input
+          type="text"
+          id="f-search"
+          name="search"
+          value={Astro.url.searchParams.get('search') ?? ''}
+          placeholder="Imię, nazwisko, tel, ID..."
+          class="field-input filter-control"
+        />
       </div>
-      {(filterStatus !== 'all' || filterDate) && (
+      <div class="w-44">
+        <span class="field-label mb-1 block invisible" aria-hidden="true">Szukaj</span>
+        <button type="submit" class="btn btn-orange filter-control w-full text-sm">Szukaj</button>
+      </div>
+      {(filterStatus !== 'all' || filterDate || searchQuery) && (
         <div class="w-44">
           <span class="field-label mb-1 block invisible" aria-hidden="true">Wyczyść</span>
           <a href="/admin/rezerwacje" class="btn btn-outline filter-control w-full text-sm">Wyczyść</a>
@@ -111,7 +138,6 @@ function formatDate(d: string) {
               {filtered.map((r) => (
                 <tr class:list={[
                   "border-b border-graphite-200/40 transition-colors hover:bg-graphite/[.02]",
-                  r.status === 'cancelled' && "opacity-55",
                 ]}>
                   <td class="px-4 py-3 font-medium text-graphite whitespace-nowrap">
                     {formatDate(r.reservationDate)}<br />
@@ -141,22 +167,25 @@ function formatDate(d: string) {
                     )}
                   </td>
                   <td class="px-4 py-3">
-                    <span class:list={[
-                      "pill !rounded-none !border-none !px-3 !py-1 !text-xs whitespace-nowrap",
-                      r.status === 'confirmed' ? "bg-green/10 text-green" : "bg-graphite/10 text-graphite-muted",
-                    ]}>
-                      {r.status === 'confirmed' ? 'Potwierdzona' : 'Anulowana'}
-                    </span>
+                    {r.status === 'confirmed' ? (
+                      <span class="pill !rounded-none !border-none !px-3 !py-1 !text-xs font-bold text-white whitespace-nowrap inline-block w-24 text-center bg-green">
+                        Potwierdzona
+                      </span>
+                    ) : (
+                      <span class="text-xs font-bold text-graphite-muted whitespace-nowrap inline-block w-24 text-center">
+                        Anulowana
+                      </span>
+                    )}
                   </td>
                   <td class="px-4 py-3 text-right">
                     {r.status === 'confirmed' && (
                       <form
                         method="POST"
                         action={actions.cancelReservation}
-                        onsubmit="return confirm('Anulować tę rezerwację?');"
+                        onsubmit="if(!confirm('Anulować tę rezerwację?')) event.preventDefault();"
                       >
                         <input type="hidden" name="id" value={r.id} />
-                        <button type="submit" class="btn btn-delete px-3 py-1.5 text-xs">
+                        <button type="submit" class="btn bg-red hover:bg-red/90 text-white font-bold border border-red px-3 py-1.5 text-xs rounded-none w-20 text-center">
                           Anuluj
                         </button>
                       </form>
@@ -165,10 +194,10 @@ function formatDate(d: string) {
                       <form
                         method="POST"
                         action={actions.deleteReservation}
-                        onsubmit="return confirm('Trwale usunąć tę rezerwację? Tej operacji nie można cofnąć.');"
+                        onsubmit="if(!confirm('Trwale usunąć tę rezerwację? Tej operacji nie można cofnąć.')) event.preventDefault();"
                       >
                         <input type="hidden" name="id" value={r.id} />
-                        <button type="submit" class="btn btn-delete px-3 py-1.5 text-xs">
+                        <button type="submit" class="btn bg-red hover:bg-red/90 text-white font-bold border border-red px-3 py-1.5 text-xs rounded-none w-20 text-center">
                           Usuń
                         </button>
                       </form>
@@ -180,6 +209,21 @@ function formatDate(d: string) {
           </table>
         </div>
       )}
+    </div>
+
+    <!-- Sekcja konserwacji danych -->
+    <div class="border border-graphite-200 bg-white p-6 rounded-none mt-8">
+      <h3 class="text-base font-bold text-graphite mb-1">Anonimizacja starych danych (RODO)</h3>
+      <p class="text-xs text-graphite-muted mb-4 leading-relaxed max-w-2xl">
+        W celu ochrony prywatności klientów oraz przestrzegania przepisów RODO, dane osobowe ze starszych rezerwacji powinny być regularnie usuwane. 
+        Poniższa akcja trwale zanonimizuje dane kontaktowe (imię, nazwisko, e-mail, telefon) oraz uwagi we wszystkich rezerwacjach starszych niż 3 miesiące. 
+        Terminy rezerwacji oraz przypisania stolików zostaną zachowane do celów statystycznych.
+      </p>
+      <form method="POST" action={actions.anonymizeReservations} onsubmit="if(!confirm('Zanonimizować rezerwacje starsze niż 3 miesiące? Zostaną ukryte dane osobowe klientów i uwagi. Tej operacji nie można cofnąć.')) event.preventDefault();">
+        <button type="submit" class="btn bg-red hover:bg-red/90 border border-red text-white text-xs px-4 py-2 font-bold rounded-none">
+          Uruchom anonimizację danych starszych niż 3 miesiące
+        </button>
+      </form>
     </div>
 
   </div>

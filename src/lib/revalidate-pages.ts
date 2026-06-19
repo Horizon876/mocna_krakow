@@ -2,7 +2,9 @@
 export async function revalidateEventsPage(origin: string): Promise<boolean> {
   try {
     const secret = import.meta.env.REVALIDATE_SECRET;
-    const headers: HeadersInit = secret ? { "x-revalidate-secret": secret } : {};
+    const headers: HeadersInit = secret
+      ? { "x-revalidate-secret": secret }
+      : {};
     const res = await fetch(`${origin}/wydarzenia`, {
       method: "GET",
       headers,

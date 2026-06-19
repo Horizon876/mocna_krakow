@@ -5,9 +5,11 @@ function scrollToBookingSection() {
   if (!anchor) return;
 
   const navOffset =
-    parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 72;
+    parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) ||
+    72;
   const extraGap = 24;
-  const top = anchor.getBoundingClientRect().top + window.scrollY - navOffset - extraGap;
+  const top =
+    anchor.getBoundingClientRect().top + window.scrollY - navOffset - extraGap;
 
   window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
 }
@@ -28,9 +30,9 @@ function hideFormError() {
 }
 
 function showSuccess(tableId: string, date: string, time: string) {
-  const flow    = document.getElementById("booking-flow");
+  const flow = document.getElementById("booking-flow");
   const success = document.getElementById("booking-success");
-  const text    = document.getElementById("booking-success-text");
+  const text = document.getElementById("booking-success-text");
   if (!flow || !success || !text) return;
 
   const dateLabel = date.split("-").reverse().join(".");
@@ -46,7 +48,9 @@ function showSuccess(tableId: string, date: string, time: string) {
 }
 
 function initBookingForm() {
-  const form = document.getElementById("booking-form") as HTMLFormElement | null;
+  const form = document.getElementById(
+    "booking-form",
+  ) as HTMLFormElement | null;
   if (!form || form.dataset.bound === "1") return;
   form.dataset.bound = "1";
 
@@ -59,7 +63,9 @@ function initBookingForm() {
       return;
     }
 
-    const btn = document.getElementById("form-submit-btn") as HTMLButtonElement | null;
+    const btn = document.getElementById(
+      "form-submit-btn",
+    ) as HTMLButtonElement | null;
     const originalLabel = btn?.textContent ?? "";
     if (btn) {
       btn.disabled = true;
@@ -67,7 +73,10 @@ function initBookingForm() {
     }
 
     try {
-      const res  = await fetch("/api/reservations", { method: "POST", body: new FormData(form) });
+      const res = await fetch("/api/reservations", {
+        method: "POST",
+        body: new FormData(form),
+      });
       const data = await res.json().catch(() => null);
 
       if (data?.success) {
@@ -76,7 +85,7 @@ function initBookingForm() {
       }
 
       showFormError(
-        data?.message ?? "Nie udało się złożyć rezerwacji. Spróbuj ponownie."
+        data?.message ?? "Nie udało się złożyć rezerwacji. Spróbuj ponownie.",
       );
     } catch {
       showFormError("Błąd połączenia. Sprawdź internet i spróbuj ponownie.");
@@ -96,9 +105,10 @@ document.addEventListener("tableSelected", (e) => {
   if (!form) return;
 
   hideFormError();
-  (document.getElementById("form-table-id") as HTMLInputElement).value = tableId ?? "";
-  (document.getElementById("form-date")     as HTMLInputElement).value = date    ?? "";
-  (document.getElementById("form-time")     as HTMLInputElement).value = time    ?? "";
+  (document.getElementById("form-table-id") as HTMLInputElement).value =
+    tableId ?? "";
+  (document.getElementById("form-date") as HTMLInputElement).value = date ?? "";
+  (document.getElementById("form-time") as HTMLInputElement).value = time ?? "";
 
   form.classList.remove("hidden");
   requestAnimationFrame(() => scrollToBookingSection());

@@ -1,7 +1,7 @@
-import { db } from '../db';
-import { reservations } from '../db/schema';
-import { and, eq } from 'drizzle-orm';
-import { sendReservationCancellation } from './reservation-email';
+import { db } from "../db";
+import { reservations } from "../db/schema";
+import { and, eq } from "drizzle-orm";
+import { sendReservationCancellation } from "./reservation-email";
 
 export type ReservationRow = typeof reservations.$inferSelect;
 
@@ -9,7 +9,12 @@ export async function findConfirmedByCancelToken(token: string) {
   const rows = await db
     .select()
     .from(reservations)
-    .where(and(eq(reservations.cancelToken, token), eq(reservations.status, 'confirmed')))
+    .where(
+      and(
+        eq(reservations.cancelToken, token),
+        eq(reservations.status, "confirmed"),
+      ),
+    )
     .limit(1);
   return rows[0] ?? null;
 }
@@ -37,8 +42,8 @@ async function notifyCancellation(reservation: ReservationRow) {
 export async function cancelReservationById(id: string) {
   const rows = await db
     .update(reservations)
-    .set({ status: 'cancelled' })
-    .where(and(eq(reservations.id, id), eq(reservations.status, 'confirmed')))
+    .set({ status: "cancelled" })
+    .where(and(eq(reservations.id, id), eq(reservations.status, "confirmed")))
     .returning();
 
   const reservation = rows[0];
@@ -51,8 +56,13 @@ export async function cancelReservationById(id: string) {
 export async function cancelReservationByToken(token: string) {
   const rows = await db
     .update(reservations)
-    .set({ status: 'cancelled' })
-    .where(and(eq(reservations.cancelToken, token), eq(reservations.status, 'confirmed')))
+    .set({ status: "cancelled" })
+    .where(
+      and(
+        eq(reservations.cancelToken, token),
+        eq(reservations.status, "confirmed"),
+      ),
+    )
     .returning();
 
   const reservation = rows[0];

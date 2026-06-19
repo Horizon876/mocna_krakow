@@ -54,7 +54,9 @@ export default function Counter({
     const el = ref.current;
     if (!el) return;
 
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     if (reduce) {
       setDisplay(value);
       return;
@@ -67,7 +69,7 @@ export default function Counter({
           io.disconnect();
         }
       },
-      { threshold: 0.35 }
+      { threshold: 0.35 },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -93,11 +95,12 @@ export default function Counter({
 
   if (variant === "tile") {
     const compact = tileSize === "compact";
-    const valueSize = value >= 1000
-      ? "text-[clamp(1.1rem,2.2vw,1.65rem)]"
-      : compact
-        ? "text-[clamp(1.45rem,2.8vw,1.9rem)]"
-        : "text-[clamp(1.65rem,3.8vw,2.35rem)]";
+    const valueSize =
+      value >= 1000
+        ? "text-[clamp(1.1rem,2.2vw,1.65rem)]"
+        : compact
+          ? "text-[clamp(1.45rem,2.8vw,1.9rem)]"
+          : "text-[clamp(1.65rem,3.8vw,2.35rem)]";
 
     return (
       <div

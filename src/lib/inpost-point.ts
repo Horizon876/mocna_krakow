@@ -21,12 +21,17 @@ export function parseInPostPointAddress(point: InPostPointLike) {
   const addr = point.address ?? {};
   const details = point.address_details ?? {};
 
-  let zipCode = (details.post_code || addr.post_code || addr.zipCode || '').trim();
-  let city = (details.city || addr.city || '').trim();
+  let zipCode = (
+    details.post_code ||
+    addr.post_code ||
+    addr.zipCode ||
+    ""
+  ).trim();
+  let city = (details.city || addr.city || "").trim();
 
   // ShipX często zwraca kod i miasto w line2: "31-801 Kraków"
   if (!zipCode || !city) {
-    const line2 = (addr.line2 || '').trim();
+    const line2 = (addr.line2 || "").trim();
     const match = line2.match(/^(\d{2}-\d{3})\s+(.+)$/);
     if (match) {
       zipCode = zipCode || match[1];
@@ -34,8 +39,11 @@ export function parseInPostPointAddress(point: InPostPointLike) {
     }
   }
 
-  const streetFromDetails = [details.street, details.building_number].filter(Boolean).join(' ').trim();
-  const address = (addr.line1 || streetFromDetails || point.name || '').trim();
+  const streetFromDetails = [details.street, details.building_number]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  const address = (addr.line1 || streetFromDetails || point.name || "").trim();
 
   return { address, zipCode, city };
 }

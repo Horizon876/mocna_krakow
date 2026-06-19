@@ -10,11 +10,26 @@ const allOrders = await db.select().from(dbOrders).orderBy(desc(dbOrders.created
 const filterStatus = Astro.url.searchParams.get("status") ?? "all";
 const filterShipping = Astro.url.searchParams.get("shipping") ?? "all";
 const filterPayment = Astro.url.searchParams.get("payment") ?? "all";
+const searchQuery = Astro.url.searchParams.get("search")?.toLowerCase() ?? "";
 
 const filteredOrders = allOrders.filter((order) => {
   if (filterStatus !== "all" && order.status !== filterStatus) return false;
   if (filterShipping !== "all" && order.shippingMethod !== filterShipping) return false;
   if (filterPayment !== "all" && order.paymentMethod !== filterPayment) return false;
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    const orderUuidPart = order.id.split('-')[0].toLowerCase();
+    const orderNumberStr = String(order.orderNumber || '').padStart(4, '0');
+    const orderFullStr = `${orderUuidPart}-${orderNumberStr}`;
+    const matchesSearch =
+      orderFullStr.includes(q) ||
+      orderUuidPart.includes(q) ||
+      orderNumberStr.includes(q) ||
+      order.firstName.toLowerCase().includes(q) ||
+      order.lastName.toLowerCase().includes(q) ||
+      order.email.toLowerCase().includes(q);
+    if (!matchesSearch) return false;
+  }
   return true;
 });
 
@@ -74,12 +89,23 @@ const CANCELLABLE = new Set(["pending", "confirmed", "paid", "processing"]);
       </select>
     </div>
     <div class="w-full sm:w-44">
-      <span class="field-label mb-1 block invisible text-xs" aria-hidden="true">Filtruj</span>
-      <button type="submit" class="btn btn-orange orders-filter w-full text-sm">Filtruj</button>
+      <label class="field-label mb-1 block text-xs font-semibold text-graphite-muted" for="f-search">Wyszukaj</label>
+      <input
+        type="text"
+        id="f-search"
+        name="search"
+        value={Astro.url.searchParams.get('search') ?? ''}
+        placeholder="Nr zamówienia, imię..."
+        class="field-input orders-filter w-full text-sm"
+      />
     </div>
-    {(filterStatus !== "all" || filterShipping !== "all" || filterPayment !== "all") && (
+    <div class="w-full sm:w-44">
+      <label class="field-label mb-1 block invisible text-xs font-semibold text-graphite-muted" aria-hidden="true">Filtruj</label>
+      <button type="submit" class="btn btn-orange orders-filter w-full text-sm">Szukaj</button>
+    </div>
+    {(filterStatus !== "all" || filterShipping !== "all" || filterPayment !== "all" || searchQuery) && (
       <div class="w-full sm:w-44">
-        <span class="field-label mb-1 block invisible text-xs" aria-hidden="true">Wyczyść</span>
+        <label class="field-label mb-1 block invisible text-xs font-semibold text-graphite-muted" aria-hidden="true">Wyczyść</label>
         <a href="/admin/zamowienia" class="btn border border-graphite-200 bg-white text-graphite orders-filter w-full text-center text-sm">
           Wyczyść filtry
         </a>
@@ -141,8 +167,8 @@ const CANCELLABLE = new Set(["pending", "confirmed", "paid", "processing"]);
               return (
                 <tr class="transition-colors hover:bg-graphite-50/50" data-order-row={order.id}>
                   <td class="px-5 py-4 align-top">
-                    <span class="block font-mono text-xs text-graphite-muted">{order.id.split("-")[0]}</span>
-                    <span class="block mt-1 font-medium text-graphite">{dateStr}</span>
+                    <span class="block font-mono text-base font-bold text-graphite">{order.id.split('-')[0]}-{String(order.orderNumber || '').padStart(4, '0')}</span>
+                    <span class="block mt-1 font-medium text-graphite-muted text-xs">{dateStr}</span>
                   </td>
 
                   <td class="px-5 py-4 align-top">
@@ -195,7 +221,7 @@ const CANCELLABLE = new Set(["pending", "confirmed", "paid", "processing"]);
 
                   <td class="px-5 py-4 align-top min-w-[160px]">
                     <span
-                      class={`inline-block px-2.5 py-1 text-xs font-bold border ${statusClass}`}
+                      class={`status-badge-styled text-xs font-bold border ${statusClass}`}
                       data-status-badge={order.id}
                     >
                       {statusMap[order.status] ?? order.status}
@@ -307,7 +333,7 @@ const CANCELLABLE = new Set(["pending", "confirmed", "paid", "processing"]);
     const badge = document.querySelector(`[data-status-badge="${orderId}"]`);
     if (badge) {
       badge.textContent = STATUS_LABELS[newStatus] ?? newStatus;
-      badge.className = `inline-block px-2.5 py-1 text-xs font-bold border ${STATUS_CLASSES[newStatus] ?? "bg-graphite text-white border-graphite"}`;
+      badge.className = `status-badge-styled text-xs font-bold border ${STATUS_CLASSES[newStatus] ?? "bg-graphite text-white border-graphite"}`;
     }
 
     rebuildQuickActions(orderId, newStatus);
@@ -316,10 +342,6 @@ const CANCELLABLE = new Set(["pending", "confirmed", "paid", "processing"]);
     if (newStatus === "cancelled" || newStatus === "shipped") {
       row?.querySelector("[data-cancel-order-btn]")?.remove();
     }
-  }
-
-  function applyCancelled(orderId: string) {
-    applyStatusChange(orderId, "cancelled");
   }
 
   async function updateStatus(orderId: string, newStatus: string, btn: HTMLButtonElement) {
@@ -344,7 +366,7 @@ const CANCELLABLE = new Set(["pending", "confirmed", "paid", "processing"]);
   }
 
   function attachWorkflowButtons(container: Element) {
-    container.querySelectorAll(".orders-workflow-btn").forEach((btn) => {
+    container.querySelectorAll<HTMLButtonElement>(".orders-workflow-btn").forEach((btn) => {
       if (btn.dataset.bound === "true") return;
       btn.dataset.bound = "true";
       btn.addEventListener("click", async () => {
@@ -384,7 +406,7 @@ const CANCELLABLE = new Set(["pending", "confirmed", "paid", "processing"]);
   function initOrdersAdmin() {
     document.querySelectorAll("[data-quick-actions]").forEach(attachWorkflowButtons);
 
-    document.querySelectorAll("[data-cancel-order-btn]").forEach((btn) => {
+    document.querySelectorAll<HTMLButtonElement>("[data-cancel-order-btn]").forEach((btn) => {
       if (btn.dataset.bound === "true") return;
       btn.dataset.bound = "true";
       btn.addEventListener("click", () => {
@@ -393,7 +415,7 @@ const CANCELLABLE = new Set(["pending", "confirmed", "paid", "processing"]);
       });
     });
 
-    document.querySelectorAll("[data-delete-order-btn]").forEach((btn) => {
+    document.querySelectorAll<HTMLButtonElement>("[data-delete-order-btn]").forEach((btn) => {
       if (btn.dataset.bound === "true") return;
       btn.dataset.bound = "true";
       btn.addEventListener("click", async () => {
@@ -434,6 +456,7 @@ const CANCELLABLE = new Set(["pending", "confirmed", "paid", "processing"]);
     margin-left: auto;
   }
 
+  .status-badge-styled,
   .orders-action-btn,
   .orders-workflow-btn {
     border-radius: 0;
@@ -451,23 +474,32 @@ const CANCELLABLE = new Set(["pending", "confirmed", "paid", "processing"]);
     border-radius: 0;
   }
 
-  select.orders-filter.field-input {
-    min-height: 3.25rem;
-    height: auto !important;
-    padding: 0.75rem 2.5rem 0.75rem 1rem;
-    line-height: 1.4;
-    font-size: 0.9375rem;
+  select.orders-filter.field-input,
+  input.orders-filter.field-input,
+  button.orders-filter,
+  a.orders-filter {
+    height: 3.25rem !important;
+    min-height: 3.25rem !important;
+    max-height: 3.25rem !important;
+    box-sizing: border-box !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1.4 !important;
+    font-size: 0.9375rem !important;
   }
 
-  .btn.orders-filter,
-  a.orders-filter {
-    min-height: 3.25rem;
-    height: auto;
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1.4;
+  select.orders-filter.field-input {
+    padding-right: 2.5rem !important;
+    padding-left: 1rem !important;
+    display: block !important;
+  }
+
+  input.orders-filter.field-input {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    display: block !important;
   }
 </style>

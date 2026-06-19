@@ -3,21 +3,57 @@ import AdminLayout from "@layouts/AdminLayout.astro";
 import { db } from "../../db";
 import { tickets, ticketOrders, events } from "../../db/schema";
 import { eq, desc } from "drizzle-orm";
+import { actions } from "astro:actions";
 
-// Pobierz ostatnie zamówienia biletów
-const recentOrders = await db.select()
-  .from(ticketOrders)
-  .orderBy(desc(ticketOrders.createdAt))
-  .limit(50);
-
-const eventIds = [...new Set(recentOrders.map(o => o.eventId))];
-const eventMap = new Map<string, string>();
-for (const eid of eventIds) {
-  const [ev] = await db.select({ id: events.id, title: events.title }).from(events).where(eq(events.id, eid));
-  if (ev) eventMap.set(ev.id, ev.title);
+const deleteResult = Astro.getActionResult(actions.deleteTicket);
+const deleteEventResult = Astro.getActionResult(actions.deleteEventTickets);
+if (deleteResult?.data?.success || deleteEventResult?.data?.success) {
+  return Astro.redirect('/admin/bilety');
 }
 
-function formatDate(d: Date | string) {
+// Filtry
+const filterEventId = Astro.url.searchParams.get('event') ?? 'all';
+const searchQuery = Astro.url.searchParams.get('search')?.toLowerCase() ?? '';
+
+// Lista wszystkich wydarzeń do filtra
+const allEvents = await db.select({ id: events.id, title: events.title }).from(events).orderBy(desc(events.eventDate));
+
+// Pobranie biletów wraz z zamówieniem i wydarzeniem
+const ticketsData = await db
+  .select({
+    ticket: tickets,
+    order: ticketOrders,
+    event: events
+  })
+  .from(tickets)
+  .leftJoin(ticketOrders, eq(tickets.ticketOrderId, ticketOrders.id))
+  .leftJoin(events, eq(tickets.eventId, events.id))
+  .orderBy(desc(tickets.createdAt));
+
+const filteredTickets = ticketsData.filter(({ ticket, order }) => {
+  if (filterEventId !== 'all' && ticket.eventId !== filterEventId) return false;
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    const orderUuidPart = (order?.id || '').split('-')[0].toLowerCase();
+    const orderNumberStr = String(order?.orderNumber || '').padStart(4, '0');
+    const orderFullStr = order?.id ? `${orderUuidPart}-${orderNumberStr}` : '';
+    
+    const matchesSearch = 
+      ticket.ticketNumber.toLowerCase().includes(q) ||
+      (order?.firstName || '').toLowerCase().includes(q) ||
+      (order?.lastName || '').toLowerCase().includes(q) ||
+      (order?.email || '').toLowerCase().includes(q) ||
+      orderFullStr.includes(q) ||
+      orderUuidPart.includes(q) ||
+      orderNumberStr.includes(q);
+
+    if (!matchesSearch) return false;
+  }
+  return true;
+});
+
+function formatDate(d: Date | string | null) {
+  if (!d) return '—';
   return new Date(d).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 ---
@@ -71,9 +107,9 @@ function formatDate(d: Date | string) {
           Skanuj kod QR kamerą
         </button>
         <div id="camera-container" class="hidden mt-4">
-          <video id="camera-video" class="w-full rounded border border-graphite-200" autoplay muted playsinline></video>
+          <video id="camera-video" class="w-full rounded-none border border-graphite-200" autoplay muted playsinline></video>
           <p class="text-xs text-center text-graphite-muted mt-2">Nakieruj kamerę na kod QR biletu</p>
-          <button id="camera-stop" type="button" class="mt-3 btn border border-red bg-red text-white hover:bg-red/90 w-full justify-center py-2 text-sm">
+          <button id="camera-stop" type="button" class="mt-3 btn border border-red bg-red text-white hover:bg-red/90 w-full justify-center py-2 text-sm rounded-none">
             Zatrzymaj kamerę
           </button>
         </div>
@@ -95,51 +131,104 @@ function formatDate(d: Date | string) {
     </div>
   </div>
 
-  <!-- Lista zamówień biletów -->
+  <!-- Lista pojedynczych biletów -->
   <div class="border border-graphite-200 bg-white">
-    <div class="p-5 border-b border-graphite-200">
-      <h2 class="text-lg font-bold text-graphite">Zamówienia biletów</h2>
+    <div class="p-5 border-b border-graphite-200 flex flex-wrap gap-4 items-center justify-between">
+      <h2 class="text-lg font-bold text-graphite">Lista Biletów</h2>
+      
+      <form method="GET" action="/admin/bilety" class="flex flex-wrap items-end gap-3">
+        <div class="w-48">
+          <label class="field-label mb-1 block text-xs" for="f-event">Wydarzenie</label>
+          <select id="f-event" name="event" class="field-input ticket-filter rounded-none">
+            <option value="all" selected={filterEventId === 'all'}>Wszystkie</option>
+            {allEvents.map(ev => (
+              <option value={ev.id} selected={filterEventId === ev.id}>{ev.title}</option>
+            ))}
+          </select>
+        </div>
+        <div class="w-48">
+          <label class="field-label mb-1 block text-xs" for="f-search">Wyszukaj</label>
+          <input
+            type="text"
+            id="f-search"
+            name="search"
+            value={Astro.url.searchParams.get('search') ?? ''}
+            placeholder="Imię, email, nr zamówienia..."
+            class="field-input ticket-filter rounded-none"
+          />
+        </div>
+        <div>
+          <button type="submit" class="btn btn-orange ticket-filter rounded-none">Szukaj</button>
+        </div>
+        {(filterEventId !== 'all' || searchQuery) && (
+          <div>
+            <a href="/admin/bilety" class="btn btn-outline ticket-filter rounded-none">Wyczyść</a>
+          </div>
+        )}
+      </form>
     </div>
+
+    {filterEventId !== 'all' && (
+      <div class="p-4 bg-red flex justify-between items-center rounded-none mb-4">
+        <span class="text-sm font-bold text-white uppercase tracking-wider">Strefa niebezpieczna:</span>
+        <form method="POST" action={actions.deleteEventTickets} onsubmit="if(!confirm('Czy na pewno chcesz usunąć wszystkie bilety dla tego wydarzenia?')) event.preventDefault();">
+          <input type="hidden" name="eventId" value={filterEventId} />
+          <button type="submit" class="btn border border-white bg-white text-red font-bold text-xs py-1.5 px-3 hover:bg-white/90 rounded-none">
+            Usuń wszystkie bilety tego wydarzenia
+          </button>
+        </form>
+      </div>
+    )}
+
     <div class="overflow-x-auto">
-      <table class="w-full text-sm">
+      <table class="w-full text-sm min-w-[900px]">
         <thead>
           <tr class="border-b border-graphite-100 bg-graphite-50 text-left">
-            <th class="px-4 py-3 font-semibold text-graphite-muted">Nr</th>
-            <th class="px-4 py-3 font-semibold text-graphite-muted">Wydarzenie</th>
-            <th class="px-4 py-3 font-semibold text-graphite-muted">Zamawiający</th>
-            <th class="px-4 py-3 font-semibold text-graphite-muted">Bilety</th>
+            <th class="px-4 py-3 font-semibold text-graphite-muted">Nr Zamówienia</th>
+            <th class="px-4 py-3 font-semibold text-graphite-muted">Bilet</th>
+            <th class="px-4 py-3 font-semibold text-graphite-muted">Nabywca</th>
             <th class="px-4 py-3 font-semibold text-graphite-muted">Status</th>
-            <th class="px-4 py-3 font-semibold text-graphite-muted">Data</th>
+            <th class="px-4 py-3 font-semibold text-graphite-muted">Data wyst.</th>
+            <th class="px-4 py-3 font-semibold text-graphite-muted text-right">Akcje</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-graphite-100">
-          {recentOrders.map(order => (
+          {filteredTickets.map(({ ticket, order, event }) => (
             <tr class="hover:bg-graphite-50 transition-colors">
-              <td class="px-4 py-3 font-mono text-xs text-graphite-muted">{order.id.split('-')[0]}</td>
-              <td class="px-4 py-3 font-medium text-graphite">{eventMap.get(order.eventId) ?? '—'}</td>
-              <td class="px-4 py-3">
-                <div class="font-medium text-graphite">{order.firstName} {order.lastName}</div>
-                <div class="text-xs text-graphite-muted">{order.email}</div>
+              <td class="px-4 py-3 font-mono font-bold text-graphite">
+                {order ? `${order.id.split('-')[0]}-${String(order.orderNumber || '').padStart(4, '0')}` : '—'}
               </td>
-              <td class="px-4 py-3 text-center font-bold text-graphite">{order.quantity}</td>
+              <td class="px-4 py-3">
+                <div class="font-mono text-lg tracking-widest text-blue font-bold">{ticket.ticketNumber}</div>
+                <div class="text-xs text-graphite-muted mt-0.5">{event?.title ?? '—'}</div>
+              </td>
+              <td class="px-4 py-3">
+                <div class="font-medium text-graphite">{order?.firstName} {order?.lastName}</div>
+                <div class="text-xs text-graphite-muted">{order?.email}</div>
+              </td>
               <td class="px-4 py-3">
                 <span class:list={[
-                  "inline-block px-2 py-0.5 text-xs font-bold uppercase tracking-wide",
-                  order.status === 'paid' ? "bg-green text-white border-2 border-green" :
-                  order.status === 'pending' ? "bg-orange/10 text-orange border border-orange/20" :
-                  "bg-red/10 text-red border border-red/20"
+                  "inline-block px-2 py-0.5 text-xs font-bold uppercase tracking-wide rounded-none",
+                  ticket.status === 'active' ? "bg-green text-white border border-green" : "bg-red text-white border border-red"
                 ]}>
-                  {order.status === 'paid' ? 'Opłacone' : order.status === 'pending' ? 'Oczekuje' : 'Anulowane'}
+                  {ticket.status === 'active' ? 'Aktywny' : 'Wykorzystany'}
                 </span>
+                {ticket.status === 'used' && <div class="text-[10px] text-graphite-muted mt-1 whitespace-nowrap">{formatDate(ticket.usedAt)}</div>}
               </td>
               <td class="px-4 py-3 text-xs text-graphite-muted whitespace-nowrap">
-                {formatDate(order.createdAt)}
+                {formatDate(ticket.createdAt)}
+              </td>
+              <td class="px-4 py-3 text-right">
+                <form method="POST" action={actions.deleteTicket} onsubmit="if(!confirm('Czy na pewno chcesz usunąć ten bilet?')) event.preventDefault();" class="inline-block">
+                  <input type="hidden" name="id" value={ticket.id} />
+                  <button type="submit" class="text-xs px-2.5 py-1 bg-red text-white hover:bg-red/90 rounded-none font-bold">Usuń</button>
+                </form>
               </td>
             </tr>
           ))}
-          {recentOrders.length === 0 && (
+          {filteredTickets.length === 0 && (
             <tr>
-              <td colspan="6" class="px-4 py-10 text-center text-graphite-muted">Brak zamówień biletów</td>
+              <td colspan="6" class="px-4 py-10 text-center text-graphite-muted">Brak biletów spełniających kryteria.</td>
             </tr>
           )}
         </tbody>
@@ -150,6 +239,12 @@ function formatDate(d: Date | string) {
 
 <script>
   import { actions } from "astro:actions";
+
+  declare global {
+    interface Window {
+      jsQR?: (data: Uint8ClampedArray, width: number, height: number) => { data: string } | null;
+    }
+  }
 
   function formatDatePl(iso: string | null) {
     if (!iso) return '—';
@@ -336,9 +431,9 @@ function formatDate(d: Date | string) {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
           // Użyj jsQR jeśli dostępne
-          if (typeof (window as any).jsQR !== 'undefined') {
+          if (typeof window.jsQR !== 'undefined') {
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const code = (window as any).jsQR(imageData.data, imageData.width, imageData.height);
+            const code = window.jsQR(imageData.data, imageData.width, imageData.height);
             if (code && /^\d{9}$/.test(code.data.trim())) {
               stopCamera();
               if (input) input.value = code.data.trim();
@@ -371,3 +466,18 @@ function formatDate(d: Date | string) {
 
 <!-- jsQR do dekodowania kodów QR z kamery -->
 <script is:inline src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+<style>
+  .ticket-filter {
+    @apply h-10 py-0 text-sm;
+  }
+
+  select.ticket-filter {
+    @apply pr-8;
+  }
+
+  .btn.ticket-filter,
+  a.ticket-filter {
+    @apply inline-flex items-center justify-center px-4;
+  }
+</style>

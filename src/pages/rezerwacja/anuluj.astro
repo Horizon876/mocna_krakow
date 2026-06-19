@@ -13,7 +13,7 @@ const TABLE_LABELS: Record<string, string> = {
 type PageState = "missing" | "notfound" | "already" | "ready";
 
 let state: PageState = "missing";
-let reservation: Awaited<ReturnType<typeof findConfirmedByCancelToken>> = null;
+let reservation: Awaited<ReturnType<typeof findConfirmedByCancelToken>> | null = null;
 
 if (token) {
   reservation = await findConfirmedByCancelToken(token);
@@ -127,7 +127,7 @@ function formatEndTime(time: string) {
 </BaseLayout>
 
 {state === "ready" && token && (
-  <script define:vars={{ token }}>
+  <script define:vars={{ token }} is:inline>
     const btn = document.getElementById("cancel-btn");
     const errorEl = document.getElementById("cancel-error");
     const flow = document.getElementById("cancel-flow");

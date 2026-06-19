@@ -50,7 +50,7 @@ if (orderId) {
 
         // Wyślij email z biletami
         await sendTicketEmail({
-          orderId: order.id,
+          orderId: `${order.id.split('-')[0]}-${String(order.orderNumber || '').padStart(4, '0')}`,
           firstName: order.firstName,
           lastName: order.lastName,
           email: order.email,
@@ -109,7 +109,7 @@ if (orderId) {
                   </div>
                   <div class="flex justify-between gap-4">
                     <span class="text-graphite-muted">Nr zamówienia</span>
-                    <span class="font-mono font-bold text-graphite">{orderData.id.split("-")[0]}</span>
+                    <span class="font-mono font-bold text-graphite">{orderData.id.split('-')[0]}-{String(orderData.orderNumber || '').padStart(4, '0')}</span>
                   </div>
                   <div class="flex justify-between gap-4">
                     <span class="text-graphite-muted">Status</span>

@@ -14,7 +14,11 @@ export function scrollToSectionEl(
   extraOffset = 0,
   behavior: ScrollBehavior = "smooth",
 ) {
-  const top = el.getBoundingClientRect().top + window.scrollY - getNavOffset() + extraOffset;
+  const top =
+    el.getBoundingClientRect().top +
+    window.scrollY -
+    getNavOffset() +
+    extraOffset;
   window.scrollTo({ top: Math.max(0, top), behavior });
 }
 
@@ -73,5 +77,7 @@ export function initSectionScroll() {
   bound = true;
 
   document.addEventListener("click", handleInPageSectionClick);
-  window.addEventListener("hashchange", () => scrollToSectionFromHash("smooth"));
+  window.addEventListener("hashchange", () =>
+    scrollToSectionFromHash("smooth"),
+  );
 }

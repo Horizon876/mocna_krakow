@@ -9,9 +9,9 @@ interface Props {
 const { variant = "soft", class: className = "", animated = true } = Astro.props;
 
 const palettes: Record<string, string[]> = {
-  hero: ["#f39200", "#ffde00", "#2c5ea9"],
+  hero: ["#2c5ea9", "#ffde00", "#2c5ea9"],
   soft: ["#e8afcd", "#ffde00", "#3cb98a"],
-  warm: ["#f39200", "#de3c42", "#ffe95c"],
+  warm: ["#2c5ea9", "#de3c42", "#ffe95c"],
   cool: ["#2c5ea9", "#00955e", "#e8afcd"],
 };
 const c = palettes[variant];

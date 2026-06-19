@@ -86,6 +86,8 @@ function updateOpenStatus() {
       return;
     }
 
+    if (!payload) return;
+
     const status = getStatus(payload);
     label.textContent = status.open ? "Teraz otwarte" : "Teraz zamknięte";
     detail.textContent = status.detail;
@@ -93,7 +95,6 @@ function updateOpenStatus() {
     panel.classList.toggle("bg-green", status.open);
     panel.classList.toggle("bg-red", !status.open);
     panel.classList.toggle("bg-graphite", false);
-
   });
 }
 

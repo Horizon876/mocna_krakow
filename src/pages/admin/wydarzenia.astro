@@ -86,18 +86,8 @@ if (editId) {
                     </span>
                   </div>
                   <div class="flex flex-wrap items-center gap-3">
-                    <span class="pill !rounded-none !border-none !bg-graphite/5 !px-3 !py-1 !text-sm font-semibold text-graphite">
+                    <span class="pill !rounded-none !border-none !bg-blue !px-3 !py-1 !text-sm font-bold text-white inline-block w-40 text-center">
                       Miejsca: {event.enrolledCount} / {event.seatLimit}
-                    </span>
-                    <span class:list={[
-                      "pill !rounded-none !border-none !px-3 !py-1 !text-sm",
-                      event.status === "active"
-                        ? "bg-green/10 text-green"
-                        : event.status === "cancelled"
-                          ? "bg-red/10 text-red"
-                          : "bg-graphite/10 text-graphite",
-                    ]}>
-                      {event.status === "active" ? "Aktywne" : event.status === "cancelled" ? "Odwołane" : "Zakończone"}
                     </span>
                   </div>
                 </div>

@@ -8,7 +8,7 @@ function initShopCards() {
     const addBtn = card.querySelector<HTMLButtonElement>("[data-add-to-cart]");
     const addDefault = addBtn?.querySelector<HTMLElement>("[data-add-default]");
     const addSuccess = addBtn?.querySelector<HTMLElement>("[data-add-success]");
-    let resetTimer: ReturnType<typeof setTimeout> | undefined;
+    let resetTimer: number | undefined;
 
     if (!qtyInput || !minusBtn || !plusBtn || !addBtn) return;
     if (card.getAttribute("data-qty-ready") === "true") return;

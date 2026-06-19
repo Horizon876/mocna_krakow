@@ -4,36 +4,38 @@
  * Cały kod działa wyłącznie po stronie serwera.
  */
 
-const COOKIE_NAME = 'admin_session';
+const COOKIE_NAME = "admin_session";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 8; // 8 godzin
 
 /**
  * Tworzy podpisany token sesji: role:timestamp.HMAC
  */
-export async function createSessionToken(role: 'admin' | 'pracownik'): Promise<string> {
+export async function createSessionToken(
+  role: "admin" | "pracownik",
+): Promise<string> {
   const secret = import.meta.env.SESSION_SECRET;
-  if (!secret) throw new Error('SESSION_SECRET nie jest ustawiony w .env');
+  if (!secret) throw new Error("SESSION_SECRET nie jest ustawiony w .env");
 
   const expires = Date.now() + SESSION_DURATION_MS;
   const payload = `${role}:${expires}`;
 
   const key = await crypto.subtle.importKey(
-    'raw',
+    "raw",
     new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
+    { name: "HMAC", hash: "SHA-256" },
     false,
-    ['sign']
+    ["sign"],
   );
 
   const signature = await crypto.subtle.sign(
-    'HMAC',
+    "HMAC",
     key,
-    new TextEncoder().encode(payload)
+    new TextEncoder().encode(payload),
   );
 
   const sigHex = Array.from(new Uint8Array(signature))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 
   return `${payload}.${sigHex}`;
 }
@@ -42,43 +44,45 @@ export async function createSessionToken(role: 'admin' | 'pracownik'): Promise<s
  * Weryfikuje podpisany token sesji.
  * Zwraca obiekt z flagą valid i odczytaną rolą.
  */
-export async function verifySessionToken(token: string): Promise<{ valid: boolean; role?: 'admin' | 'pracownik' }> {
+export async function verifySessionToken(
+  token: string,
+): Promise<{ valid: boolean; role?: "admin" | "pracownik" }> {
   try {
     const secret = import.meta.env.SESSION_SECRET;
     if (!secret) return { valid: false };
 
-    const lastDot = token.lastIndexOf('.');
+    const lastDot = token.lastIndexOf(".");
     if (lastDot === -1) return { valid: false };
 
     const payload = token.substring(0, lastDot);
     const sigHex = token.substring(lastDot + 1);
 
     // Sprawdź wygaśnięcie
-    const parts = payload.split(':');
+    const parts = payload.split(":");
     if (parts.length !== 2) return { valid: false };
-    const role = parts[0] as 'admin' | 'pracownik';
-    if (role !== 'admin' && role !== 'pracownik') return { valid: false };
+    const role = parts[0] as "admin" | "pracownik";
+    if (role !== "admin" && role !== "pracownik") return { valid: false };
     const expires = parseInt(parts[1], 10);
     if (isNaN(expires) || Date.now() > expires) return { valid: false };
 
     // Weryfikuj podpis HMAC
     const key = await crypto.subtle.importKey(
-      'raw',
+      "raw",
       new TextEncoder().encode(secret),
-      { name: 'HMAC', hash: 'SHA-256' },
+      { name: "HMAC", hash: "SHA-256" },
       false,
-      ['verify']
+      ["verify"],
     );
 
     const sigBytes = new Uint8Array(
-      sigHex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16))
+      sigHex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)),
     );
 
     const valid = await crypto.subtle.verify(
-      'HMAC',
+      "HMAC",
       key,
       sigBytes,
-      new TextEncoder().encode(payload)
+      new TextEncoder().encode(payload),
     );
 
     return { valid, role: valid ? role : undefined };

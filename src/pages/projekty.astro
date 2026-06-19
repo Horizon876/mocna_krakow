@@ -1,7 +1,6 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
 import PageHero from "@components/PageHero.astro";
-import SectionHeading from "@components/SectionHeading.astro";
 import BrandBlobs from "@components/BrandBlobs.astro";
 import { COLORS } from "@data/site";
 
@@ -82,7 +81,7 @@ const projekty = [
           {projekty.map((p) => (
             <article
               class="project-card flex flex-col lg:flex-row gap-10 lg:gap-16 items-start border-2 p-8 sm:p-12"
-              style={`--accent: ${COLORS[p.color]};`}
+              style={`--accent: ${COLORS[p.color as keyof typeof COLORS]};`}
             >
               {/* Treść (lewa strona) */}
               <div class="flex-1 min-w-0 flex flex-col gap-6 text-white font-sans">

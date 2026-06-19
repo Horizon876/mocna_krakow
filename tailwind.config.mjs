@@ -18,11 +18,11 @@ export default {
         100: "#f4f4f3",
         200: "#e7e6e4",
       },
-      // Akcenty marki – dokładne wartości z logo
+      // Akcenty marki – dokładne wartości z logo (zmapowane na niebieskie na życzenie użytkownika)
       orange: {
-        DEFAULT: "#f39200",
-        soft: "#ffb13f",
-        ink: "#c46f00",
+        DEFAULT: "#2c5ea9",
+        soft: "#5b87cb",
+        ink: "#244d8f",
       },
       red: {
         DEFAULT: "#de3c42",

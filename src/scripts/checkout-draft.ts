@@ -34,7 +34,9 @@ export type CompleteCheckoutDraft = Required<
   Pick<CheckoutDraft, "paczkomatPoint">;
 
 export function shippingCostFor(method: string) {
-  return method === "paczkomat" ? PACZKOMAT_SHIPPING_COST : COURIER_SHIPPING_COST;
+  return method === "paczkomat"
+    ? PACZKOMAT_SHIPPING_COST
+    : COURIER_SHIPPING_COST;
 }
 
 export function paymentCostFor(method: string) {
@@ -74,7 +76,8 @@ export function isCheckoutDraftComplete(
   draft: CheckoutDraft | null,
 ): draft is CompleteCheckoutDraft {
   if (!draft?.shippingMethod || !draft.paymentMethod) return false;
-  if (!draft.firstName || !draft.lastName || !draft.email || !draft.phone) return false;
+  if (!draft.firstName || !draft.lastName || !draft.email || !draft.phone)
+    return false;
   if (draft.shippingMethod === "courier") {
     return !!(draft.address && draft.zipCode && draft.city);
   }

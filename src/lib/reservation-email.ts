@@ -1,17 +1,30 @@
-import { Resend } from 'resend';
-import { BRAND, COLORS } from '../data/site';
-import { getResendConfig, resolveEmailRecipient } from './resend-config';
+import { Resend } from "resend";
+import { BRAND, COLORS } from "../data/site";
+import { getResendConfig, resolveEmailRecipient } from "./resend-config";
 
 /** Kolorowy nagłówek MOCna! — jak na stronie głównej */
 const BRAND_HEADING = `
   <p style="margin:0 0 10px;font-size:44px;font-weight:700;line-height:1;letter-spacing:-0.03em;text-align:center;">
-    <span style="color:${COLORS.blue};">M</span><span style="color:${COLORS.red};">O</span><span style="color:${COLORS.yellow};">C</span><span style="color:${COLORS.green};">n</span><span style="color:${COLORS.pink};">a</span><span style="color:${COLORS.orange};">!</span>
+    <span style="color:${COLORS.blue};">M</span><span style="color:${COLORS.red};">O</span><span style="color:${COLORS.yellow};">C</span><span style="color:${COLORS.green};">n</span><span style="color:${COLORS.pink};">a</span><span style="color:${COLORS.blue};">!</span>
   </p>`;
 
 const TABLE_LABELS: Record<string, string> = {
-  T1: 'Stolik 1', T2: 'Stolik 2', T3: 'Stolik 3', T4: 'Stolik 4', T5: 'Stolik 5',
-  T6: 'Stolik 6', T7: 'Stolik 7', T8: 'Stolik 8', T9: 'Stolik 9', T10: 'Stolik 10 (lounge)',
-  G1: 'Ogród 1', G2: 'Ogród 2', G3: 'Ogród 3', G4: 'Ogród 4', G5: 'Ogród 5', G6: 'Ogród 6',
+  T1: "Stolik 1",
+  T2: "Stolik 2",
+  T3: "Stolik 3",
+  T4: "Stolik 4",
+  T5: "Stolik 5",
+  T6: "Stolik 6",
+  T7: "Stolik 7",
+  T8: "Stolik 8",
+  T9: "Stolik 9",
+  T10: "Stolik 10 (lounge)",
+  G1: "Ogród 1",
+  G2: "Ogród 2",
+  G3: "Ogród 3",
+  G4: "Ogród 4",
+  G5: "Ogród 5",
+  G6: "Ogród 6",
 };
 
 export type ReservationEmailData = {
@@ -27,17 +40,17 @@ export type ReservationEmailData = {
 };
 
 function siteUrl() {
-  return import.meta.env.SITE ?? 'https://mocna.org';
+  return import.meta.env.SITE ?? "https://mocna.org";
 }
 
 function formatDate(date: string) {
-  return date.split('-').reverse().join('.');
+  return date.split("-").reverse().join(".");
 }
 
 function formatEndTime(time: string) {
-  const [h, m] = time.split(':').map(Number);
+  const [h, m] = time.split(":").map(Number);
   const end = new Date(0, 0, 0, h + 1, m);
-  return `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+  return `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`;
 }
 
 function reservationDetailsBlock(data: ReservationEmailData) {
@@ -73,7 +86,7 @@ function buildConfirmationHtml(data: ReservationEmailData) {
       <td align="center">
         <table width="100%" style="max-width:560px;background:#ffffff;border:1px solid #e5e5e5;">
           <tr>
-            <td style="padding:28px 32px 20px;border-bottom:4px solid #f39200;text-align:center;">
+            <td style="padding:28px 32px 20px;border-bottom:4px solid #2c5ea9;text-align:center;">
               ${BRAND_HEADING}
               <p style="margin:0;font-size:14px;color:#666;">Potwierdzenie rezerwacji stolika</p>
             </td>
@@ -87,17 +100,21 @@ function buildConfirmationHtml(data: ReservationEmailData) {
                 Twoja rezerwacja w kawiarni MOCna! została potwierdzona. Poniżej szczegóły:
               </p>
               ${reservationDetailsBlock(data)}
-              ${data.notes ? `<p style="margin:20px 0 0;font-size:14px;color:#666;"><strong>Uwagi:</strong> ${data.notes}</p>` : ''}
+              ${data.notes ? `<p style="margin:20px 0 0;font-size:14px;color:#666;"><strong>Uwagi:</strong> ${data.notes}</p>` : ""}
               <p style="margin:24px 0 0;font-size:14px;line-height:1.6;color:#666;">
                 Rezerwacja obowiązuje przez 1 godzinę. W razie pytań napisz na
                 <a href="mailto:${BRAND.email}" style="color:#2c5ea9;">${BRAND.email}</a>
                 lub zadzwoń: ${BRAND.phone}.
               </p>
-              ${cancelUrl ? `
+              ${
+                cancelUrl
+                  ? `
               <p style="margin:24px 0 0;font-size:14px;line-height:1.6;color:#666;">
                 Nie możesz przyjść? Możesz
                 <a href="${cancelUrl}" style="color:#de3c42;font-weight:600;">anulować rezerwację online</a>.
-              </p>` : ''}
+              </p>`
+                  : ""
+              }
             </td>
           </tr>
           <tr>
@@ -124,20 +141,22 @@ function buildConfirmationText(data: ReservationEmailData) {
 
   return [
     `Cześć ${data.firstName},`,
-    '',
-    'Twoja rezerwacja w kawiarni MOCna! została potwierdzona.',
-    '',
+    "",
+    "Twoja rezerwacja w kawiarni MOCna! została potwierdzona.",
+    "",
     `Stolik: ${tableLabel}`,
     `Data: ${dateLabel}`,
     `Godzina: ${data.reservationTime} – ${endTime}`,
     `Adres: ${BRAND.address}`,
-    data.notes ? `Uwagi: ${data.notes}` : '',
-    '',
+    data.notes ? `Uwagi: ${data.notes}` : "",
+    "",
     `Kontakt: ${BRAND.email} | ${BRAND.phone}`,
-    cancelUrl ? `Anuluj rezerwację: ${cancelUrl}` : '',
-    '',
-    'Do zobaczenia w MOCnej!',
-  ].filter(Boolean).join('\n');
+    cancelUrl ? `Anuluj rezerwację: ${cancelUrl}` : "",
+    "",
+    "Do zobaczenia w MOCnej!",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function buildCancellationHtml(data: ReservationEmailData) {
@@ -197,29 +216,40 @@ function buildCancellationText(data: ReservationEmailData) {
 
   return [
     `Cześć ${data.firstName},`,
-    '',
-    'Twoja rezerwacja w kawiarni MOCna! została anulowana.',
-    '',
+    "",
+    "Twoja rezerwacja w kawiarni MOCna! została anulowana.",
+    "",
     `Stolik: ${tableLabel}`,
     `Data: ${dateLabel}`,
     `Godzina: ${data.reservationTime} – ${endTime}`,
     `Adres: ${BRAND.address}`,
-    '',
+    "",
     `Nowa rezerwacja: ${siteUrl()}/rezerwacja`,
     `Kontakt: ${BRAND.email} | ${BRAND.phone}`,
-  ].join('\n');
+  ].join("\n");
 }
 
-async function sendEmail(to: string, subject: string, html: string, text: string) {
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  text: string,
+) {
   const { apiKey, from, testTo } = getResendConfig();
   if (!apiKey) {
-    console.warn('[reservation-email] Brak RESEND_API_KEY — e-mail pominięty.');
+    console.warn("[reservation-email] Brak RESEND_API_KEY — e-mail pominięty.");
     return { ok: false, skipped: true as const };
   }
 
-  const { to: recipient, subjectPrefix } = resolveEmailRecipient(to, from, testTo);
+  const { to: recipient, subjectPrefix } = resolveEmailRecipient(
+    to,
+    from,
+    testTo,
+  );
   if (subjectPrefix) {
-    console.info(`[reservation-email] DEV: wysyłka przekierowana ${to} → ${recipient}`);
+    console.info(
+      `[reservation-email] DEV: wysyłka przekierowana ${to} → ${recipient}`,
+    );
   }
 
   const resend = new Resend(apiKey);
@@ -232,7 +262,7 @@ async function sendEmail(to: string, subject: string, html: string, text: string
   });
 
   if (error) {
-    console.error('[reservation-email] Błąd wysyłki:', JSON.stringify(error));
+    console.error("[reservation-email] Błąd wysyłki:", JSON.stringify(error));
     return { ok: false, skipped: false as const, error };
   }
 

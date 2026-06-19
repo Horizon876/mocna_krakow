@@ -21,7 +21,7 @@ if (orderId) {
       try { items = JSON.parse(order.items); } catch { /* ignoruj */ }
 
       sendOrderEmail({
-        orderId: order.id,
+        orderId: `${order.id.split('-')[0]}-${String(order.orderNumber || '').padStart(4, '0')}`,
         firstName: order.firstName,
         lastName: order.lastName,
         email: order.email,

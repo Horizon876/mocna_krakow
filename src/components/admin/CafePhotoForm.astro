@@ -1,7 +1,8 @@
 ---
-import { actions } from 'astro:actions';
+import { actions, isInputError } from 'astro:actions';
 
 const result = Astro.getActionResult(actions.createCafePhoto);
+const inputError = result?.error && isInputError(result.error) ? result.error : null;
 ---
 
 <form method="POST" action={actions.createCafePhoto} enctype="multipart/form-data" class="space-y-5">
@@ -27,8 +28,8 @@ const result = Astro.getActionResult(actions.createCafePhoto);
       class="field-input file:mr-4 file:border-0 file:bg-graphite-100 file:px-4 file:py-2 file:text-sm file:font-medium file:text-graphite hover:file:bg-graphite-200"
     />
     <p class="text-xs text-graphite-muted">JPG, PNG, WebP lub GIF. Pojawi się na stronie /kawiarnia.</p>
-    {result?.error && 'imageFile' in result.error.fields && (
-      <p class="mt-1 text-xs font-medium text-red">{result.error.fields.imageFile?.[0]}</p>
+    {inputError?.fields.imageFile && (
+      <p class="mt-1 text-xs font-medium text-red">{inputError.fields.imageFile[0]}</p>
     )}
   </div>
 

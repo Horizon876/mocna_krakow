@@ -1,4 +1,4 @@
-const DRAFT_KEY = 'mocna-ticket-draft';
+const DRAFT_KEY = "mocna-ticket-draft";
 
 export type TicketDraft = {
   eventId: string;
@@ -27,7 +27,9 @@ export function clearTicketDraft(): void {
   sessionStorage.removeItem(DRAFT_KEY);
 }
 
-export function isTicketDraftComplete(draft: Partial<TicketDraft>): draft is TicketDraft {
+export function isTicketDraftComplete(
+  draft: Partial<TicketDraft>,
+): draft is TicketDraft {
   return !!(
     draft.eventId &&
     draft.quantity &&

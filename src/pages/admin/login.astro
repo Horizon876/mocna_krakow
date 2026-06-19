@@ -19,6 +19,14 @@ if (result?.data?.success) {
 }
 
 const errorMessage = result?.error?.message ?? null;
+
+let submittedRole = "";
+if (Astro.request.method === "POST") {
+  try {
+    const formData = await Astro.request.clone().formData();
+    submittedRole = formData.get("role")?.toString() || "";
+  } catch {}
+}
 ---
 
 <!doctype html>
@@ -28,7 +36,7 @@ const errorMessage = result?.error?.message ?? null;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Logowanie — Panel Admina {BRAND.name}</title>
     <meta name="robots" content="noindex, nofollow" />
-    <meta name="theme-color" content="#f39200" />
+    <meta name="theme-color" content="#2c5ea9" />
     <link rel="icon" type="image/svg+xml" href="/brand/logo-kolor.svg" />
     <ViewTransitions />
   </head>
@@ -66,39 +74,145 @@ const errorMessage = result?.error?.message ?? null;
         )}
 
         <form id="login-form" method="POST" action={actions.login} novalidate class="space-y-5">
-          <div class="space-y-1.5">
-            <label for="password" class="field-label">Hasło administratora</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              autocomplete="current-password"
-              placeholder="••••••••••"
-              required
-              autofocus
-              class="field-input"
-            />
+          <input type="hidden" name="role" id="role-input" value={submittedRole} />
+
+          <!-- STEP 1: Wybór roli -->
+          <div id="step-role" class="space-y-5">
+            <p class="text-center text-sm font-medium text-graphite-muted mb-4">Wybierz rolę, aby kontynuować:</p>
+            <div class="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                id="choose-admin"
+                class="flex flex-col items-center justify-center p-6 border-2 border-graphite-200 hover:border-blue hover:bg-blue/5 rounded-none transition-all duration-200 group text-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-graphite-muted group-hover:text-blue mb-3 transition-colors">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                </svg>
+                <span class="font-bold text-graphite">Administrator</span>
+              </button>
+
+              <button
+                type="button"
+                id="choose-pracownik"
+                class="flex flex-col items-center justify-center p-6 border-2 border-graphite-200 hover:border-blue hover:bg-blue/5 rounded-none transition-all duration-200 group text-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-10 h-10 text-graphite-muted group-hover:text-blue mb-3 transition-colors">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                </svg>
+                <span class="font-bold text-graphite">Pracownik</span>
+              </button>
+            </div>
           </div>
 
-          <button type="submit" class="btn btn-orange w-full" id="login-btn">
-            <span class="spinner hidden h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true"></span>
-            <span class="btn-text">Zaloguj się</span>
-          </button>
+          <!-- STEP 2: Wpisywanie hasła -->
+          <div id="step-password" class="space-y-5 hidden">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-graphite-muted" id="role-display">Rola: </span>
+              <button
+                type="button"
+                id="btn-back"
+                class="text-xs font-semibold text-blue hover:underline flex items-center gap-1"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3 h-3">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                </svg>
+                Zmień rolę
+              </button>
+            </div>
+
+            <div class="space-y-1.5">
+              <label for="password" class="field-label" id="password-label">Hasło</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                autocomplete="current-password"
+                placeholder="••••••••••"
+                required
+                class="field-input"
+              />
+            </div>
+
+            <button type="submit" class="btn btn-orange w-full" id="login-btn">
+              <span class="spinner hidden h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true"></span>
+              <span class="btn-text">Zaloguj się</span>
+            </button>
+          </div>
         </form>
         </div>
       </div>
     </main>
 
     <script>
-      const form = document.getElementById("login-form") as HTMLFormElement;
-      const btn = document.getElementById("login-btn") as HTMLButtonElement;
+      function setupLogin() {
+        const form = document.getElementById("login-form") as HTMLFormElement;
+        const btn = document.getElementById("login-btn") as HTMLButtonElement;
+        const roleInput = document.getElementById("role-input") as HTMLInputElement;
+        const chooseAdmin = document.getElementById("choose-admin");
+        const choosePracownik = document.getElementById("choose-pracownik");
+        const stepRole = document.getElementById("step-role");
+        const stepPassword = document.getElementById("step-password");
+        const roleDisplay = document.getElementById("role-display");
+        const passwordLabel = document.getElementById("password-label");
+        const passwordInput = document.getElementById("password") as HTMLInputElement;
+        const btnBack = document.getElementById("btn-back");
 
-      form?.addEventListener("submit", () => {
-        btn.querySelector(".spinner")?.classList.remove("hidden");
-        btn.querySelector(".btn-text")?.classList.add("hidden");
-        btn.disabled = true;
-        btn.classList.add("opacity-70", "cursor-not-allowed");
-      });
+        if (!form || !roleInput || !chooseAdmin || !choosePracownik || !stepRole || !stepPassword || !roleDisplay || !passwordLabel || !passwordInput || !btnBack) return;
+
+        function showStep(step: 1 | 2) {
+          if (step === 1) {
+            stepRole!.classList.remove("hidden");
+            stepPassword!.classList.add("hidden");
+            roleInput.value = "";
+            passwordInput.value = "";
+            passwordInput.removeAttribute("required");
+          } else {
+            stepRole!.classList.add("hidden");
+            stepPassword!.classList.remove("hidden");
+            passwordInput.setAttribute("required", "required");
+            passwordInput.focus();
+
+            const isAdmin = roleInput.value === "admin";
+            roleDisplay!.textContent = `Rola: ${isAdmin ? "Administrator" : "Pracownik"}`;
+            passwordLabel!.textContent = `Hasło ${isAdmin ? "administratora" : "pracownika"}`;
+          }
+        }
+
+        chooseAdmin.addEventListener("click", () => {
+          roleInput.value = "admin";
+          showStep(2);
+        });
+
+        choosePracownik.addEventListener("click", () => {
+          roleInput.value = "pracownik";
+          showStep(2);
+        });
+
+        btnBack.addEventListener("click", () => {
+          showStep(1);
+        });
+
+        if (roleInput.value) {
+          showStep(2);
+        } else {
+          showStep(1);
+        }
+
+        form.addEventListener("submit", (e) => {
+          if (!roleInput.value) {
+            e.preventDefault();
+            showStep(1);
+            return;
+          }
+          btn.querySelector(".spinner")?.classList.remove("hidden");
+          btn.querySelector(".btn-text")?.classList.add("hidden");
+          btn.disabled = true;
+          btn.classList.add("opacity-70", "cursor-not-allowed");
+        });
+      }
+
+      setupLogin();
+      document.addEventListener("astro:page-load", setupLogin);
     </script>
   </body>
 </html>

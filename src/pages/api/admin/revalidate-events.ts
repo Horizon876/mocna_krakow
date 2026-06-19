@@ -20,7 +20,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     status: ok ? 200 : 502,
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "private, no-cache, no-store, must-revalidate, max-age=0",
+      "Cache-Control":
+        "private, no-cache, no-store, must-revalidate, max-age=0",
     },
   });
 };

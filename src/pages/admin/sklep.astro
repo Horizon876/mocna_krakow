@@ -83,10 +83,10 @@ if (editId) {
                         {(product.price / 100).toFixed(2)} PLN
                       </span>
                       <span class:list={[
-                        "pill !rounded-none !border-none !px-3 !py-1 !text-sm",
+                        "pill !rounded-none !border-none !px-3 !py-1 !text-sm text-white",
                         product.availabilityStatus === "available"
-                          ? "bg-green/10 text-green"
-                          : "bg-red/10 text-red",
+                          ? "bg-green"
+                          : "bg-red",
                       ]}>
                         {product.availabilityStatus === "available" ? "Dostępny" : "Niedostępny"}
                       </span>

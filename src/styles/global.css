@@ -35,7 +35,7 @@
   }
 
   ::selection {
-    background: var(--mocna-orange);
+    background: var(--mocna-blue);
     color: #fff;
   }
 
@@ -44,12 +44,15 @@
     width: 11px;
   }
   ::-webkit-scrollbar-thumb {
-    background: var(--mocna-orange);
+    background: var(--mocna-blue);
     border-radius: 999px;
     border: 3px solid #fff;
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     @apply font-display tracking-tightest text-graphite;
     font-weight: 700;
   }
@@ -83,22 +86,26 @@
   }
   .btn-orange {
     @apply btn bg-blue text-white;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 2px 6px -2px rgba(44,94,169,0.3);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      0 2px 6px -2px rgba(44, 94, 169, 0.3);
   }
   .btn-orange:hover {
     background-color: #244d8f;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 28px -8px rgba(44,94,169,0.45);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      0 10px 28px -8px rgba(44, 94, 169, 0.45);
   }
   .btn-outline {
     @apply btn border border-graphite-200 bg-white text-graphite;
   }
   .btn-outline:hover {
     @apply border-blue/50 text-blue;
-    background: rgba(44,94,169,0.05);
+    background: rgba(44, 94, 169, 0.05);
   }
   .btn-ink {
     @apply btn bg-graphite text-white;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
   }
   .btn-ink:hover {
     @apply bg-graphite-soft;
@@ -116,7 +123,7 @@
 
   /* Pola formularzy (panel admina i formularze publiczne) */
   .field-input {
-    @apply w-full border border-graphite-200 bg-white/80 px-4 py-3 text-graphite shadow-sm transition-all placeholder:text-graphite/40 focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20;
+    @apply w-full border border-graphite-200 bg-white/80 px-4 py-3 text-graphite shadow-sm transition-all placeholder:text-graphite/40 focus:border-blue focus:outline-none focus:ring-2 focus:ring-blue/20;
     box-sizing: border-box;
   }
 
@@ -151,14 +158,14 @@
     @apply alert border-green/30 bg-green/10 text-green;
   }
   .alert-warning {
-    @apply alert border-orange/30 bg-orange/10 text-orange-ink;
+    @apply alert border-blue/30 bg-blue/10 text-blue;
   }
 
   .admin-card {
     @apply relative flex flex-col border border-graphite-200 bg-white p-6 transition-colors duration-300 sm:p-8;
   }
   .admin-card:hover {
-    @apply border-orange/30;
+    @apply border-blue/30;
   }
 
   .admin-shell-centered {
@@ -178,7 +185,7 @@
     @apply admin-card flex min-h-[9.5rem] flex-col items-center justify-center px-4 py-8 text-center transition-colors duration-300 sm:min-h-[10.5rem] sm:px-6 sm:py-10;
   }
   .admin-dashboard-tile:hover {
-    @apply border-orange/40 bg-orange/5;
+    @apply border-blue/40 bg-blue/5;
   }
 
   .admin-panel {
@@ -189,10 +196,10 @@
     @apply flex flex-col gap-4 rounded-none border border-graphite-200 bg-white p-5 shadow-sm transition-colors sm:flex-row sm:items-center sm:justify-between;
   }
   .admin-list-item:hover {
-    @apply border-orange/30;
+    @apply border-blue/30;
   }
   .admin-list-item.is-active {
-    @apply border-orange ring-1 ring-orange;
+    @apply border-blue ring-1 ring-blue;
   }
 
   .admin-crud .admin-list-item:hover {
@@ -207,7 +214,9 @@
 
   .admin-crud .btn-edit {
     @apply border-blue bg-blue text-white;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 2px 6px -2px rgba(44, 94, 169, 0.3);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      0 2px 6px -2px rgba(44, 94, 169, 0.3);
   }
   .admin-crud .btn-delete {
     @apply border-red bg-red text-white;
@@ -231,7 +240,9 @@
   }
   .admin-crud .btn-orange:hover {
     background-color: #2c5ea9;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 2px 6px -2px rgba(44, 94, 169, 0.3);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.14),
+      0 2px 6px -2px rgba(44, 94, 169, 0.3);
   }
   .admin-crud .btn-outline:hover {
     @apply border-graphite-200 bg-white text-graphite;
@@ -245,7 +256,10 @@
     --admin-product-row-h: 7rem;
     --admin-product-row-gap: 1rem;
     --admin-crud-body-extra: 50px;
-    height: calc(var(--admin-product-row-h) * 5 + var(--admin-product-row-gap) * 4 + var(--admin-crud-body-extra));
+    height: calc(
+      var(--admin-product-row-h) * 5 + var(--admin-product-row-gap) * 4 +
+        var(--admin-crud-body-extra)
+    );
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-right: 16px;
@@ -301,7 +315,10 @@
 
   /* „Maluje” podkreślenie pod słowem niczym pociągnięcie pędzla */
   .brush-underline {
-    background-image: linear-gradient(transparent 62%, rgba(255, 222, 0, 0.85) 62%);
+    background-image: linear-gradient(
+      transparent 62%,
+      rgba(255, 222, 0, 0.85) 62%
+    );
     background-repeat: no-repeat;
     background-size: 100% 100%;
     padding: 0 0.12em;

@@ -4,7 +4,6 @@ import SectionHeading from "@components/SectionHeading.astro";
 import { db } from "../db";
 import { products as dbProducts } from "../db/schema";
 import { desc, eq } from "drizzle-orm";
-import { COLORS } from "@data/site";
 
 const productsData = await db.select().from(dbProducts).where(eq(dbProducts.availabilityStatus, 'available')).orderBy(desc(dbProducts.createdAt));
 
@@ -50,7 +49,7 @@ const products = productsData.map(p => ({
                     ) : (
                       <div
                         class="aspect-[4/3]"
-                        style={`background:#f3920018`}
+                        style={`background:#2c5ea918`}
                         aria-hidden="true"
                       ></div>
                     )

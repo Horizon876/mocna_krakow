@@ -1,5 +1,5 @@
 ---
-import { actions } from 'astro:actions';
+import { actions, isInputError } from 'astro:actions';
 
 interface Props {
   event?: {
@@ -22,6 +22,7 @@ const isEdit = !!event;
 const resultCreate = Astro.getActionResult(actions.createEvent);
 const resultUpdate = Astro.getActionResult(actions.updateEvent);
 const result = isEdit ? resultUpdate : resultCreate;
+const inputError = result?.error && isInputError(result.error) ? result.error : null;
 
 const action = isEdit ? actions.updateEvent : actions.createEvent;
 
@@ -53,8 +54,8 @@ const formatDateTimeLocal = (date: Date | string | null | undefined) => {
     <div class="space-y-1.5">
       <label for="title" class="field-label">Tytuł wydarzenia</label>
       <input type="text" id="title" name="title" value={event?.title || ''} required class="field-input" placeholder="np. Warsztaty parzenia kawy" />
-      {result?.error && 'title' in result.error.fields && (
-        <p class="mt-1 text-xs font-medium text-red">{result.error.fields.title?.[0]}</p>
+      {inputError?.fields.title && (
+        <p class="mt-1 text-xs font-medium text-red">{inputError.fields.title[0]}</p>
       )}
     </div>
     <div class="space-y-1.5">
@@ -67,8 +68,8 @@ const formatDateTimeLocal = (date: Date | string | null | undefined) => {
     <div class="space-y-1.5">
       <label for="eventDate" class="field-label">Data i czas</label>
       <input type="datetime-local" id="eventDate" name="eventDate" value={formatDateTimeLocal(event?.eventDate)} required class="field-input" />
-      {result?.error && 'eventDate' in result.error.fields && (
-        <p class="mt-1 text-xs font-medium text-red">{result.error.fields.eventDate?.[0]}</p>
+      {inputError?.fields.eventDate && (
+        <p class="mt-1 text-xs font-medium text-red">{inputError.fields.eventDate[0]}</p>
       )}
     </div>
     <div class="space-y-1.5">
@@ -90,28 +91,20 @@ const formatDateTimeLocal = (date: Date | string | null | undefined) => {
     <textarea id="longDescription" name="longDescription" rows="4" class="field-input" placeholder="Szczegółowy opis, agenda, informacje dla uczestników...">{event?.longDescription || ''}</textarea>
   </div>
 
-  <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
     <div class="space-y-1.5">
-      <label for="ticketPrice" class="field-label">Cena biletu (grosze)</label>
-      <input type="number" id="ticketPrice" name="ticketPrice" value={event?.ticketPrice !== undefined ? event.ticketPrice : ''} required min="0" class="field-input" placeholder="np. 4500 (45,00 PLN)" />
-      {result?.error && 'ticketPrice' in result.error.fields && (
-        <p class="mt-1 text-xs font-medium text-red">{result.error.fields.ticketPrice?.[0]}</p>
+      <label for="ticketPrice" class="field-label">Cena biletu (PLN)</label>
+      <input type="text" inputmode="decimal" id="ticketPrice" name="ticketPrice" value={event?.ticketPrice !== undefined ? (event.ticketPrice / 100).toFixed(2) : ''} required class="field-input" placeholder="np. 45.00 lub 45,00" />
+      {inputError?.fields.ticketPrice && (
+        <p class="mt-1 text-xs font-medium text-red">{inputError.fields.ticketPrice[0]}</p>
       )}
     </div>
     <div class="space-y-1.5">
       <label for="seatLimit" class="field-label">Limit miejsc</label>
       <input type="number" id="seatLimit" name="seatLimit" value={event?.seatLimit !== undefined ? event.seatLimit : ''} required min="1" class="field-input" placeholder="np. 20" />
-      {result?.error && 'seatLimit' in result.error.fields && (
-        <p class="mt-1 text-xs font-medium text-red">{result.error.fields.seatLimit?.[0]}</p>
+      {inputError?.fields.seatLimit && (
+        <p class="mt-1 text-xs font-medium text-red">{inputError.fields.seatLimit[0]}</p>
       )}
-    </div>
-    <div class="space-y-1.5">
-      <label for="status" class="field-label">Status</label>
-      <select id="status" name="status" class="field-input cursor-pointer appearance-none">
-        <option value="active" selected={event?.status === 'active'}>Aktywne</option>
-        <option value="completed" selected={event?.status === 'completed'}>Zakończone</option>
-        <option value="cancelled" selected={event?.status === 'cancelled'}>Odwołane</option>
-      </select>
     </div>
   </div>
 

@@ -21,6 +21,6 @@ interface ImportMeta {
 
 declare namespace App {
   interface Locals {
-    adminRole?: 'admin' | 'pracownik';
+    adminRole?: "admin" | "pracownik";
   }
 }

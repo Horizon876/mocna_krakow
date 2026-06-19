@@ -30,7 +30,11 @@ export default function StoriesShowstopper({ stories }: Props) {
     if (!el) return;
     if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
       const max = el.scrollWidth - el.clientWidth;
-      if ((el.scrollLeft > 0 && el.scrollLeft < max) || (el.scrollLeft === 0 && e.deltaY > 0) || (el.scrollLeft >= max && e.deltaY < 0)) {
+      if (
+        (el.scrollLeft > 0 && el.scrollLeft < max) ||
+        (el.scrollLeft === 0 && e.deltaY > 0) ||
+        (el.scrollLeft >= max && e.deltaY < 0)
+      ) {
         el.scrollLeft += e.deltaY;
         if (el.scrollLeft > 0 && el.scrollLeft < max) e.preventDefault();
       }
@@ -69,7 +73,10 @@ export default function StoriesShowstopper({ stories }: Props) {
             key={s.slug}
             onClick={() => setActive(s)}
             className="story-card group relative aspect-[3/4] w-[78vw] max-w-[360px] shrink-0 animate-rise-in snap-center overflow-hidden rounded-[30px] text-left sm:w-[340px]"
-            style={{ ["--accent" as string]: s.accent, animationDelay: `${(i % 3) * 90}ms` }}
+            style={{
+              ["--accent" as string]: s.accent,
+              animationDelay: `${(i % 3) * 90}ms`,
+            }}
           >
             {/* „Portret” – placeholder w masce; B&W -> kolor na hover */}
             <div
@@ -78,7 +85,9 @@ export default function StoriesShowstopper({ stories }: Props) {
                 background: `radial-gradient(120% 120% at 30% 20%, ${s.accent}40, transparent 60%), radial-gradient(120% 120% at 80% 90%, ${s.accent}66, transparent 55%), ${s.accent}26`,
               }}
             >
-              <span className="text-7xl opacity-80 transition-transform duration-700 group-hover:scale-110">👤</span>
+              <span className="text-7xl opacity-80 transition-transform duration-700 group-hover:scale-110">
+                👤
+              </span>
             </div>
 
             {/* Gradient czytelności */}
@@ -92,12 +101,17 @@ export default function StoriesShowstopper({ stories }: Props) {
               >
                 {s.role}
               </span>
-              <h3 className="font-display text-3xl font-bold tracking-tightest">{s.name}</h3>
+              <h3 className="font-display text-3xl font-bold tracking-tightest">
+                {s.name}
+              </h3>
               <p className="mt-1 max-w-[18rem] text-sm leading-relaxed text-white/80 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
                 {s.teaser}
               </p>
               <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium">
-                Poznaj historię <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+                Poznaj historię{" "}
+                <span className="transition-transform duration-300 group-hover:translate-x-1">
+                  →
+                </span>
               </span>
             </div>
           </button>
@@ -148,10 +162,16 @@ export default function StoriesShowstopper({ stories }: Props) {
               >
                 „{active.quote}”
               </p>
-              <p className="mt-5 text-lg leading-relaxed text-graphite-soft">{active.body}</p>
+              <p className="mt-5 text-lg leading-relaxed text-graphite-soft">
+                {active.body}
+              </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <a href="/wesprzyj" className="btn-orange">Wesprzyj takie historie</a>
-                <a href="/ludziemocnej" className="btn-outline">Poznaj cały zespół</a>
+                <a href="/wesprzyj" className="btn-orange">
+                  Wesprzyj takie historie
+                </a>
+                <a href="/ludziemocnej" className="btn-outline">
+                  Poznaj cały zespół
+                </a>
               </div>
             </motion.div>
           </motion.div>

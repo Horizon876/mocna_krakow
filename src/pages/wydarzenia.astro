@@ -5,7 +5,7 @@ import BrandBlobs from "@components/BrandBlobs.astro";
 import { COLORS } from "@data/site";
 import { db } from "../db";
 import { events } from "../db/schema";
-import { desc, eq, and, gte } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 // Fetch only active events, sorted by date (upcoming first)
 // Optionally we could filter out past events: gte(events.eventDate, new Date())
@@ -46,7 +46,7 @@ const wydarzenia = dbEvents.map(e => {
   <div class="home-page flex min-h-full flex-1 flex-col">
 
     <PageHero
-      title="Nadchodzące <span class='text-orange'>wydarzenia</span>"
+      title="<span class='text-blue'>N</span><span class='text-red'>a</span><span class='text-yellow'>d</span><span class='text-green'>chodzące</span> <span class='text-orange'>w</span><span class='text-pink'>y</span><span class='text-blue'>d</span><span class='text-red'>a</span><span class='text-yellow'>r</span><span class='text-green'>z</span><span class='text-pink'>e</span><span class='text-orange'>n</span><span class='text-blue'>ia</span>"
       variant="warm"
       animated={false}
     />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { PRODUCTS, COLORS } from "@data/site";
 import {
   readCart,
@@ -28,12 +28,15 @@ function linePrice(item: CartItem) {
   return unit !== null ? formatPln(unit * item.qty) : item.price;
 }
 
-function enrichItem(item: CartItem): CartItem & { emoji: string; color: string; image?: string } {
+function enrichItem(
+  item: CartItem,
+): CartItem & { emoji: string; color: string; image?: string } {
   const p = PRODUCTS.find((x) => x.id === item.id);
   return {
     ...item,
     emoji: item.emoji || p?.emoji || "🛍️",
-    color: item.color || (p ? COLORS[p.color as keyof typeof COLORS] : "#f39200"),
+    color:
+      item.color || (p ? COLORS[p.color as keyof typeof COLORS] : "#2c5ea9"),
     image: item.image || p?.image,
   };
 }
@@ -111,7 +114,9 @@ export default function CartDrawerReact() {
     <div
       id="cart-drawer"
       className={`fixed inset-0 z-[100] transition-opacity duration-300 ${
-        isOpen ? "visible opacity-100 pointer-events-auto" : "invisible opacity-0 pointer-events-none"
+        isOpen
+          ? "visible opacity-100 pointer-events-auto"
+          : "invisible opacity-0 pointer-events-none"
       }`}
       aria-hidden={!isOpen}
       {...(!isOpen ? { inert: "" } : {})}
@@ -135,13 +140,23 @@ export default function CartDrawerReact() {
         {/* ── Nagłówek ── */}
         <header className="flex shrink-0 items-center justify-between gap-3 border-b-2 border-[#f0ece6] bg-white px-6 py-[1.35rem]">
           <div className="flex items-center gap-2.5">
-            <svg className="h-[1.4rem] w-[1.4rem] shrink-0 text-orange" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <svg
+              className="h-[1.4rem] w-[1.4rem] shrink-0 text-orange"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden="true"
+            >
               <path d="M6 6h15l-1.5 9h-12z" strokeLinejoin="round" />
               <path d="M6 6l-1.2-3H2" strokeLinecap="round" />
               <circle cx="9" cy="20" r="1" />
               <circle cx="18" cy="20" r="1" />
             </svg>
-            <h2 id="cart-drawer-title" className="m-0 text-[1.35rem] font-bold leading-none tracking-[-0.025em] text-[#1c1c1c]">
+            <h2
+              id="cart-drawer-title"
+              className="m-0 text-[1.35rem] font-bold leading-none tracking-[-0.025em] text-[#1c1c1c]"
+            >
               Koszyk
             </h2>
           </div>
@@ -152,7 +167,14 @@ export default function CartDrawerReact() {
             onClick={closeCartDrawer}
             aria-label="Zamknij koszyk"
           >
-            <svg className="h-[1.2rem] w-[1.2rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <svg
+              className="h-[1.2rem] w-[1.2rem]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
               <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
             </svg>
           </button>
@@ -162,19 +184,36 @@ export default function CartDrawerReact() {
         <div className="flex-1 overflow-y-auto p-5 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-orange">
           {items.length === 0 ? (
             <div className="flex flex-col items-center gap-0 px-4 pt-12 pb-4 text-center">
-              <div className="grid h-20 w-20 place-items-center bg-white border-[1.5px] border-[#e8e4de] text-[#bbb]" aria-hidden="true">
-                <svg className="h-9 w-9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
+              <div
+                className="grid h-20 w-20 place-items-center bg-white border-[1.5px] border-[#e8e4de] text-[#bbb]"
+                aria-hidden="true"
+              >
+                <svg
+                  className="h-9 w-9"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                >
                   <path d="M6 6h15l-1.5 9h-12z" strokeLinejoin="round" />
                   <path d="M6 6l-1.2-3H2" strokeLinecap="round" />
                   <circle cx="9" cy="20" r="1" />
                   <circle cx="18" cy="20" r="1" />
                 </svg>
               </div>
-              <p className="mt-5 text-[1.1rem] font-bold text-[#1c1c1c]">Koszyk jest pusty</p>
-              <p className="mt-2 text-[0.9375rem] leading-[1.65] text-[#888]">
-                Dodaj produkty ze sklepu MOCnej,<br />aby złożyć zamówienie.
+              <p className="mt-5 text-[1.1rem] font-bold text-[#1c1c1c]">
+                Koszyk jest pusty
               </p>
-              <a href="/sklep" onClick={closeCartDrawer} className="btn-orange mt-6 min-w-[14rem] justify-center">
+              <p className="mt-2 text-[0.9375rem] leading-[1.65] text-[#888]">
+                Dodaj produkty ze sklepu MOCnej,
+                <br />
+                aby złożyć zamówienie.
+              </p>
+              <a
+                href="/sklep"
+                onClick={closeCartDrawer}
+                className="btn-orange mt-6 min-w-[14rem] justify-center"
+              >
                 Przejdź do sklepu
               </a>
             </div>
@@ -193,7 +232,12 @@ export default function CartDrawerReact() {
                       aria-hidden="true"
                     >
                       {item.image ? (
-                        <img src={item.image} alt={item.name} loading="lazy" className="block h-full w-full object-cover" />
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          loading="lazy"
+                          className="block h-full w-full object-cover"
+                        />
                       ) : (
                         <span className="select-none text-[2.4rem] leading-none drop-shadow-[0_2px_5px_rgba(0,0,0,0.08)]">
                           {item.emoji}
@@ -202,8 +246,12 @@ export default function CartDrawerReact() {
                     </div>
                     <div className="col-start-2 row-start-1 flex min-w-0 items-start justify-between gap-2 px-[0.95rem] pb-[0.4rem] pt-[0.85rem]">
                       <div className="min-w-0 flex-1">
-                        <h3 className="m-0 text-[0.9375rem] font-bold leading-[1.3] text-[#1c1c1c]">{item.name}</h3>
-                        <p className="mt-[0.2rem] text-[0.8125rem] text-[#888]">{item.price} / szt.</p>
+                        <h3 className="m-0 text-[0.9375rem] font-bold leading-[1.3] text-[#1c1c1c]">
+                          {item.name}
+                        </h3>
+                        <p className="mt-[0.2rem] text-[0.8125rem] text-[#888]">
+                          {item.price} / szt.
+                        </p>
                       </div>
                       <button
                         type="button"
@@ -211,8 +259,19 @@ export default function CartDrawerReact() {
                         onClick={() => removeCartItem(item.id)}
                         aria-label={`Usuń ${item.name} z koszyka`}
                       >
-                        <svg className="h-[0.9rem] w-[0.9rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
-                          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg
+                          className="h-[0.9rem] w-[0.9rem]"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
                         </svg>
                       </button>
                     </div>
@@ -234,7 +293,12 @@ export default function CartDrawerReact() {
                           inputMode="numeric"
                           className="h-[2.1rem] w-[3rem] appearance-none border-y-0 border-x-[1.5px] border-x-[#ddd8d0] bg-white text-center text-[0.9rem] font-bold text-[#1c1c1c] focus:outline-none focus:ring-[inset_0_0_0_2px_rgba(44,94,169,0.2)]"
                           value={item.qty}
-                          onChange={(e) => setCartItemQty(item.id, clampQty(parseInt(e.target.value, 10) || 1))}
+                          onChange={(e) =>
+                            setCartItemQty(
+                              item.id,
+                              clampQty(parseInt(e.target.value, 10) || 1),
+                            )
+                          }
                           aria-label={`Ilość — ${item.name}`}
                         />
                         <button
@@ -261,7 +325,9 @@ export default function CartDrawerReact() {
         {items.length > 0 && (
           <footer className="flex shrink-0 flex-col gap-[0.85rem] border-t-2 border-[#f0ece6] bg-white px-6 pb-6 pt-5">
             <div className="flex items-center justify-between gap-4 border-[1.5px] border-[#00955e] bg-[#00955e] px-[1.1rem] py-[0.85rem]">
-              <span className="text-[0.875rem] font-bold text-white">Razem do zapłaty</span>
+              <span className="text-[0.875rem] font-bold text-white">
+                Razem do zapłaty
+              </span>
               <span className="text-[1.45rem] font-extrabold tracking-[-0.03em] text-white">
                 {formatPln(total)}
               </span>
@@ -271,8 +337,19 @@ export default function CartDrawerReact() {
               className="btn-orange flex min-h-[3.1rem] items-center justify-center gap-[0.6rem] text-[1rem]"
               onClick={closeCartDrawer}
             >
-              <svg className="h-[1.15rem] w-[1.15rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                <path d="M3 3h2l.4 2M7 13h10l4-8H5.4" strokeLinecap="round" strokeLinejoin="round" />
+              <svg
+                className="h-[1.15rem] w-[1.15rem]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                aria-hidden="true"
+              >
+                <path
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
                 <circle cx="9" cy="21" r="1" />
                 <circle cx="20" cy="21" r="1" />
               </svg>
