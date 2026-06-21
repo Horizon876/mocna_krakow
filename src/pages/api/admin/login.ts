@@ -25,21 +25,35 @@ function loginRedirect(location: string): Response {
   });
 }
 
-async function readPassword(request: Request): Promise<string> {
+async function readLoginForm(request: Request): Promise<{
+  password: string;
+  role: string;
+}> {
   const contentType = request.headers.get("content-type") || "";
   if (contentType.includes("application/x-www-form-urlencoded")) {
     const body = await request.text();
-    return new URLSearchParams(body).get("password") || "";
+    const params = new URLSearchParams(body);
+    return {
+      password: params.get("password") || "",
+      role: params.get("role") || "",
+    };
   }
   const formData = await request.formData();
-  return String(formData.get("password") || "");
+  return {
+    password: String(formData.get("password") || ""),
+    role: String(formData.get("role") || ""),
+  };
 }
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  const password = await readPassword(request);
+  const { password, role } = await readLoginForm(request);
 
   if (!password) {
     return loginRedirect("/admin/login?error=empty");
+  }
+
+  if (role !== "admin" && role !== "pracownik") {
+    return loginRedirect("/admin/login?error=invalid");
   }
 
   const hashAdminB64 = getServerEnv("ADMIN_PASSWORD_HASH_B64");
@@ -49,25 +63,23 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     return loginRedirect("/admin/login?error=config");
   }
 
-  let role: "admin" | "pracownik" | null = null;
+  let matchedRole: "admin" | "pracownik" | null = null;
 
-  // Sprawdź hasło administratora
-  try {
-    const storedAdminHash = Buffer.from(hashAdminB64, "base64").toString(
-      "utf8",
-    );
-    if (
-      storedAdminHash.startsWith("$2") &&
-      (await bcrypt.compare(password, storedAdminHash))
-    ) {
-      role = "admin";
+  if (role === "admin") {
+    try {
+      const storedAdminHash = Buffer.from(hashAdminB64, "base64").toString(
+        "utf8",
+      );
+      if (
+        storedAdminHash.startsWith("$2") &&
+        (await bcrypt.compare(password, storedAdminHash))
+      ) {
+        matchedRole = "admin";
+      }
+    } catch {
+      return loginRedirect("/admin/login?error=config");
     }
-  } catch {
-    return loginRedirect("/admin/login?error=config");
-  }
-
-  // Sprawdź hasło pracownika (jeśli jest skonfigurowane)
-  if (!role && hashPracownikB64) {
+  } else if (hashPracownikB64) {
     try {
       const storedPracownikHash = Buffer.from(
         hashPracownikB64,
@@ -77,22 +89,22 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         storedPracownikHash.startsWith("$2") &&
         (await bcrypt.compare(password, storedPracownikHash))
       ) {
-        role = "pracownik";
+        matchedRole = "pracownik";
       }
     } catch {
-      // ignoruj błędy dekodowania i porównywania dla pracownika
+      return loginRedirect("/admin/login?error=config");
     }
   }
 
-  if (!role) {
+  if (!matchedRole) {
     await new Promise((r) => setTimeout(r, 500));
     return loginRedirect("/admin/login?error=invalid");
   }
 
-  const token = await createSessionToken(role);
+  const token = await createSessionToken(matchedRole);
   cookies.set(COOKIE_NAME_EXPORT, token, {
     httpOnly: true,
-    secure: import.meta.env.PROD,
+    secure: getServerEnv("VERCEL") === "1" || import.meta.env.PROD,
     sameSite: "lax",
     maxAge: SESSION_DURATION_SEC,
     path: "/",

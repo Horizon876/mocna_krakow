@@ -1,24 +1,19 @@
 ---
 import "../../styles/global.css";
 import { ViewTransitions } from "astro:transitions";
-import { actions } from "astro:actions";
-import { verifySessionToken, COOKIE_NAME_EXPORT } from "../../lib/session";
 import NoiseOverlay from "@components/NoiseOverlay.astro";
 import { BRAND } from "@data/site";
 
-const token = Astro.cookies.get(COOKIE_NAME_EXPORT)?.value;
-if (token && (await verifySessionToken(token))) {
-  return Astro.redirect("/admin/dashboard");
-}
-
-const result = Astro.getActionResult(actions.login);
 const expired = Astro.url.searchParams.get("expired") === "1";
+const errorCode = Astro.url.searchParams.get("error");
 
-if (result?.data?.success) {
-  return Astro.redirect("/admin/dashboard");
-}
+const errorMessages: Record<string, string> = {
+  invalid: "Nieprawidłowe hasło.",
+  empty: "Hasło jest wymagane.",
+  config: "Konfiguracja serwera jest nieprawidłowa.",
+};
 
-const errorMessage = result?.error?.message ?? null;
+const errorMessage = errorCode ? errorMessages[errorCode] ?? "Nie udało się zalogować." : null;
 
 let submittedRole = "";
 if (Astro.request.method === "POST") {
@@ -73,7 +68,7 @@ if (Astro.request.method === "POST") {
           </div>
         )}
 
-        <form id="login-form" method="POST" action={actions.login} novalidate class="space-y-5">
+        <form id="login-form" method="POST" action="/api/admin/login" novalidate class="space-y-5">
           <input type="hidden" name="role" id="role-input" value={submittedRole} />
 
           <!-- STEP 1: Wybór roli -->
@@ -139,6 +134,11 @@ if (Astro.request.method === "POST") {
             </button>
           </div>
         </form>
+
+        <p class="mt-6 text-center text-xs text-graphite-muted">
+          Problemy z logowaniem?
+          <a href="/api/admin/logout" class="font-semibold text-blue hover:underline">Wyczyść sesję</a>
+        </p>
         </div>
       </div>
     </main>

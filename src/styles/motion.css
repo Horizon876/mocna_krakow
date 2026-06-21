@@ -1,0 +1,162 @@
+/* Poziomy animacji: html[data-motion="full|lite|reduced"] (ustawiane w <head>) */
+
+/* --- Kosztowne dekoracje: wyłącz na lite/reduced --- */
+html[data-motion="lite"] .noise-overlay,
+html[data-motion="reduced"] .noise-overlay {
+  display: none;
+}
+
+html[data-motion="lite"] .brand-blob,
+html[data-motion="reduced"] .brand-blob {
+  animation: none !important;
+  filter: none !important;
+  opacity: 0.13 !important;
+}
+
+html[data-motion="lite"] .animate-floaty,
+html[data-motion="lite"] .animate-floaty-slow,
+html[data-motion="lite"] .animate-blob-morph,
+html[data-motion="lite"] .animate-glow,
+html[data-motion="lite"] .animate-marquee,
+html[data-motion="reduced"] .animate-floaty,
+html[data-motion="reduced"] .animate-floaty-slow,
+html[data-motion="reduced"] .animate-blob-morph,
+html[data-motion="reduced"] .animate-glow,
+html[data-motion="reduced"] .animate-marquee {
+  animation: none !important;
+}
+
+html[data-motion="lite"] .blur-3xl,
+html[data-motion="reduced"] .blur-3xl {
+  filter: none !important;
+}
+
+/* --- Wejścia stron / hero --- */
+html[data-motion="lite"] main,
+html[data-motion="reduced"] main {
+  animation: none !important;
+}
+
+html[data-motion="lite"] .hero-section h1 .hero-kicker,
+html[data-motion="lite"] .hero-section h1 .hero-brand,
+html[data-motion="lite"] .hero-section h1 .hero-sub,
+html[data-motion="lite"] .hero-section .hero-lead,
+html[data-motion="lite"] .hero-section .hero-btn,
+html[data-motion="lite"] .hero-section .hero-btn-primary,
+html[data-motion="lite"] .hero-section .hero-photo-col,
+html[data-motion="reduced"] .hero-section h1 .hero-kicker,
+html[data-motion="reduced"] .hero-section h1 .hero-brand,
+html[data-motion="reduced"] .hero-section h1 .hero-sub,
+html[data-motion="reduced"] .hero-section .hero-lead,
+html[data-motion="reduced"] .hero-section .hero-btn,
+html[data-motion="reduced"] .hero-section .hero-btn-primary,
+html[data-motion="reduced"] .hero-section .hero-photo-col {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+}
+
+html[data-motion="lite"] .animate-rise-in,
+html[data-motion="lite"] .story-card,
+html[data-motion="reduced"] .animate-rise-in,
+html[data-motion="reduced"] .story-card {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* --- View Transitions --- */
+html[data-motion="lite"] ::view-transition-old(root),
+html[data-motion="lite"] ::view-transition-new(root) {
+  animation-duration: 0.2s !important;
+}
+
+html[data-motion="reduced"] ::view-transition-old(root),
+html[data-motion="reduced"] ::view-transition-new(root) {
+  animation-duration: 0.001ms !important;
+}
+
+/* --- Przyciski / hover: tylko transform, krócej na lite --- */
+html[data-motion="lite"] .btn,
+html[data-motion="lite"] .btn-orange,
+html[data-motion="lite"] .btn-outline {
+  will-change: auto !important;
+  transition-duration: 0.15s !important;
+}
+
+html[data-motion="lite"] .btn:hover,
+html[data-motion="lite"] .btn-orange:hover,
+html[data-motion="lite"] .btn-outline:hover,
+html[data-motion="reduced"] .btn:hover,
+html[data-motion="reduced"] .btn-orange:hover,
+html[data-motion="reduced"] .btn-outline:hover {
+  transform: none !important;
+}
+
+/* --- Koszyk / sklep --- */
+html[data-motion="lite"] .nav-motion-pop {
+  animation-duration: 0.4s !important;
+}
+
+html[data-motion="reduced"] .nav-motion-pop,
+html[data-motion="reduced"] .nav-motion-bump {
+  animation: none !important;
+}
+
+html[data-motion="lite"] .shop-add-btn.is-added {
+  animation: none !important;
+}
+
+html[data-motion="lite"] .shop-add-btn.is-added .shop-add-check {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+html[data-motion="reduced"] .shop-add-btn,
+html[data-motion="reduced"] .shop-add-label {
+  transition: none !important;
+}
+
+html[data-motion="reduced"] .shop-add-btn.is-added,
+html[data-motion="reduced"] .shop-add-btn.is-added .shop-add-check {
+  animation: none !important;
+}
+
+/* --- Drawery --- */
+html[data-motion="lite"] .cart-drawer-backdrop {
+  transition-duration: 0.18s !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html[data-motion="lite"] .cart-drawer-panel {
+  transition-duration: 0.22s !important;
+}
+
+html[data-motion="reduced"] .cart-drawer-backdrop,
+html[data-motion="reduced"] .cart-drawer-panel {
+  transition-duration: 0.001ms !important;
+}
+
+html[data-motion="lite"] .nav-mobile-panel,
+html[data-motion="lite"] .nav-mobile-link {
+  transition-duration: 0.15s !important;
+}
+
+html[data-motion="reduced"] .nav-mobile-panel,
+html[data-motion="reduced"] .nav-mobile-link {
+  transition: none !important;
+  animation: none !important;
+}
+
+html[data-motion="lite"] .story-card .transition-all,
+html[data-motion="lite"] .story-card .duration-700 {
+  transition-duration: 0.15s !important;
+}
+
+html[data-motion="lite"] .story-card:hover *,
+html[data-motion="reduced"] .story-card:hover * {
+  transform: none !important;
+  filter: none !important;
+}

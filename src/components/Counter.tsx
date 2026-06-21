@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { StatAccent, StatTileSize } from "@data/site";
+import { isMotionLite } from "@/lib/motion";
 
 const tileAccent = {
   orange: {
@@ -54,9 +55,9 @@ export default function Counter({
     const el = ref.current;
     if (!el) return;
 
-    const reduce = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    const reduce =
+      isMotionLite() ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) {
       setDisplay(value);
       return;
@@ -77,6 +78,10 @@ export default function Counter({
 
   useEffect(() => {
     if (!started) return;
+    if (isMotionLite()) {
+      setDisplay(value);
+      return;
+    }
     const duration = 1800;
     const start = performance.now();
     let raf = 0;

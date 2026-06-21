@@ -7,11 +7,6 @@ import { asc } from 'drizzle-orm';
 import { actions } from 'astro:actions';
 import { ensureCafeGallerySeeded } from '../../lib/cafe-gallery';
 
-const logoutResult = Astro.getActionResult(actions.logout);
-if (logoutResult?.data?.success) {
-  return Astro.redirect('/admin/login');
-}
-
 const resultDelete = Astro.getActionResult(actions.deleteCafePhoto);
 if (resultDelete?.data?.success) {
   return Astro.redirect('/admin/kawiarnia');

@@ -18,9 +18,37 @@ const {
 
 ---
 <!doctype html>
-<html lang="pl">
+<html lang="pl" data-motion="full">
   <head>
     <meta charset="UTF-8" />
+    <script is:inline>
+      (function () {
+        try {
+          var tier = "full";
+          if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            tier = "reduced";
+          } else {
+            var nav = navigator;
+            var conn =
+              nav.connection || nav.mozConnection || nav.webkitConnection;
+            var low =
+              (typeof nav.deviceMemory === "number" && nav.deviceMemory <= 4) ||
+              ((nav.hardwareConcurrency || 8) <= 4 &&
+                matchMedia("(max-width: 768px)").matches);
+            if (
+              conn &&
+              (conn.saveData || /^(slow-2g|2g)$/.test(conn.effectiveType || ""))
+            ) {
+              low = true;
+            }
+            if (low) tier = "lite";
+          }
+          document.documentElement.dataset.motion = tier;
+        } catch (e) {
+          document.documentElement.dataset.motion = "lite";
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="preload" href="/brand/logo-kolor.svg" as="image" type="image/svg+xml" fetchpriority="high" />
     <link rel="preload" href="/brand/logo-kolor.svg" as="image" type="image/svg+xml" fetchpriority="high" />

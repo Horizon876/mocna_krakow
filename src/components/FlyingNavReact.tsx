@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { HOME_SECTION_SCROLL } from "@data/site";
+import { getMotionTier } from "@/lib/motion";
 import { readCart } from "../scripts/cart";
 
 const oNas = [
@@ -142,11 +143,16 @@ export default function FlyingNavReact() {
     updateCart();
 
     const handleAdded = () => {
+      updateCart();
+      const tier = getMotionTier();
+      if (tier === "reduced") return;
+
       setCartAdded(true);
       setCartBump(true);
-      setTimeout(() => setCartAdded(false), 2200);
-      setTimeout(() => setCartBump(false), 750);
-      updateCart();
+      const addedMs = tier === "lite" ? 500 : 1200;
+      const bumpMs = tier === "lite" ? 350 : 520;
+      setTimeout(() => setCartAdded(false), addedMs);
+      setTimeout(() => setCartBump(false), bumpMs);
     };
 
     const handleStorage = (e: StorageEvent) => {
@@ -449,9 +455,9 @@ export default function FlyingNavReact() {
                     href="/sklep"
                     onClick={handleShopClick}
                     style={{ transition: cartAdded ? "none" : "" }}
-                    className={`${navCtaBase} border transition-all ${
+                    className={`${navCtaBase} border transition-all nav-motion-pop ${
                       cartAdded
-                        ? "animate-[nav-cart-added_2.2s_cubic-bezier(0.22,0.55,0.1,1)] bg-[#ffde00] border-[#ffde00]"
+                        ? "animate-[nav-cart-added_1.2s_cubic-bezier(0.22,1,0.36,1)] bg-[#ffde00] border-[#ffde00] text-[#333333]"
                         : navLinkIsActive("/sklep")
                           ? "border-[#e6c800] bg-[#ffde00] text-[#333333]"
                           : "border-[#ffde00] bg-[#ffde00] text-[#333333] hover:border-[#e6c800] hover:bg-[#f5d500]"
@@ -497,7 +503,7 @@ export default function FlyingNavReact() {
                     <span>{shopCtaLabel}</span>
                     {isSklepPage && (
                       <span
-                        className={`inline-flex items-center justify-center min-w-[1.2rem] h-[1.2rem] px-[0.3rem] ml-[0.15rem] rounded-full bg-[#2c5ea9] text-white text-[0.65rem] font-bold leading-none tracking-[-0.02em] ${cartBump ? "animate-[nav-cart-count-bump_0.75s_ease-out]" : ""}`}
+                        className={`inline-flex items-center justify-center min-w-[1.2rem] h-[1.2rem] px-[0.3rem] ml-[0.15rem] rounded-full bg-[#2c5ea9] text-white text-[0.65rem] font-bold leading-none tracking-[-0.02em] nav-motion-bump ${cartBump ? "animate-[nav-cart-count-bump_0.52s_cubic-bezier(0.22,1,0.36,1)]" : ""}`}
                       >
                         {cartCount}
                       </span>
@@ -548,7 +554,7 @@ export default function FlyingNavReact() {
                   <a
                     href="/sklep"
                     onClick={handleShopClick}
-                    className="grid h-10 w-10 place-items-center rounded-none text-[#333333] bg-transparent transition-all duration-200 hover:bg-[#f4f4f4] sm:hidden relative"
+                    className={`grid h-10 w-10 place-items-center rounded-none text-[#333333] bg-transparent transition-all duration-200 hover:bg-[#f4f4f4] sm:hidden relative nav-motion-pop ${cartAdded ? "animate-[nav-cart-icon-pop_1s_cubic-bezier(0.22,1,0.36,1)]" : ""}`}
                     aria-label="Koszyk"
                   >
                     <svg
@@ -567,7 +573,7 @@ export default function FlyingNavReact() {
                       <circle cx="18" cy="20" r="1"></circle>
                     </svg>
                     <span
-                      className={`absolute -top-1.5 -right-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-none border border-[#333333] bg-[#ffde00] px-1 text-[9px] font-bold text-[#333333] leading-none ${cartBump ? "animate-[nav-cart-count-bump_0.75s_ease-out]" : ""}`}
+                      className={`absolute -top-1.5 -right-1.5 inline-flex items-center justify-center min-w-[1.2rem] h-[1.2rem] px-[0.3rem] rounded-full bg-[#2c5ea9] text-white text-[0.65rem] font-bold leading-none tracking-[-0.02em] nav-motion-bump ${cartBump ? "animate-[nav-cart-count-bump_0.52s_cubic-bezier(0.22,1,0.36,1)]" : ""}`}
                     >
                       {cartCount}
                     </span>
@@ -623,7 +629,7 @@ export default function FlyingNavReact() {
         ></div>
 
         <div
-          className={`absolute inset-0 flex flex-col overflow-y-auto rounded-none border-0 bg-white px-6 pb-8 pt-0 shadow-none transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${isDrawerOpen ? "translate-y-0 opacity-100" : "-translate-y-[15px] opacity-0"}`}
+          className={`absolute inset-0 flex flex-col overflow-y-auto rounded-none border-0 bg-white px-6 pb-8 pt-0 shadow-none transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] nav-mobile-panel ${isDrawerOpen ? "translate-y-0 opacity-100" : "-translate-y-[15px] opacity-0"}`}
         >
           <div className="relative flex h-16 shrink-0 items-center justify-between border-b border-[#333]/[0.07] bg-transparent sm:h-[4.5rem]">
             <a
@@ -768,7 +774,13 @@ export default function FlyingNavReact() {
             <a
               href="/sklep"
               onClick={handleShopClick}
-              className={`flex w-full items-center justify-center gap-2 rounded-none border-2 py-4 text-base font-bold transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${navLinkIsActive("/sklep") ? "border-[#e6c800] bg-[#ffde00] text-[#333333] shadow-md" : "border-[#ffde00] bg-[#ffde00] text-[#333333] hover:-translate-y-0.5 hover:border-[#e6c800] hover:bg-[#f5d500] hover:shadow-lg"} ${isDrawerOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[12px]"}`}
+              className={`flex w-full items-center justify-center gap-2 rounded-none border-2 py-4 text-base font-bold transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] nav-motion-pop nav-mobile-link ${
+                cartAdded
+                  ? "animate-[nav-cart-added_1.2s_cubic-bezier(0.22,1,0.36,1)] border-[#ffde00] bg-[#ffde00] text-[#333333]"
+                  : navLinkIsActive("/sklep")
+                    ? "border-[#e6c800] bg-[#ffde00] text-[#333333] shadow-md"
+                    : "border-[#ffde00] bg-[#ffde00] text-[#333333] hover:-translate-y-0.5 hover:border-[#e6c800] hover:bg-[#f5d500] hover:shadow-lg"
+              } ${isDrawerOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-[12px]"}`}
               style={{ transitionDelay: "0.4s" }}
             >
               {!isSklepPage ? (
@@ -811,7 +823,7 @@ export default function FlyingNavReact() {
               <span>{shopCtaLabel}</span>
               {isSklepPage && (
                 <span
-                  className={`ml-1 inline-flex items-center justify-center min-w-[1.2rem] h-[1.2rem] px-[0.3rem] rounded-full bg-[#2c5ea9] text-white text-[0.65rem] font-bold leading-none tracking-[-0.02em] ${cartBump ? "animate-[nav-cart-count-bump_0.75s_ease-out]" : ""}`}
+                  className={`ml-1 inline-flex items-center justify-center min-w-[1.2rem] h-[1.2rem] px-[0.3rem] rounded-full bg-[#2c5ea9] text-white text-[0.65rem] font-bold leading-none tracking-[-0.02em] nav-motion-bump ${cartBump ? "animate-[nav-cart-count-bump_0.52s_cubic-bezier(0.22,1,0.36,1)]" : ""}`}
                 >
                   {cartCount}
                 </span>
@@ -831,20 +843,36 @@ export default function FlyingNavReact() {
 
       <style>{`
         @keyframes nav-cart-added {
-          0%, 100% { transform: scale(1) translateY(0); box-shadow: none; }
-          18% { transform: scale(1.08) translateY(-2px); background-color: #d4f0e0; border-color: #9dd4b8; box-shadow: 0 0 0 2px rgba(0, 149, 94, 0.28), 0 6px 18px -5px rgba(0, 149, 94, 0.28); }
-          36% { transform: scale(1.04) translateY(-1px); background-color: #dff5e9; border-color: #b5dcc5; box-shadow: 0 0 0 1.5px rgba(0, 149, 94, 0.18), 0 3px 12px -6px rgba(0, 149, 94, 0.15); }
-          52% { transform: scale(1.025) translateY(0); background-color: #eaf7f0; border-color: #c8e6d4; box-shadow: 0 0 0 1px rgba(0, 149, 94, 0.1); }
-          66% { transform: scale(1.012) translateY(0); background-color: #f3f0c4; border-color: #ede070; }
-          78% { transform: scale(1.006) translateY(0); background-color: #f8ef8e; border-color: #f5e860; }
-          88% { transform: scale(1.002) translateY(0); background-color: #fce88a; border-color: #ffde00; }
+          0% {
+            transform: scale(1) translateY(0);
+          }
+          24% {
+            transform: scale(1.06) translateY(-2px);
+          }
+          52% {
+            transform: scale(1.02) translateY(0);
+          }
+          100% {
+            transform: scale(1) translateY(0);
+          }
         }
         @keyframes nav-cart-count-bump {
-          0%, 100% { transform: scale(1); }
-          30% { transform: scale(1.3); }
-          55% { transform: scale(1.05); }
-          75% { transform: scale(1.12); }
-          88% { transform: scale(0.98); }
+          0% { transform: scale(1); }
+          38% { transform: scale(1.35); }
+          62% { transform: scale(0.96); }
+          100% { transform: scale(1); }
+        }
+        @keyframes nav-cart-icon-pop {
+          0% { transform: scale(1); }
+          32% { transform: scale(1.1); }
+          58% { transform: scale(0.97); }
+          100% { transform: scale(1); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .nav-motion-pop,
+          .nav-motion-bump {
+            animation: none !important;
+          }
         }
       `}</style>
     </>

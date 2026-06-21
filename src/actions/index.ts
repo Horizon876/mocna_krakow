@@ -18,6 +18,7 @@ import {
   COOKIE_NAME_EXPORT,
   SESSION_DURATION_SEC,
 } from "../lib/session";
+import { getServerEnv } from "../lib/env-server";
 import { saveImage } from "../lib/upload";
 import { cancelReservationById } from "../lib/reservations";
 import { sendOrderEmail } from "../lib/order-email";
@@ -27,6 +28,14 @@ import {
   generateTicketNumber,
   generateTicketQR,
 } from "../lib/ticket-generator";
+
+/** Puste pole file w multipart → brak pliku (zamiast File o size 0). */
+const optionalImageFile = z.preprocess((val) => {
+  if (typeof File === "undefined") return undefined;
+  if (val instanceof File && val.size === 0) return undefined;
+  if (val instanceof File) return val;
+  return undefined;
+}, z.any().optional());
 
 export const server = {
   createProduct: defineAction({
@@ -43,7 +52,7 @@ export const server = {
             .min(0, "Cena nie może być ujemna")
             .max(10000000, "Cena jest zbyt wysoka"),
         ),
-      imageFile: z.instanceof(File).optional(),
+      imageFile: optionalImageFile,
       availabilityStatus: z
         .enum(["available", "unavailable"])
         .default("available"),
@@ -56,11 +65,7 @@ export const server = {
         });
       try {
         let imageUrl = null;
-        if (
-          input.imageFile &&
-          input.imageFile instanceof File &&
-          input.imageFile.size > 0
-        ) {
+        if (input.imageFile) {
           imageUrl = await saveImage(input.imageFile);
         }
 
@@ -76,7 +81,14 @@ export const server = {
           .returning();
         return { success: true, product: result[0] };
       } catch (error) {
-        throw new Error("Błąd podczas tworzenia produktu");
+        console.error("createProduct failed:", error);
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Błąd podczas tworzenia produktu",
+        });
       }
     },
   }),
@@ -96,7 +108,7 @@ export const server = {
             .min(0, "Cena nie może być ujemna")
             .max(10000000, "Cena jest zbyt wysoka"),
         ),
-      imageFile: z.instanceof(File).optional(),
+      imageFile: optionalImageFile,
       existingImageUrl: z.string().optional(),
       availabilityStatus: z
         .enum(["available", "unavailable"])
@@ -110,11 +122,7 @@ export const server = {
         });
       try {
         let imageUrl = input.existingImageUrl || null;
-        if (
-          input.imageFile &&
-          input.imageFile instanceof File &&
-          input.imageFile.size > 0
-        ) {
+        if (input.imageFile) {
           imageUrl = await saveImage(input.imageFile);
         }
 
@@ -131,7 +139,14 @@ export const server = {
           .returning();
         return { success: true, product: result[0] };
       } catch (error) {
-        throw new Error("Błąd podczas aktualizacji produktu");
+        console.error("updateProduct failed:", error);
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Błąd podczas aktualizacji produktu",
+        });
       }
     },
   }),
@@ -1135,8 +1150,8 @@ export const server = {
     }),
     handler: async (input, context) => {
       // Hash przechowywany jako base64 aby uniknąć interpolacji $ przez Vite
-      const hashAdminB64 = import.meta.env.ADMIN_PASSWORD_HASH_B64;
-      const hashPracownikB64 = import.meta.env.PRACOWNIK_PASSWORD_HASH_B64;
+      const hashAdminB64 = getServerEnv("ADMIN_PASSWORD_HASH_B64");
+      const hashPracownikB64 = getServerEnv("PRACOWNIK_PASSWORD_HASH_B64");
 
       if (!hashAdminB64) {
         throw new ActionError({

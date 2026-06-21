@@ -1,8 +1,9 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
+import { getServerEnv } from "../lib/env-server";
 
-const connectionString = import.meta.env.DATABASE_URL;
+const connectionString = getServerEnv("DATABASE_URL");
 
 if (!connectionString) {
   throw new Error(

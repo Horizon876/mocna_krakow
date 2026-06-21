@@ -5,11 +5,6 @@ import { reservations } from '../../db/schema';
 import { desc } from 'drizzle-orm';
 import { actions } from 'astro:actions';
 
-const logoutResult = Astro.getActionResult(actions.logout);
-if (logoutResult?.data?.success) {
-  return Astro.redirect('/admin/login');
-}
-
 const cancelResult = Astro.getActionResult(actions.cancelReservation);
 const deleteResult = Astro.getActionResult(actions.deleteReservation);
 const anonResult = Astro.getActionResult(actions.anonymizeReservations);

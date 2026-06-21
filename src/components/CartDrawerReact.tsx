@@ -113,7 +113,7 @@ export default function CartDrawerReact() {
   return (
     <div
       id="cart-drawer"
-      className={`fixed inset-0 z-[100] transition-opacity duration-300 ${
+      className={`cart-drawer-backdrop fixed inset-0 z-[100] transition-opacity duration-300 ${
         isOpen
           ? "visible opacity-100 pointer-events-auto"
           : "invisible opacity-0 pointer-events-none"
@@ -130,7 +130,7 @@ export default function CartDrawerReact() {
 
       <aside
         id="cart-drawer-panel"
-        className={`absolute top-0 right-0 flex h-full w-[min(100vw,36rem)] flex-col bg-[#f9f6f1] shadow-[-20px_0_60px_-10px_rgba(20,20,20,0.25)] transition-transform duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`cart-drawer-panel absolute top-0 right-0 flex h-full w-[min(100vw,36rem)] flex-col bg-[#f9f6f1] shadow-[-20px_0_60px_-10px_rgba(20,20,20,0.25)] transition-transform duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"

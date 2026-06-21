@@ -1,5 +1,10 @@
 import { clampQty, migrateCart, readCart, writeCart } from "./cart";
 
+function isMotionLite(): boolean {
+  const tier = document.documentElement.dataset.motion;
+  return tier === "lite" || tier === "reduced";
+}
+
 function initShopCards() {
   document.querySelectorAll("[data-product-card]").forEach((card) => {
     const qtyInput = card.querySelector<HTMLInputElement>("[data-qty]");
@@ -65,16 +70,14 @@ function initShopCards() {
       if (resetTimer) window.clearTimeout(resetTimer);
 
       addBtn.classList.add("is-added");
-      addDefault.classList.add("hidden");
-      addSuccess.classList.remove("hidden");
+      addSuccess.setAttribute("aria-hidden", "false");
       addBtn.disabled = true;
 
       resetTimer = window.setTimeout(() => {
         addBtn.classList.remove("is-added");
-        addDefault.classList.remove("hidden");
-        addSuccess.classList.add("hidden");
+        addSuccess.setAttribute("aria-hidden", "true");
         addBtn.disabled = false;
-      }, 1100);
+      }, isMotionLite() ? 900 : 1400);
     });
   });
 }

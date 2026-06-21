@@ -1,11 +1,5 @@
 ---
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { actions } from 'astro:actions';
-
-const logoutResult = Astro.getActionResult(actions.logout);
-if (logoutResult?.data?.success) {
-  return Astro.redirect('/admin/login');
-}
 
 const role = Astro.locals.adminRole;
 const forbidden = Astro.url.searchParams.get('forbidden');

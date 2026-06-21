@@ -4,8 +4,14 @@
  * Cały kod działa wyłącznie po stronie serwera.
  */
 
+import { getServerEnv } from "./env-server";
+
 const COOKIE_NAME = "admin_session";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 8; // 8 godzin
+
+function getSessionSecret(): string | undefined {
+  return getServerEnv("SESSION_SECRET");
+}
 
 /**
  * Tworzy podpisany token sesji: role:timestamp.HMAC
@@ -13,7 +19,7 @@ const SESSION_DURATION_MS = 1000 * 60 * 60 * 8; // 8 godzin
 export async function createSessionToken(
   role: "admin" | "pracownik",
 ): Promise<string> {
-  const secret = import.meta.env.SESSION_SECRET;
+  const secret = getSessionSecret();
   if (!secret) throw new Error("SESSION_SECRET nie jest ustawiony w .env");
 
   const expires = Date.now() + SESSION_DURATION_MS;
@@ -48,7 +54,7 @@ export async function verifySessionToken(
   token: string,
 ): Promise<{ valid: boolean; role?: "admin" | "pracownik" }> {
   try {
-    const secret = import.meta.env.SESSION_SECRET;
+    const secret = getSessionSecret();
     if (!secret) return { valid: false };
 
     const lastDot = token.lastIndexOf(".");

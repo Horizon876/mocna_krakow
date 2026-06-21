@@ -29,7 +29,8 @@ const action = isEdit ? actions.updateProduct : actions.createProduct;
 
   {result?.error && (
     <div class="alert-error">
-      <span aria-hidden="true">⚠</span> Wystąpił błąd podczas zapisywania produktu. Sprawdź poprawność danych.
+      <span aria-hidden="true">⚠</span>
+      {result.error.message || 'Wystąpił błąd podczas zapisywania produktu. Sprawdź poprawność danych.'}
     </div>
   )}
   {result?.data?.success && (

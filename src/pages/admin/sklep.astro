@@ -6,11 +6,6 @@ import { products } from '../../db/schema';
 import { desc, eq } from 'drizzle-orm';
 import { actions } from 'astro:actions';
 
-const logoutResult = Astro.getActionResult(actions.logout);
-if (logoutResult?.data?.success) {
-  return Astro.redirect('/admin/login');
-}
-
 const resultDelete = Astro.getActionResult(actions.deleteProduct);
 if (resultDelete?.data?.success) {
   return Astro.redirect('/admin/sklep');

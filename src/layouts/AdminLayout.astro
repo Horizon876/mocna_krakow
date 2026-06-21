@@ -1,9 +1,7 @@
 ---
 import "../styles/global.css";
-import { ViewTransitions } from "astro:transitions";
 import NoiseOverlay from "@components/NoiseOverlay.astro";
 import { BRAND } from "@data/site";
-import { actions } from "astro:actions";
 
 interface Props {
   title?: string;
@@ -58,15 +56,42 @@ const mobileTabClass = (active: boolean) =>
   ] as const;
 ---
 <!doctype html>
-<html lang="pl" class:list={[noScroll && "h-full overflow-hidden"]}>
+<html lang="pl" data-motion="full" class:list={[noScroll && "h-full overflow-hidden"]}>
   <head>
     <meta charset="UTF-8" />
+    <script is:inline>
+      (function () {
+        try {
+          var tier = "full";
+          if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            tier = "reduced";
+          } else {
+            var nav = navigator;
+            var conn =
+              nav.connection || nav.mozConnection || nav.webkitConnection;
+            var low =
+              (typeof nav.deviceMemory === "number" && nav.deviceMemory <= 4) ||
+              ((nav.hardwareConcurrency || 8) <= 4 &&
+                matchMedia("(max-width: 768px)").matches);
+            if (
+              conn &&
+              (conn.saveData || /^(slow-2g|2g)$/.test(conn.effectiveType || ""))
+            ) {
+              low = true;
+            }
+            if (low) tier = "lite";
+          }
+          document.documentElement.dataset.motion = tier;
+        } catch (e) {
+          document.documentElement.dataset.motion = "lite";
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/brand/logo-kolor.svg" />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="theme-color" content="#2c5ea9" />
     <title>{title}</title>
-    <ViewTransitions />
   </head>
   <body class:list={["relative flex flex-col text-graphite font-sans", noScroll ? "h-full overflow-hidden" : "min-h-screen"]}>
     <NoiseOverlay />
@@ -117,7 +142,7 @@ const mobileTabClass = (active: boolean) =>
             }
           </ul>
 
-          <form method="POST" action={actions.logout} class="ml-auto shrink-0">
+          <form method="POST" action="/api/admin/logout" class="ml-auto shrink-0">
             <button
               type="submit"
               class="btn rounded-none border-red bg-red px-4 py-2 text-[13px] text-white hover:border-[#c42f35] hover:bg-[#c42f35]"

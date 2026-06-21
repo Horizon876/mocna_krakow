@@ -18,15 +18,15 @@ const c = palettes[variant];
 ---
 <div class:list={["pointer-events-none absolute inset-0 -z-10 overflow-hidden", className]} aria-hidden="true">
   <span
-    class:list={["absolute -left-24 -top-24 h-[34rem] w-[34rem] rounded-blob blur-3xl opacity-[0.22]", animated && "animate-floaty"]}
+    class:list={["absolute -left-24 -top-24 h-[34rem] w-[34rem] rounded-blob blur-3xl opacity-[0.22] brand-blob", animated && "animate-floaty"]}
     style={`background:${c[0]}`}
   ></span>
   <span
-    class:list={["absolute -right-32 top-1/3 h-[30rem] w-[30rem] rounded-blob-2 blur-3xl opacity-[0.18]", animated && "animate-floaty-slow"]}
+    class:list={["absolute -right-32 top-1/3 h-[30rem] w-[30rem] rounded-blob-2 blur-3xl opacity-[0.18] brand-blob", animated && "animate-floaty-slow"]}
     style={`background:${c[1]}`}
   ></span>
   <span
-    class:list={["absolute bottom-[-10rem] left-1/3 h-[26rem] w-[26rem] rounded-blob blur-3xl opacity-[0.16]", animated && "animate-blob-morph"]}
+    class:list={["absolute bottom-[-10rem] left-1/3 h-[26rem] w-[26rem] rounded-blob blur-3xl opacity-[0.16] brand-blob", animated && "animate-blob-morph"]}
     style={`background:${c[2]}`}
   ></span>
 </div>
