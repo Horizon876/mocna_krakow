@@ -13,12 +13,12 @@ const tileAccent = {
     label: "text-graphite",
   },
   red: {
-    btn: "border-red bg-red",
+    btn: "border-[#c2343a] bg-[#c2343a]",
     value: "text-white",
     label: "text-white",
   },
   green: {
-    btn: "border-green bg-green",
+    btn: "border-[#007a4c] bg-[#007a4c]",
     value: "text-white",
     label: "text-white",
   },

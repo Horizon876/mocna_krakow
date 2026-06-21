@@ -1,4 +1,4 @@
-/* Fonty ładowane asynchronicznie w BaseLayout (bez blokowania renderu). */
+@import "./fonts.css";
 
 @tailwind base;
 @tailwind components;

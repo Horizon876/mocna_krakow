@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build && node scripts/patch-vercel-runtime.mjs",
+    "build": "node scripts/setup-fonts.mjs && node scripts/optimize-images.mjs && astro build && node scripts/patch-vercel-runtime.mjs",
     "preview": "astro preview",
     "astro": "astro",
     "db:push": "drizzle-kit push",
@@ -17,6 +17,8 @@
     "db:studio": "drizzle-kit studio",
     "setup": "powershell -ExecutionPolicy Bypass -File scripts/setup.ps1",
     "setup:vercel": "node scripts/setup-vercel-env.mjs",
+    "fonts:setup": "node scripts/setup-fonts.mjs",
+    "images:optimize": "node scripts/optimize-images.mjs",
     "gen:creds": "node scripts/gen-creds.mjs",
     "deploy": "npx vercel --prod --yes"
   },
@@ -49,6 +51,7 @@
     "@types/pg": "^8.20.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "drizzle-kit": "^0.31.10"
+    "drizzle-kit": "^0.31.10",
+    "sharp": "^0.34.5"
   }
 }

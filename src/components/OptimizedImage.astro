@@ -1,0 +1,73 @@
+---
+import {
+  optimizedVariants,
+  optimizedSrcset,
+  isOptimizableImage,
+  type OptimizedVariant,
+} from "@/lib/optimized-image";
+
+interface Props {
+  src: string;
+  alt: string;
+  widths: readonly number[];
+  sizes: string;
+  loading?: "lazy" | "eager";
+  fetchpriority?: "high" | "low" | "auto";
+  class?: string;
+  width?: number;
+  height?: number;
+  decoding?: "async" | "sync" | "auto";
+}
+
+const {
+  src,
+  alt,
+  widths,
+  sizes,
+  loading = "lazy",
+  fetchpriority,
+  class: className = "",
+  width,
+  height,
+  decoding = "async",
+} = Astro.props;
+
+const variants: OptimizedVariant[] = optimizedVariants(src, [...widths]);
+const useOptimized = variants.length > 0;
+const srcset = optimizedSrcset(variants);
+---
+
+{
+  useOptimized ? (
+    <picture class="optimized-picture">
+      <source type="image/webp" srcset={srcset} sizes={sizes} />
+      <img
+        src={src}
+        alt={alt}
+        class={className}
+        loading={loading}
+        fetchpriority={fetchpriority}
+        decoding={decoding}
+        width={width}
+        height={height}
+      />
+    </picture>
+  ) : (
+    <img
+      src={src}
+      alt={alt}
+      class={className}
+      loading={loading}
+      fetchpriority={fetchpriority}
+      decoding={decoding}
+      width={width}
+      height={height}
+    />
+  )
+}
+<style>
+  /* W masked/absolute layoutach picture nie tworzy dodatkowego boxa */
+  .optimized-picture:has(.absolute) {
+    display: contents;
+  }
+</style>

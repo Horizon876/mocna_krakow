@@ -1,5 +1,7 @@
 ---
 import Counter from "@components/Counter.tsx";
+import OptimizedImage from "@components/OptimizedImage.astro";
+import { BENTO_PHOTO_SIZES, PHOTO_IMAGE_WIDTHS } from "@/lib/optimized-image";
 import { STATS } from "@data/site";
 ---
 
@@ -35,9 +37,11 @@ import { STATS } from "@data/site";
         </svg>
         <div class="bento-photo absolute inset-0">
           <div class="bento-photo-masked absolute inset-0">
-            <img
+            <OptimizedImage
               src="/photos/poznaj_mocna.jpeg"
               alt="Zespół kawiarni MOCna! przy pracy"
+              widths={PHOTO_IMAGE_WIDTHS}
+              sizes={BENTO_PHOTO_SIZES}
               class="bento-photo-img absolute inset-0 h-full w-full object-cover"
               loading="lazy"
             />

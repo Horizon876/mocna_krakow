@@ -1,5 +1,7 @@
 ---
 import SectionHeading from "@components/SectionHeading.astro";
+import OptimizedImage from "@components/OptimizedImage.astro";
+import { LOGO_IMAGE_SIZES, LOGO_IMAGE_WIDTHS } from "@/lib/optimized-image";
 import { MEDIA_LOGOS_HOME, COLORS } from "@data/site";
 
 const TILE_ACCENTS = ["blue", "red", "green", "orange", "pink", "yellow"] as const;
@@ -29,10 +31,12 @@ const TILE_ACCENTS = ["blue", "red", "green", "orange", "pink", "yellow"] as con
                 aria-label={item.name}
               >
                 {item.logo ? (
-                  <img
+                  <OptimizedImage
                     src={item.logo}
                     alt={item.name}
-                    class="max-h-14 w-full max-w-[11rem] object-contain sm:max-h-16 lg:max-h-[4.5rem] transition-all duration-300"
+                    widths={LOGO_IMAGE_WIDTHS}
+                    sizes={LOGO_IMAGE_SIZES}
+                    class="media-logo-img max-h-14 w-auto max-w-[11rem] object-contain sm:max-h-16 lg:max-h-[4.5rem] transition-all duration-300"
                     loading="lazy"
                   />
                 ) : (
@@ -47,10 +51,12 @@ const TILE_ACCENTS = ["blue", "red", "green", "orange", "pink", "yellow"] as con
                 style={`--accent: ${color};`}
               >
                 {item.logo ? (
-                  <img
+                  <OptimizedImage
                     src={item.logo}
                     alt={item.name}
-                    class="max-h-14 w-full max-w-[11rem] object-contain sm:max-h-16 lg:max-h-[4.5rem]"
+                    widths={LOGO_IMAGE_WIDTHS}
+                    sizes={LOGO_IMAGE_SIZES}
+                    class="media-logo-img max-h-14 w-auto max-w-[11rem] object-contain sm:max-h-16 lg:max-h-[4.5rem]"
                     loading="lazy"
                   />
                 ) : (
@@ -91,5 +97,13 @@ const TILE_ACCENTS = ["blue", "red", "green", "orange", "pink", "yellow"] as con
 
   .media-logo-tile.no-logo:hover {
     --accent-bg: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+
+  .media-logo-tile :global(.optimized-picture),
+  .media-logo-tile :global(.media-logo-img) {
+    display: block;
+    margin-inline: auto;
+    width: fit-content;
+    max-width: 100%;
   }
 </style>

@@ -1,10 +1,13 @@
 ---
+import OptimizedImage from "@components/OptimizedImage.astro";
+import { HERO_PHOTO_SIZES, PHOTO_IMAGE_WIDTHS } from "@/lib/optimized-image";
+
 const primary = { label: "Zobacz wydarzenia", href: "/wydarzenia" };
 const secondaryAccent = {
   orange: {
-    btn: "border-orange-ink bg-orange-ink text-white hover:border-[#a35d00] hover:bg-[#a35d00]",
-    icon: "text-white",
-    label: "text-white",
+    btn: "border-[#f39200] bg-[#f39200] text-graphite hover:border-[#d97f00] hover:bg-[#d97f00]",
+    icon: "text-graphite",
+    label: "text-graphite",
   },
   yellow: {
     btn: "border-yellow bg-yellow text-graphite hover:border-[#e6c800] hover:bg-[#f5d500]",
@@ -12,12 +15,12 @@ const secondaryAccent = {
     label: "text-graphite",
   },
   red: {
-    btn: "border-red bg-red text-white hover:border-[#c42f35] hover:bg-[#c42f35]",
+    btn: "border-[#c2343a] bg-[#c2343a] text-white hover:border-[#a92a30] hover:bg-[#a92a30]",
     icon: "text-white",
     label: "text-white",
   },
   green: {
-    btn: "border-green bg-green text-white hover:border-[#007a4c] hover:bg-[#007a4c]",
+    btn: "border-[#007a4c] bg-[#007a4c] text-white hover:border-[#006640] hover:bg-[#006640]",
     icon: "text-white",
     label: "text-white",
   },
@@ -67,7 +70,7 @@ const secondary = [
         <span class="text-blue">M</span><span class="text-red">O</span><span class="text-yellow">C</span><span class="text-green">n</span><span class="text-pink">a</span><span class="text-orange">!</span>
       </span>
       <span class="hero-sub mt-3 block font-semibold leading-[1.1] text-blue sm:mt-3.5">
-        miejsce, gdzie <span class="text-orange-ink">kawa</span><br />
+        miejsce, gdzie <span class="text-[#f39200]">kawa</span><br />
         spotyka <span class="text-[#E85D5D]">człowieka</span>.
       </span>
     </h1>
@@ -160,13 +163,17 @@ const secondary = [
           </mask>
         </defs>
       </svg>
-      <img
-        src="/photos/zespol.jpeg"
-        alt="Cały zespół kawiarni MOCna! przy barze"
-        class="hero-photo-img absolute inset-0 h-full w-full object-cover object-[58%_center] lg:object-[52%_center]"
-        loading="eager"
-        fetchpriority="high"
-      />
+      <div class="hero-photo-masked absolute inset-0">
+        <OptimizedImage
+          src="/photos/zespol.jpeg"
+          alt="Cały zespół kawiarni MOCna! przy barze"
+          widths={PHOTO_IMAGE_WIDTHS}
+          sizes={HERO_PHOTO_SIZES}
+          class="hero-photo-img absolute inset-0 h-full w-full object-cover object-[58%_center] lg:object-[52%_center]"
+          loading="eager"
+          fetchpriority="high"
+        />
+      </div>
       <div class="hero-photo-fade pointer-events-none absolute inset-0" aria-hidden="true"></div>
     </div>
   </div>
@@ -200,7 +207,7 @@ const secondary = [
     overflow: hidden;
   }
 
-  .hero-photo-img {
+  .hero-photo-masked {
     transform: scale(1.02);
     transform-origin: center;
     -webkit-mask: url(#hero-photo-organic-mask);
@@ -212,10 +219,14 @@ const secondary = [
   }
 
   @media (min-width: 1024px) {
-    .hero-photo-img {
+    .hero-photo-masked {
       -webkit-mask: url(#hero-photo-organic-mask-lg);
       mask: url(#hero-photo-organic-mask-lg);
     }
+  }
+
+  .hero-photo-img {
+    transform: none;
   }
 
   .hero-photo-fade {
@@ -246,12 +257,16 @@ const secondary = [
     h1 .hero-brand,
     h1 .hero-sub,
     .hero-lead,
-    .hero-btn,
-    .hero-btn-primary,
     .hero-photo-col {
       opacity: 0;
       transform: translateY(22px);
       animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .hero-btn,
+    .hero-btn-primary {
+      transform: translateY(22px);
+      animation: hero-rise-motion 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
 
     h1 .hero-kicker    { animation-delay: 0.05s; }
@@ -264,6 +279,10 @@ const secondary = [
 
     @keyframes hero-rise {
       to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes hero-rise-motion {
+      to { transform: translateY(0); }
     }
   }
 </style>
