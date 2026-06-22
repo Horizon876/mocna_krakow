@@ -24,29 +24,29 @@ if (orderId) {
       if (order.status === 'paid') {
         alreadyDone = true;
       } else if (order.status === 'pending') {
-        // Oznacz jako opłacone
-        await db.update(ticketOrders).set({ status: 'paid' }).where(eq(ticketOrders.id, order.id));
+        await Promise.all([
+          db.update(ticketOrders).set({ status: 'paid' }).where(eq(ticketOrders.id, order.id)),
+          event
+            ? db
+                .update(events)
+                .set({ enrolledCount: event.enrolledCount + order.quantity })
+                .where(eq(events.id, event.id))
+            : Promise.resolve(),
+        ]);
 
-        // Aktualizuj licznik zapisanych
-        if (event) {
-          await db.update(events)
-            .set({ enrolledCount: event.enrolledCount + order.quantity })
-            .where(eq(events.id, event.id));
-        }
-
-        // Generuj bilety
-        const generatedTickets: Array<{ ticketNumber: string; qrDataUrl: string }> = [];
-        for (let i = 0; i < order.quantity; i++) {
-          const ticketNumber = await generateTicketNumber();
-          const qrDataUrl = await generateTicketQR(ticketNumber);
-          await db.insert(tickets).values({
-            ticketOrderId: order.id,
-            eventId: order.eventId,
-            ticketNumber,
-            status: 'active',
-          });
-          generatedTickets.push({ ticketNumber, qrDataUrl });
-        }
+        const generatedTickets = await Promise.all(
+          Array.from({ length: order.quantity }, async () => {
+            const ticketNumber = await generateTicketNumber();
+            const qrDataUrl = await generateTicketQR(ticketNumber);
+            await db.insert(tickets).values({
+              ticketOrderId: order.id,
+              eventId: order.eventId,
+              ticketNumber,
+              status: 'active',
+            });
+            return { ticketNumber, qrDataUrl };
+          }),
+        );
 
         // Wyślij email z biletami
         await sendTicketEmail({

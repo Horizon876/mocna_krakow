@@ -11,12 +11,14 @@ export async function ensureCafeGallerySeeded(): Promise<void> {
     .limit(1);
   if (existing.length > 0) return;
 
-  for (const photo of CAFE_GALLERY) {
-    await db.insert(cafePhotos).values({
-      imageUrl: photo.src,
-      alt: photo.alt,
-    });
-  }
+  await Promise.all(
+    CAFE_GALLERY.map((photo) =>
+      db.insert(cafePhotos).values({
+        imageUrl: photo.src,
+        alt: photo.alt,
+      }),
+    ),
+  );
 }
 
 export async function getCafeGalleryPhotos(): Promise<

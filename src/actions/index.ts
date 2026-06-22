@@ -795,30 +795,30 @@ export const server = {
 
         // Bezpłatne wydarzenie — pomiń Stripe, generuj bilety od razu
         if (event.ticketPrice === 0) {
-          await db
-            .update(ticketOrders)
-            .set({ status: "paid" })
-            .where(eq(ticketOrders.id, order.id));
-          await db
-            .update(events)
-            .set({ enrolledCount: event.enrolledCount + input.quantity })
-            .where(eq(events.id, event.id));
+          await Promise.all([
+            db
+              .update(ticketOrders)
+              .set({ status: "paid" })
+              .where(eq(ticketOrders.id, order.id)),
+            db
+              .update(events)
+              .set({ enrolledCount: event.enrolledCount + input.quantity })
+              .where(eq(events.id, event.id)),
+          ]);
 
-          const generatedTickets: Array<{
-            ticketNumber: string;
-            qrDataUrl: string;
-          }> = [];
-          for (let i = 0; i < input.quantity; i++) {
-            const ticketNumber = await generateTicketNumber();
-            const qrDataUrl = await generateTicketQR(ticketNumber);
-            await db.insert(tickets).values({
-              ticketOrderId: order.id,
-              eventId: event.id,
-              ticketNumber,
-              status: "active",
-            });
-            generatedTickets.push({ ticketNumber, qrDataUrl });
-          }
+          const generatedTickets = await Promise.all(
+            Array.from({ length: input.quantity }, async () => {
+              const ticketNumber = await generateTicketNumber();
+              const qrDataUrl = await generateTicketQR(ticketNumber);
+              await db.insert(tickets).values({
+                ticketOrderId: order.id,
+                eventId: event.id,
+                ticketNumber,
+                status: "active",
+              });
+              return { ticketNumber, qrDataUrl };
+            }),
+          );
 
           sendTicketEmail({
             orderId: `${order.id.split("-")[0]}-${String(order.orderNumber || "").padStart(4, "0")}`,
@@ -926,30 +926,32 @@ export const server = {
           .where(eq(events.id, order.eventId));
         const eventTitle = event?.title ?? "Wydarzenie";
 
-        await db
-          .update(ticketOrders)
-          .set({ status: "paid" })
-          .where(eq(ticketOrders.id, order.id));
-        await db
-          .update(events)
-          .set({ enrolledCount: (event?.enrolledCount ?? 0) + order.quantity })
-          .where(eq(events.id, order.eventId));
+        await Promise.all([
+          db
+            .update(ticketOrders)
+            .set({ status: "paid" })
+            .where(eq(ticketOrders.id, order.id)),
+          db
+            .update(events)
+            .set({
+              enrolledCount: (event?.enrolledCount ?? 0) + order.quantity,
+            })
+            .where(eq(events.id, order.eventId)),
+        ]);
 
-        const generatedTickets: Array<{
-          ticketNumber: string;
-          qrDataUrl: string;
-        }> = [];
-        for (let i = 0; i < order.quantity; i++) {
-          const ticketNumber = await generateTicketNumber();
-          const qrDataUrl = await generateTicketQR(ticketNumber);
-          await db.insert(tickets).values({
-            ticketOrderId: order.id,
-            eventId: order.eventId,
-            ticketNumber,
-            status: "active",
-          });
-          generatedTickets.push({ ticketNumber, qrDataUrl });
-        }
+        const generatedTickets = await Promise.all(
+          Array.from({ length: order.quantity }, async () => {
+            const ticketNumber = await generateTicketNumber();
+            const qrDataUrl = await generateTicketQR(ticketNumber);
+            await db.insert(tickets).values({
+              ticketOrderId: order.id,
+              eventId: order.eventId,
+              ticketNumber,
+              status: "active",
+            });
+            return { ticketNumber, qrDataUrl };
+          }),
+        );
 
         await sendTicketEmail({
           orderId: `${order.id.split("-")[0]}-${String(order.orderNumber || "").padStart(4, "0")}`,
@@ -1016,14 +1018,13 @@ export const server = {
           return { found: false };
         }
 
-        const [event] = await db
-          .select()
-          .from(events)
-          .where(eq(events.id, ticket.eventId));
-        const [order] = await db
-          .select()
-          .from(ticketOrders)
-          .where(eq(ticketOrders.id, ticket.ticketOrderId));
+        const [[event], [order]] = await Promise.all([
+          db.select().from(events).where(eq(events.id, ticket.eventId)),
+          db
+            .select()
+            .from(ticketOrders)
+            .where(eq(ticketOrders.id, ticket.ticketOrderId)),
+        ]);
 
         return {
           found: true,

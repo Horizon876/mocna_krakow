@@ -15,20 +15,22 @@ if (deleteResult?.data?.success || deleteEventResult?.data?.success) {
 const filterEventId = Astro.url.searchParams.get('event') ?? 'all';
 const searchQuery = Astro.url.searchParams.get('search')?.toLowerCase() ?? '';
 
-// Lista wszystkich wydarzeń do filtra
-const allEvents = await db.select({ id: events.id, title: events.title }).from(events).orderBy(desc(events.eventDate));
-
-// Pobranie biletów wraz z zamówieniem i wydarzeniem
-const ticketsData = await db
-  .select({
-    ticket: tickets,
-    order: ticketOrders,
-    event: events
-  })
-  .from(tickets)
-  .leftJoin(ticketOrders, eq(tickets.ticketOrderId, ticketOrders.id))
-  .leftJoin(events, eq(tickets.eventId, events.id))
-  .orderBy(desc(tickets.createdAt));
+const [allEvents, ticketsData] = await Promise.all([
+  db
+    .select({ id: events.id, title: events.title })
+    .from(events)
+    .orderBy(desc(events.eventDate)),
+  db
+    .select({
+      ticket: tickets,
+      order: ticketOrders,
+      event: events,
+    })
+    .from(tickets)
+    .leftJoin(ticketOrders, eq(tickets.ticketOrderId, ticketOrders.id))
+    .leftJoin(events, eq(tickets.eventId, events.id))
+    .orderBy(desc(tickets.createdAt)),
+]);
 
 const filteredTickets = ticketsData.filter(({ ticket, order }) => {
   if (filterEventId !== 'all' && ticket.eventId !== filterEventId) return false;

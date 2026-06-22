@@ -21,16 +21,16 @@ if (resultCreate?.data?.success) {
   return Astro.redirect('/admin/sklep');
 }
 
-const allProducts = await db.select().from(products).orderBy(desc(products.createdAt));
-
 const editId = Astro.url.searchParams.get('edit');
-let editProduct = undefined;
-if (editId) {
-  const result = await db.select().from(products).where(eq(products.id, editId)).limit(1);
-  if (result.length > 0) {
-    editProduct = result[0];
-  }
-}
+
+const [allProducts, editResult] = await Promise.all([
+  db.select().from(products).orderBy(desc(products.createdAt)),
+  editId
+    ? db.select().from(products).where(eq(products.id, editId)).limit(1)
+    : Promise.resolve([]),
+]);
+
+const editProduct = editResult.length > 0 ? editResult[0] : undefined;
 ---
 
 <AdminLayout title="Zarządzanie sklepem - Panel Admina" activeTab="sklep" noScroll>
