@@ -1,10 +1,7 @@
 ---
 import CheckoutLayout from "@layouts/CheckoutLayout.astro";
-import { db } from "../../db";
-import { ticketOrders, events, tickets } from "../../db/schema";
-import { eq } from "drizzle-orm";
-import { generateTicketNumber, generateTicketQR } from "../../lib/ticket-generator";
-import { sendTicketEmail } from "../../lib/ticket-email";
+import { fulfillPaidTicketOrder } from "../../lib/ticket-fulfillment";
+import type { events, ticketOrders } from "../../db/schema";
 
 const orderId = Astro.url.searchParams.get("order_id");
 let processed = false;
@@ -12,57 +9,23 @@ let alreadyDone = false;
 let orderData: typeof ticketOrders.$inferSelect | null = null;
 let eventData: typeof events.$inferSelect | null = null;
 let serverError = false;
+let expiredNoSeats = false;
 
 if (orderId) {
   try {
-    const [order] = await db.select().from(ticketOrders).where(eq(ticketOrders.id, orderId));
-    if (order) {
-      orderData = order;
-      const [event] = await db.select().from(events).where(eq(events.id, order.eventId));
-      eventData = event ?? null;
-
-      if (order.status === 'paid') {
+    const result = await fulfillPaidTicketOrder(orderId);
+    if (result.ok) {
+      orderData = result.order;
+      eventData = result.event;
+      if (result.alreadyProcessed) {
         alreadyDone = true;
-      } else if (order.status === 'pending') {
-        await Promise.all([
-          db.update(ticketOrders).set({ status: 'paid' }).where(eq(ticketOrders.id, order.id)),
-          event
-            ? db
-                .update(events)
-                .set({ enrolledCount: event.enrolledCount + order.quantity })
-                .where(eq(events.id, event.id))
-            : Promise.resolve(),
-        ]);
-
-        const generatedTickets = await Promise.all(
-          Array.from({ length: order.quantity }, async () => {
-            const ticketNumber = await generateTicketNumber();
-            const qrDataUrl = await generateTicketQR(ticketNumber);
-            await db.insert(tickets).values({
-              ticketOrderId: order.id,
-              eventId: order.eventId,
-              ticketNumber,
-              status: 'active',
-            });
-            return { ticketNumber, qrDataUrl };
-          }),
-        );
-
-        // Wyślij email z biletami
-        await sendTicketEmail({
-          orderId: `${order.id.split('-')[0]}-${String(order.orderNumber || '').padStart(4, '0')}`,
-          firstName: order.firstName,
-          lastName: order.lastName,
-          email: order.email,
-          eventTitle: event?.title ?? 'Wydarzenie',
-          eventDate: event?.eventDate ?? new Date(),
-          quantity: order.quantity,
-          totalAmount: order.totalAmount,
-          tickets: generatedTickets,
-        });
-
+      } else {
         processed = true;
       }
+    } else if (result.reason === "expired_no_seats") {
+      expiredNoSeats = true;
+    } else {
+      serverError = true;
     }
   } catch (e) {
     console.error('[bilety/success]', e);
@@ -125,6 +88,17 @@ if (orderId) {
           </>
         )}
 
+        {expiredNoSeats && (
+          <>
+            <h1 class="text-2xl font-bold text-graphite">Miejsca już zajęte</h1>
+            <p class="mt-4 text-base text-graphite-muted leading-relaxed">
+              Płatność mogła zostać pobrana, ale 5-minutowa rezerwacja wygasła i miejsca zostały sprzedane innym osobom.
+              Skontaktuj się z nami — pomożemy w zwrocie środków.
+            </p>
+            <a href="/kontakt" class="btn-orange mt-6 inline-flex">Kontakt</a>
+          </>
+        )}
+
         {serverError && (
           <>
             <h1 class="text-2xl font-bold text-graphite">Coś poszło nie tak</h1>
@@ -135,7 +109,7 @@ if (orderId) {
           </>
         )}
 
-        {!processed && !alreadyDone && !serverError && (
+        {!processed && !alreadyDone && !serverError && !expiredNoSeats && (
           <>
             <h1 class="text-2xl font-bold text-graphite">Brak danych zamówienia</h1>
             <p class="mt-4 text-base text-graphite-muted">Nie znaleziono zamówienia do potwierdzenia.</p>

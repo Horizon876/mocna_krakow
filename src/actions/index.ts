@@ -22,12 +22,16 @@ import { getServerEnv } from "../lib/env-server";
 import { saveImage } from "../lib/upload";
 import { cancelReservationById } from "../lib/reservations";
 import { sendOrderEmail } from "../lib/order-email";
-import { sendTicketEmail, sendTicketPendingEmail } from "../lib/ticket-email";
+import { sendTicketPendingEmail } from "../lib/ticket-email";
 import { parseInPostPointAddress } from "../lib/inpost-point";
+import { fulfillPaidTicketOrder } from "../lib/ticket-fulfillment";
 import {
-  generateTicketNumber,
-  generateTicketQR,
-} from "../lib/ticket-generator";
+  getReservationExpiresAt,
+  releaseExpiredTicketReservations,
+  releaseEventSeats,
+  releaseTicketOrderReservation,
+  reserveEventSeats,
+} from "../lib/ticket-reservations";
 
 /** Puste pole file w multipart → brak pliku (zamiast File o size 0). */
 const optionalImageFile = z.preprocess((val) => {
@@ -747,6 +751,8 @@ export const server = {
     }),
     handler: async (input, context) => {
       try {
+        await releaseExpiredTicketReservations(input.eventId);
+
         const [event] = await db
           .select()
           .from(events)
@@ -763,8 +769,10 @@ export const server = {
             message: "To wydarzenie nie jest już dostępne.",
           });
         }
-        const available = event.seatLimit - event.enrolledCount;
-        if (input.quantity > available) {
+
+        const reserved = await reserveEventSeats(input.eventId, input.quantity);
+        if (!reserved) {
+          const available = Math.max(0, event.seatLimit - event.enrolledCount);
           const limitInfo = `${event.enrolledCount}/${event.seatLimit}`;
           const message =
             available <= 0
@@ -774,63 +782,42 @@ export const server = {
         }
 
         const totalAmount = event.ticketPrice * input.quantity;
+        const expiresAt = getReservationExpiresAt();
 
-        const result = await db
-          .insert(ticketOrders)
-          .values({
-            eventId: input.eventId,
-            firstName: input.firstName,
-            lastName: input.lastName,
-            email: input.email,
-            phone: input.phone,
-            quantity: input.quantity,
-            totalAmount,
-            status: "pending",
-          })
-          .returning();
-
-        const order = result[0];
+        let order;
+        try {
+          const result = await db
+            .insert(ticketOrders)
+            .values({
+              eventId: input.eventId,
+              firstName: input.firstName,
+              lastName: input.lastName,
+              email: input.email,
+              phone: input.phone,
+              quantity: input.quantity,
+              totalAmount,
+              status: "pending",
+              expiresAt,
+            })
+            .returning();
+          order = result[0];
+        } catch (insertError) {
+          await releaseEventSeats(input.eventId, input.quantity);
+          throw insertError;
+        }
 
         const origin = new URL(context.request.url).origin;
 
         // Bezpłatne wydarzenie — pomiń Stripe, generuj bilety od razu
         if (event.ticketPrice === 0) {
-          await Promise.all([
-            db
-              .update(ticketOrders)
-              .set({ status: "paid" })
-              .where(eq(ticketOrders.id, order.id)),
-            db
-              .update(events)
-              .set({ enrolledCount: event.enrolledCount + input.quantity })
-              .where(eq(events.id, event.id)),
-          ]);
-
-          const generatedTickets = await Promise.all(
-            Array.from({ length: input.quantity }, async () => {
-              const ticketNumber = await generateTicketNumber();
-              const qrDataUrl = await generateTicketQR(ticketNumber);
-              await db.insert(tickets).values({
-                ticketOrderId: order.id,
-                eventId: event.id,
-                ticketNumber,
-                status: "active",
-              });
-              return { ticketNumber, qrDataUrl };
-            }),
-          );
-
-          sendTicketEmail({
-            orderId: `${order.id.split("-")[0]}-${String(order.orderNumber || "").padStart(4, "0")}`,
-            firstName: order.firstName,
-            lastName: order.lastName,
-            email: order.email,
-            eventTitle: event.title,
-            eventDate: event.eventDate,
-            quantity: order.quantity,
-            totalAmount: 0,
-            tickets: generatedTickets,
-          }).catch((err) => console.error("[ticket-email] free:", err));
+          const fulfilled = await fulfillPaidTicketOrder(order.id);
+          if (!fulfilled.ok) {
+            await releaseTicketOrderReservation(order.id, "cancelled");
+            throw new ActionError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Nie udało się potwierdzić bezpłatnego zamówienia.",
+            });
+          }
 
           return {
             success: true,
@@ -842,37 +829,48 @@ export const server = {
           apiVersion: "2024-10-28.acacia",
         });
 
-        const session = await stripe.checkout.sessions.create({
-          payment_method_types: ["card", "blik", "p24"],
-          line_items: [
-            {
-              price_data: {
-                currency: "pln",
-                product_data: {
-                  name: `Bilet: ${event.title}`,
-                  images: event.imageUrl
-                    ? [
-                        event.imageUrl.startsWith("http")
-                          ? event.imageUrl
-                          : new URL(event.imageUrl, origin).href,
-                      ]
-                    : [],
+        let session;
+        try {
+          session = await stripe.checkout.sessions.create({
+            payment_method_types: ["card", "blik", "p24"],
+            line_items: [
+              {
+                price_data: {
+                  currency: "pln",
+                  product_data: {
+                    name: `Bilet: ${event.title}`,
+                    images: event.imageUrl
+                      ? [
+                          event.imageUrl.startsWith("http")
+                            ? event.imageUrl
+                            : new URL(event.imageUrl, origin).href,
+                        ]
+                      : [],
+                  },
+                  unit_amount: event.ticketPrice,
                 },
-                unit_amount: event.ticketPrice,
+                quantity: input.quantity,
               },
-              quantity: input.quantity,
-            },
-          ],
-          mode: "payment",
-          client_reference_id: order.id,
-          success_url: `${origin}/bilety/success?order_id=${order.id}`,
-          cancel_url: `${origin}/bilety/cancel?order_id=${order.id}`,
-        });
+            ],
+            mode: "payment",
+            client_reference_id: order.id,
+            success_url: `${origin}/bilety/success?order_id=${order.id}`,
+            cancel_url: `${origin}/bilety/cancel?order_id=${order.id}`,
+          });
+        } catch (stripeError) {
+          await releaseTicketOrderReservation(order.id, "cancelled");
+          throw stripeError;
+        }
 
-        await db
-          .update(ticketOrders)
-          .set({ stripeSessionId: session.id })
-          .where(eq(ticketOrders.id, order.id));
+        try {
+          await db
+            .update(ticketOrders)
+            .set({ stripeSessionId: session.id })
+            .where(eq(ticketOrders.id, order.id));
+        } catch (stripeDbError) {
+          await releaseTicketOrderReservation(order.id, "cancelled");
+          throw stripeDbError;
+        }
 
         sendTicketPendingEmail({
           firstName: order.firstName,
@@ -901,71 +899,31 @@ export const server = {
     }),
     handler: async (input) => {
       try {
-        const [order] = await db
-          .select()
-          .from(ticketOrders)
-          .where(eq(ticketOrders.id, input.orderId));
-        if (!order)
-          throw new ActionError({
-            code: "NOT_FOUND",
-            message: "Zamówienie nie istnieje.",
-          });
-        if (order.status === "paid") {
-          return { success: true, alreadyProcessed: true };
-        }
-        if (order.status !== "pending") {
+        const result = await fulfillPaidTicketOrder(input.orderId);
+        if (!result.ok) {
+          if (result.reason === "not_found") {
+            throw new ActionError({
+              code: "NOT_FOUND",
+              message: "Zamówienie nie istnieje.",
+            });
+          }
+          if (result.reason === "expired_no_seats") {
+            throw new ActionError({
+              code: "BAD_REQUEST",
+              message:
+                "Rezerwacja wygasła i miejsca zostały zajęte. Skontaktuj się z nami w sprawie zwrotu płatności.",
+            });
+          }
           throw new ActionError({
             code: "BAD_REQUEST",
             message: "Zamówienie nie może być potwierdzone.",
           });
         }
 
-        const [event] = await db
-          .select()
-          .from(events)
-          .where(eq(events.id, order.eventId));
-        const eventTitle = event?.title ?? "Wydarzenie";
-
-        await Promise.all([
-          db
-            .update(ticketOrders)
-            .set({ status: "paid" })
-            .where(eq(ticketOrders.id, order.id)),
-          db
-            .update(events)
-            .set({
-              enrolledCount: (event?.enrolledCount ?? 0) + order.quantity,
-            })
-            .where(eq(events.id, order.eventId)),
-        ]);
-
-        const generatedTickets = await Promise.all(
-          Array.from({ length: order.quantity }, async () => {
-            const ticketNumber = await generateTicketNumber();
-            const qrDataUrl = await generateTicketQR(ticketNumber);
-            await db.insert(tickets).values({
-              ticketOrderId: order.id,
-              eventId: order.eventId,
-              ticketNumber,
-              status: "active",
-            });
-            return { ticketNumber, qrDataUrl };
-          }),
-        );
-
-        await sendTicketEmail({
-          orderId: `${order.id.split("-")[0]}-${String(order.orderNumber || "").padStart(4, "0")}`,
-          firstName: order.firstName,
-          lastName: order.lastName,
-          email: order.email,
-          eventTitle,
-          eventDate: event?.eventDate ?? new Date(),
-          quantity: order.quantity,
-          totalAmount: order.totalAmount,
-          tickets: generatedTickets,
-        });
-
-        return { success: true, alreadyProcessed: false };
+        return {
+          success: true,
+          alreadyProcessed: result.alreadyProcessed,
+        };
       } catch (error: unknown) {
         if (error instanceof ActionError) throw error;
         throw new ActionError({
@@ -983,15 +941,7 @@ export const server = {
     }),
     handler: async (input) => {
       try {
-        await db
-          .update(ticketOrders)
-          .set({ status: "cancelled" })
-          .where(
-            and(
-              eq(ticketOrders.id, input.orderId),
-              eq(ticketOrders.status, "pending"),
-            ),
-          );
+        await releaseTicketOrderReservation(input.orderId, "cancelled");
         return { success: true };
       } catch (error: unknown) {
         throw new ActionError({

@@ -1,16 +1,12 @@
 ---
 import CheckoutLayout from "@layouts/CheckoutLayout.astro";
-import { db } from "../../db";
-import { ticketOrders } from "../../db/schema";
-import { eq, and } from "drizzle-orm";
+import { releaseTicketOrderReservation } from "../../lib/ticket-reservations";
 
 const orderId = Astro.url.searchParams.get("order_id");
 
 if (orderId) {
   try {
-    await db.update(ticketOrders)
-      .set({ status: 'cancelled' })
-      .where(and(eq(ticketOrders.id, orderId), eq(ticketOrders.status, 'pending')));
+    await releaseTicketOrderReservation(orderId, "cancelled");
   } catch (e) {
     console.error('[bilety/cancel]', e);
   }
@@ -30,9 +26,12 @@ if (orderId) {
         </div>
 
         <h1 class="text-2xl font-bold text-graphite">Płatność anulowana</h1>
+        <p class="mt-4 text-base text-graphite-muted leading-relaxed">
+          Rezerwacja miejsc została zwolniona. Możesz spróbować ponownie, jeśli są jeszcze wolne miejsca.
+        </p>
 
-        <a href="/" class="btn-orange mt-8 inline-flex w-full sm:w-auto justify-center">
-          Powrót na stronę główną
+        <a href="/wydarzenia" class="btn-orange mt-8 inline-flex w-full sm:w-auto justify-center">
+          Zobacz wydarzenia
         </a>
 
       </div>

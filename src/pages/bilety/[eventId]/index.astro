@@ -4,6 +4,7 @@ import { db } from "../../../db";
 import { events } from "../../../db/schema";
 import { eq } from "drizzle-orm";
 import { COLORS } from "@data/site";
+import { getEventSeatAvailability } from "../../../lib/ticket-reservations";
 
 const { eventId } = Astro.params;
 
@@ -13,11 +14,13 @@ if (!event || event.status !== 'active') {
   return Astro.redirect('/wydarzenia');
 }
 
+const availability = await getEventSeatAvailability(event.id);
+const dostepneMiejsca = availability?.available ?? 0;
+
 const dateObj = new Date(event.eventDate);
 const dataStr = dateObj.toLocaleDateString('pl-PL', { day: '2-digit', month: 'long', year: 'numeric' });
 const godzinaStr = dateObj.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
 const cenaJednostkowa = (event.ticketPrice / 100).toFixed(0);
-const dostepneMiejsca = event.seatLimit - event.enrolledCount;
 const isBezplatne = event.ticketPrice === 0;
 ---
 

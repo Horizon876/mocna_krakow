@@ -5,6 +5,7 @@ import NoiseOverlay from "@components/NoiseOverlay.astro";
 import FlyingNav from "@components/FlyingNav.astro";
 import CartDrawer from "@components/CartDrawer.astro";
 import Footer from "@components/Footer.astro";
+import CookieConsent from "@components/CookieConsent.astro";
 import { BRAND } from "@data/site";
 
 interface Props {
@@ -86,6 +87,8 @@ const {
     </main>
 
     <Footer />
+
+    <CookieConsent />
 
     <script>
       import { initSectionScroll } from "../scripts/scroll-to-section";

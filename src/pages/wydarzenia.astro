@@ -6,9 +6,10 @@ import { COLORS } from "@data/site";
 import { db } from "../db";
 import { events } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { releaseExpiredTicketReservations } from "../lib/ticket-reservations";
 
 // Fetch only active events, sorted by date (upcoming first)
-// Optionally we could filter out past events: gte(events.eventDate, new Date())
+await releaseExpiredTicketReservations();
 const dbEvents = await db.select()
   .from(events)
   .where(eq(events.status, 'active'))

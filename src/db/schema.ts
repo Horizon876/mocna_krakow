@@ -103,8 +103,10 @@ export const ticketOrders = pgTable("ticket_orders", {
   phone: varchar("phone", { length: 50 }).notNull(),
   quantity: integer("quantity").notNull(),
   totalAmount: integer("total_amount").notNull(), // w groszach
-  status: varchar("status", { length: 50 }).default("pending").notNull(), // pending | paid | cancelled
+  status: varchar("status", { length: 50 }).default("pending").notNull(), // pending | paid | cancelled | expired
   stripeSessionId: varchar("stripe_session_id", { length: 255 }),
+  /** Po tym czasie rezerwacja miejsc wygasa (tylko status pending). */
+  expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
