@@ -4,18 +4,20 @@ import { db } from "../../../db";
 import { events } from "../../../db/schema";
 import { eq } from "drizzle-orm";
 import { COLORS } from "@data/site";
+import { isEventPast } from "../../../lib/event";
 import { getEventSeatAvailability } from "../../../lib/ticket-reservations";
 
 const { eventId } = Astro.params;
 
 const [event] = await db.select().from(events).where(eq(events.id, eventId!));
 
-if (!event || event.status !== 'active') {
+if (!event || event.status !== 'active' || isEventPast(event.eventDate)) {
   return Astro.redirect('/wydarzenia');
 }
 
 const availability = await getEventSeatAvailability(event.id);
 const dostepneMiejsca = availability?.available ?? 0;
+const brakMiejsc = dostepneMiejsca < 1;
 
 const dateObj = new Date(event.eventDate);
 const dataStr = dateObj.toLocaleDateString('pl-PL', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -25,7 +27,7 @@ const isBezplatne = event.ticketPrice === 0;
 ---
 
 <CheckoutLayout title={`Kup bilet: ${event.title} — MOCna!`}>
-  <div class="checkout-page home-page pb-20 pt-16 sm:pb-28 sm:pt-24 min-h-screen">
+  <div class="checkout-page pb-20 pt-16 sm:pb-28 sm:pt-24 min-h-screen">
     <div class="shell max-w-3xl">
 
       <div class="border border-graphite-200 bg-white">
@@ -62,7 +64,7 @@ const isBezplatne = event.ticketPrice === 0;
         </div>
 
         <div class="p-6 sm:p-8">
-          {dostepneMiejsca <= 0 ? (
+          {brakMiejsc ? (
             <div class="text-center py-10">
               <p class="text-xl font-bold text-graphite">Brak wolnych miejsc</p>
               <p class="mt-2 text-graphite-muted">Wszystkie bilety na to wydarzenie zostały wyprzedane.</p>

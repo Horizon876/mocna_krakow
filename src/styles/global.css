@@ -22,16 +22,18 @@
     scroll-padding-top: 4.5rem;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    background-color: var(--mocna-page-bg);
   }
 
   body {
-    @apply bg-white text-graphite font-sans leading-relaxed;
+    @apply text-graphite font-sans leading-relaxed;
     font-weight: 400;
     overflow-x: hidden;
+    background-color: var(--mocna-page-bg);
   }
 
-  /* Strona główna — ciepłe tło kremowe */
-  .home-page {
+  /* Powierzchnia treści między nav a stopką */
+  .page-surface {
     background-color: var(--mocna-page-bg);
   }
 
@@ -47,7 +49,7 @@
   ::-webkit-scrollbar-thumb {
     background: var(--mocna-blue);
     border-radius: 999px;
-    border: 3px solid #fff;
+    border: 3px solid var(--mocna-page-bg);
   }
 
   h1,
@@ -340,21 +342,24 @@
 
 @keyframes rise-in {
   0% {
-    opacity: 0;
     transform: translateY(28px);
   }
   100% {
-    opacity: 1;
     transform: translateY(0);
   }
 }
 
 /* ----------- Astro View Transitions: nazwane, premium ----------- */
 @media (prefers-reduced-motion: no-preference) {
+  ::view-transition-group(root) {
+    background-color: var(--mocna-page-bg);
+  }
+
   ::view-transition-old(root),
   ::view-transition-new(root) {
     animation-duration: 0.55s;
     animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    mix-blend-mode: normal;
   }
 }
 

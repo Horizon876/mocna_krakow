@@ -6,6 +6,7 @@ import { COLORS } from "@data/site";
 import { db } from "../db";
 import { events } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { isEventPast } from "../lib/event";
 import { releaseExpiredTicketReservations } from "../lib/ticket-reservations";
 
 // Fetch only active events, sorted by date (upcoming first)
@@ -15,7 +16,9 @@ const dbEvents = await db.select()
   .where(eq(events.status, 'active'))
   .orderBy(events.eventDate);
 
-const wydarzenia = dbEvents.map(e => {
+const wydarzenia = dbEvents
+  .filter((e) => !isEventPast(e.eventDate))
+  .map(e => {
   const dateObj = new Date(e.eventDate);
   const data = dateObj.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const godzina = dateObj.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
@@ -24,6 +27,7 @@ const wydarzenia = dbEvents.map(e => {
   const hasInternalTickets = !e.link;
   const ticketLink = hasInternalTickets ? `/bilety/${e.id}` : (e.link || "/kontakt");
   const available = e.seatLimit - e.enrolledCount;
+  const soldOut = available <= 0;
 
   return {
     id: e.id,
@@ -39,12 +43,13 @@ const wydarzenia = dbEvents.map(e => {
     link: ticketLink,
     hasInternalTickets,
     available,
+    soldOut,
   };
 });
 ---
 
 <BaseLayout title="Wydarzenia — MOCna!">
-  <div class="home-page flex min-h-full flex-1 flex-col">
+  <div class="page-surface flex min-h-full flex-1 flex-col">
 
     <PageHero
       title="<span class='text-blue'>N</span><span class='text-red'>a</span><span class='text-yellow'>d</span><span class='text-green'>chodzące</span> <span class='text-orange'>w</span><span class='text-pink'>y</span><span class='text-blue'>d</span><span class='text-red'>a</span><span class='text-yellow'>r</span><span class='text-green'>z</span><span class='text-pink'>e</span><span class='text-orange'>n</span><span class='text-blue'>ia</span>"
@@ -52,7 +57,7 @@ const wydarzenia = dbEvents.map(e => {
       animated={false}
     />
 
-    <section class="relative py-16 sm:py-24">
+    <section class="relative overflow-hidden py-16 sm:py-24">
       <BrandBlobs variant="soft" animated={false} />
       <div class="shell relative">
 
@@ -119,7 +124,7 @@ const wydarzenia = dbEvents.map(e => {
                     <span class="text-fluid-lg font-display font-extrabold text-graphite">{e.cena}</span>
                   </div>
                   
-                  {e.available <= 0 ? (
+                  {e.soldOut ? (
                     <span class="btn border border-graphite-200 bg-graphite-50 text-graphite-muted font-bold text-xs uppercase tracking-wider px-8 py-3.5 cursor-not-allowed">
                       Wyprzedane
                     </span>

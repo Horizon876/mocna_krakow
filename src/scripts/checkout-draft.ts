@@ -1,8 +1,8 @@
 export const CHECKOUT_DRAFT_KEY = "mocna-checkout-draft";
 
-export const COURIER_SHIPPING_COST = 20;
-export const PACZKOMAT_SHIPPING_COST = 15;
-export const COD_FEE = 5;
+const COURIER_SHIPPING_COST = 20;
+const PACZKOMAT_SHIPPING_COST = 15;
+const COD_FEE = 5;
 
 export type CheckoutDraft = {
   shippingMethod?: "courier" | "paczkomat";
@@ -43,7 +43,7 @@ export function paymentCostFor(method: string) {
   return method === "cod" ? COD_FEE : 0;
 }
 
-export function saveCheckoutDraft(draft: CheckoutDraft) {
+function saveCheckoutDraft(draft: CheckoutDraft) {
   sessionStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(draft));
 }
 

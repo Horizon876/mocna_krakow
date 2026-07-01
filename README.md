@@ -1,128 +1,115 @@
-# MOCna! — społeczna kawiarnia specialty
+# MOCna! – Architektura E-Commerce i CMS Premium
+> Studium Przypadku (Case Study)
 
-Wielostronicowa witryna (MPA) zbudowana w **Astro + Tailwind CSS + React (Astro Islands) + Framer Motion**, z **Astro View Transitions** dla płynnych przejść klasy premium.
+[Wersja Produkcyjna](https://www.mocnakrakow.pl/)
+[Prezentacja Wideo](https://example.com)
 
-> „Najpierw człowiek. Potem kawa. Zawsze w tej kolejności.”
+## Opis Projektu
+
+Niniejsze repozytorium zawiera kod źródłowy aplikacji **MOCna!** – serwisu internetowego zaprojektowanego na potrzeby fundacji oraz kawiarni społecznej. System łączy w sobie nowoczesną witrynę wizerunkową, autorski moduł e-commerce, system rezerwacji stolików z interaktywną mapą, rezerwacje biletów na wydarzenia oraz dedykowany panel administratora z podziałem na role, przy jednoczesnym zachowaniu najwyższych standardów Core Web Vitals.
+
+## Główne Funkcjonalności Systemu
+
+### 1. Panel Administracyjny z Podziałem na Role (RBAC) i Zarządzanie Zamówieniami
+System implementuje mechanizm kontroli dostępu oparty na rolach (Role-Based Access Control) realizowany po stronie serwera:
+- **Rola: Pracownik (Pracownik)**: Posiada uprawnienia do obsługi zamówień sklepowych, rezerwacji stolików oraz skanowania i walidacji biletów. Zmiana statusu zamówienia w panelu (np. na status "w realizacji") automatycznie generuje i wysyła dedykowany e-mail powiadomieniowy do klienta za pośrednictwem zintegrowanego systemu wysyłki.
+- **Rola: Administrator (Admin)**: Posiada pełne uprawnienia deweloperskie i biznesowe, w tym możliwość edycji i aktualizacji kluczowych sekcji wizerunkowych na stronie głównej oraz zarządzania konfiguracją systemową.
+
+### 2. Moduł E-Commerce z Bramką Płatniczą i Integracją Logistyczną
+W pełni funkcjonalny sklep internetowy zintegrowany z zewnętrznymi usługodawcami:
+- **Płatności online**: Pełna integracja z bramką **Stripe** obsługująca bezpieczne płatności kartowe oraz cyfrowe portfele bezpośrednio na stronie transakcji.
+- **Wybór przesyłki (InPost)**: Integracja z widgetem API **InPost** umożliwiająca klientowi dynamiczny wybór paczkomatu docelowego z interaktywnej mapy punktów odbioru podczas przechodzenia przez koszyk zakupowy (Checkout).
+
+### 3. Rezerwacja Stolików z Ochroną przed Race Conditions i Łatwym Anulowaniem
+Proces rezerwacji stolików został zaprojektowany z myślą o spójności danych transakcyjnych:
+- Wizualny interfejs wyboru stolików oparty na interaktywnej mapie (SVG/React) reagujący w czasie rzeczywistym na zajętość miejsc w wybranym przedziale czasowym.
+- **Ochrona przed wyścigami (Race Conditions)**: Logika API rezerwacji weryfikuje dostępność zasobu bezpośrednio w bazie danych. Wykorzystanie unikalnych indeksów kompozytowych PostgreSQL (constraint `table_slot`) gwarantuje, że ten sam stolik nie zostanie zarezerwowany dwukrotnie na ten sam przedział czasowy, nawet w przypadku jednoczesnych zapytań (concurrency).
+- **Prosty system odwoływania**: Każdy e-mail potwierdzający zawiera spersonalizowany, bezpieczny link z tokenem uniemożliwiającym sfałszowanie żądania. Kliknięcie w link pozwala użytkownikowi na natychmiastowe i bezproblemowe anulowanie rezerwacji jednym kliknięciem.
+
+### 4. Generator Biletów z Ochroną przed Race Conditions, Kodami QR i Walidacją
+Moduł eventowy automatyzuje proces dystrybucji wejściówek:
+- **Ochrona przed nadmiarową rezerwacją**: System weryfikuje dostępną pulę wolnych miejsc w bazie danych przed zapisem transakcji biletowej, zapobiegając nadmiarowej rezerwacji (overbooking) przy jednoczesnych zakupach.
+- Po dokonaniu rezerwacji system generuje unikalny numer biletu, na którego bazie tworzony jest kod QR (Base64 PNG), wysyłany bezpośrednio w wiadomości e-mail do klienta.
+- Dedykowany endpoint walidacyjny pozwala pracownikom kawiarni skanować kody QR urządzeniem mobilnym i sprawdzać status oraz ważność biletu w czasie rzeczywistym.
+
+### 5. Transakcyjny System Powiadomień E-mail
+Komunikacja z użytkownikiem końcowym jest zautomatyzowana i oparta na szablonach e-mail:
+- Integracja z dostawcą **Resend API**.
+- Automatyczne powiadomienia o statusie zamówienia (złożenie zamówienia, płatność, wysyłka, realizacja).
+- Potwierdzenia rezerwacji stolików wraz z unikalnym tokenem umożliwiającym bezpieczne anulowanie rezerwacji bezpośrednio z poziomu wiadomości e-mail.
 
 ---
 
-## 1. Wizja artystyczna i User Flow
+## Architektura i Stack Technologiczny
 
-**Styl: Organic Modernism.** Czysta biel jako oddech, grafit `#333` zamiast czerni, a do tego pełna, dokładna paleta marki z logo. Sekcje nie są odcinane prostą linią — przechodzą jedna w drugą **krzywymi Béziera** (`OrganicDivider`), tła wypełniają rozmyte, morfujące **bloby** inspirowane skrzydłami logo, a całość spina subtelny **watermark patternu** i stała **tekstura szumu (~3%)**, która zabija „cyfrową sterylność”.
+Aplikacja została oparta na architekturze "server-first" w celu dostarczenia użytkownikowi zoptymalizowanego kodu HTML bez zbędnego narzutu JavaScript na kliencie, stosując selektywne nawadnianie (hydration).
 
-**User Flow strony głównej** prowadzi emocjonalnie: mocny *statement* (Hero) → *dlaczego* (misja + animowane liczniki) → *co się dzieje* (wydarzenia) → *zabierz MOC do domu* (sklep) → **showstopper** budujący zaufanie (czarno-białe portrety, które ożywają kolorem) → dowód społeczny (media) → zmysły (galeria kawiarni) → konwersja (wsparcie). Każdy krok ma jasny, „custom made” CTA — nic nie wygląda jak gotowy komponent z biblioteki.
+### Główne Technologie
+- **Astro (v4.x)**: Główny framework realizujący statyczne generowanie stron (SSG) oraz renderowanie po stronie serwera (SSR). Wykorzystanie architektury wyspowej (Island Architecture) pozwala na ładowanie kodu JS dla interaktywnych elementów Reacta wyłącznie w miejscach, gdzie jest to niezbędne.
+- **React (v18)**: Używany wyłącznie do dynamicznych i stanowych komponentów interfejsu (np. koszyk zakupowy, interaktywna mapa stolików, formularze zakupowe).
+- **TypeScript**: Gwarantuje ścisłe typowanie w całym projekcie, eliminując błędy na etapie kompilacji i standaryzując kontrakty danych.
 
-Dostępność i wydajność są częścią premium: `prefers-reduced-motion`, widoczny focus w kolorze marki, skip-link, a JavaScript ładuje się **tylko** na wyspach, które tego wymagają (liczniki, showstopper).
+### Baza Danych i Trwałość Danych
+- **PostgreSQL**: Relacyjna baza danych obsługująca transakcje zamówień, rezerwacji oraz użytkowników.
+- **Drizzle ORM**: Lekki i w pełni typowany ORM zapewniający maksymalną wydajność zapytań SQL bez narzutu ciężkich warstw abstrakcji.
 
-## 2. Struktura projektu
+### Style i Animacje
+- **Tailwind CSS**: Narzędziowy framework CSS dostarczający spójny i łatwy w utrzymaniu system tokenów projektowych (Design System).
+- **Framer Motion**: Wykorzystany do implementacji zaawansowanych mikrointerakcji oraz przejść animowanych wewnątrz dynamicznych komponentów React.
 
-```
-mocna/
-├─ astro.config.mjs          # integracje: tailwind + react, prefetch, islands
-├─ tailwind.config.mjs       # ścisła paleta marki, fluid typo, animacje (glow/szum)
-├─ tsconfig.json             # aliasy @components / @layouts / @data
-├─ package.json
-├─ public/
-│  ├─ brand/                 # PRAWDZIWE assety marki (SVG + PNG)
-│  │  ├─ logo-kolor.svg / logo-white.svg
-│  │  ├─ pattern.svg / pattern.png      # watermark
-│  │  └─ skrzydla-01.svg / skrzydla-02.svg
-│  └─ photos/                # tu wgraj zdjęcia (zespół, kawiarnia…)
-└─ src/
-   ├─ styles/global.css      # fonty, warstwy, komponenty, view transitions
-   ├─ data/site.ts           # JEDNO źródło prawdy: nav(12), kolory, stats, stories…
-   ├─ layouts/BaseLayout.astro
-   ├─ components/
-   │  ├─ NoiseOverlay.astro   • FlyingNav.astro    • Footer.astro
-   │  ├─ HeroSection.astro    • BentoMission.astro • Counter.tsx (island)
-   │  ├─ EventsTiles.astro    • ShopPreview.astro
-   │  ├─ StoriesShowstopper.tsx (island) • StoriesSection.astro
-   │  ├─ MediaWall.astro      • CafeGallery.astro  • SupportCards.astro
-   │  ├─ BrandBlobs.astro     • OrganicDivider.astro
-   │  └─ Photo.astro • PageHero.astro • SectionHeading.astro
-   └─ pages/                  # 12 podstron menu
-      ├─ index.astro          ├─ o-mocnej.astro    ├─ kawiarnia.astro
-      ├─ rezerwacja.astro     ├─ wydarzenia.astro  ├─ sklep.astro
-      ├─ catering.astro       ├─ szkolenia.astro   ├─ w-mediach.astro
-      ├─ wolontariat.astro    ├─ wesprzyj.astro    └─ kontakt.astro
-```
+### Infrastruktura i CI/CD
+- **Vercel**: Wdrożenie w architekturze Edge Network z funkcjami Serverless do obsługi API i endpointów SSR.
+- **Vercel Blob**: Bezpieczne przechowywanie multimediów, zdjęć oraz materiałów prasowych.
 
-## 3. Paleta marki (dokładne wartości z logo)
+---
 
-| Token | HEX | Zastosowanie |
-|---|---|---|
-| `orange` | `#f39200` | główny akcent / CTA |
-| `red` | `#de3c42` | energia, akcenty |
-| `yellow` | `#ffde00` | miękkie tła, przełamania |
-| `blue` | `#2c5ea9` | akcent / skrzydła logo |
-| `green` | `#00955e` | akcent / „realny wpływ” |
-| `pink` | `#e8afcd` | akcent / cukiernia |
-| `graphite` | `#333333` | tekst (ZAKAZ `#000`) |
-| `white` | `#ffffff` | tło bazowe |
+## Kluczowe Rozwiązania Techniczne
 
-## 4. Jak uruchomić
+### 1. Architektura Wyspowa (Island Architecture)
+Większość serwisu ładuje się jako czysty, statyczny plik HTML. Elementy wymagające dynamicznej interakcji, takie jak `TableMapPicker` czy proces podsumowania zamówienia, są nawadniane na kliencie przy użyciu dyrektyw `client:load` oraz `client:visible`.
 
-Wymagany **Node.js 18.20+ lub 20+** wraz z `npm` (na tej maszynie `npm` nie był zainstalowany — patrz niżej).
+### 2. Zautomatyzowany Pakiet QA (Quality Assurance)
+Projekt posiada zintegrowane środowisko testowe w celu zagwarantowania stabilności regresji:
+- **Testy jednostkowe i integracyjne**: Oparte na frameworku `Vitest` oraz `React Testing Library`. Weryfikują one krytyczną logikę biznesową (np. kryptograficzna walidacja sesji, parsowanie i sanitacja danych adresowych).
+- **Testy E2E (End-to-End)**: Oparte na `Playwright`. Scenariusze automatycznie symulują pełne ścieżki użytkownika (np. zabezpieczenia panelu administratora oraz integralność elementów strony głównej) w rzeczywistych przeglądarkach.
 
+### 3. Bezpieczeństwo i Autoryzacja Sesji
+W celu uniknięcia zewnętrznych zależności wdrożono autorskie mechanizmy uwierzytelniania w oparciu o bezpieczne pliki cookies z flagą HTTP-Only, autoryzowane za pomocą podpisów kryptograficznych HMAC-SHA256.
+
+### 4. Optymalizacja Wydajności Mediów
+Serwis wykorzystuje zautomatyzowane generowanie wariantów grafik w nowoczesnym formacie WebP wraz z odpowiednio dopasowanymi atrybutami `srcset`, co gwarantuje błyskawiczne renderowanie layoutu na urządzeniach mobilnych i desktopowych.
+
+---
+
+## Konfiguracja Lokalna i Uruchomienie
+
+### Wymagania Wstępne
+- Node.js (zalecana wersja v22.x LTS)
+- Aktywna instancja bazy PostgreSQL (lokalna lub połączenie sieciowe)
+
+### Instalacja i Pierwsze Kroki
 ```bash
+# Instalacja zależności
 npm install
-npm run dev        # http://localhost:4321
-npm run build      # produkcyjny build do ./dist
-npm run preview    # podgląd buildu
-```
 
-### Brak npm? Zainstaluj Node (Windows, winget)
+# Przygotowanie zmiennych środowiskowych
+cp .env.example .env.local
 
-```powershell
-winget install OpenJS.NodeJS.LTS
-# zamknij i otwórz ponownie terminal, potem:
-npm install
+# Wdrożenie schematu bazy danych
+npm run db:push
+
+# Uruchomienie serwera deweloperskiego
 npm run dev
 ```
 
-### Zmienne środowiskowe
-
-Skopiuj `.env.example` do `.env` i uzupełnij:
-
-| Zmienna | Opis |
-|---|---|
-| `DATABASE_URL` | PostgreSQL (Neon, Supabase, Vercel Postgres) |
-| `SESSION_SECRET` | Losowy sekret sesji admina (min. 32 znaki) |
-| `ADMIN_PASSWORD_HASH_B64` | Hash bcrypt hasła admina w base64 |
-| `BLOB_READ_WRITE_TOKEN` | Opcjonalnie lokalnie; na Vercel — po podłączeniu Blob Storage |
-
-Schemat bazy:
-
+### Wykonywanie Testów
 ```bash
-npm run db:push
+# Uruchomienie testów jednostkowych
+npm run test
+
+# Uruchomienie testów End-to-End
+npm run test:e2e
 ```
 
-## 5. Deploy na Vercel
-
-1. Wypchnij repozytorium na GitHub i zaimportuj projekt w [Vercel](https://vercel.com).
-2. Framework zostanie wykryty automatycznie (Astro).
-3. W **Settings → Environment Variables** dodaj zmienne z `.env.example`.
-4. Utwórz bazę **Vercel Postgres** (lub podłącz Neon/Supabase) i ustaw `DATABASE_URL`.
-5. Uruchom `npm run db:push` lokalnie z produkcyjnym `DATABASE_URL` (jednorazowo).
-6. W **Storage → Blob** utwórz store — token `BLOB_READ_WRITE_TOKEN` zostanie dodany automatycznie.
-7. Deploy — build: `npm run build`, adapter: `@astrojs/vercel/serverless`.
-
-Panel admina: `/admin/login`
-
-## 6. Podmiana placeholderów na prawdziwe zdjęcia
-
-Komponent `Photo.astro` renderuje markowy placeholder, dopóki nie podasz zdjęcia.
-Wgraj plik do `public/photos/` i podaj `src`:
-
-```astro
-<Photo src="/photos/zespol.jpg" alt="Zespół MOCnej" mask="blob" ratio="4/5" />
-```
-
-## 7. Architektura wysp (Astro Islands)
-
-Tylko dwa komponenty wysyłają JS do klienta — i to dopiero, gdy wjadą w viewport:
-
-- `Counter.tsx` → `client:visible` (animowane liczniki)
-- `StoriesShowstopper.tsx` → `client:visible` (poziomy parallax + modal historii)
-
-Reszta witryny to czysty, statyczny HTML/CSS. Nawigacja, formularze i menu mobilne używają minimalnych skryptów inline, re-inicjowanych po `astro:after-swap` (View Transitions).
+## Utrzymanie i Rozwój Kodu
+Repozytorium podlega ścisłym regułom jakości kodu. Każda zmiana w kodzie (Pull Request) musi spełniać kryteria formatowania ESLint/Prettier oraz pomyślnie przejść testy jednostkowe Vitest i integracyjne Playwright.

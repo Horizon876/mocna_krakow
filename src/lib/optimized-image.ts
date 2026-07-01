@@ -33,10 +33,6 @@ export function optimizedSrcset(variants: OptimizedVariant[]): string {
   return variants.map((v) => `${v.src} ${v.width}w`).join(", ");
 }
 
-export function pickFallbackSrc(src: string, variants: OptimizedVariant[]): string {
-  if (variants.length === 0) return src;
-  return variants[variants.length - 1]?.src ?? src;
-}
 
 /** Logo w sekcji mediów — max ~176px (2x: 352) */
 export const LOGO_IMAGE_WIDTHS = [128, 256] as const;

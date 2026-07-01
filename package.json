@@ -12,6 +12,9 @@
     "build": "node scripts/setup-fonts.mjs && node scripts/optimize-images.mjs && astro build && node scripts/patch-vercel-runtime.mjs",
     "preview": "astro preview",
     "astro": "astro",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:e2e": "playwright test",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
@@ -46,12 +49,19 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@resvg/resvg-js": "^2.6.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/pg": "^8.20.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/testing-library__jest-dom": "^5.14.9",
     "drizzle-kit": "^0.31.10",
-    "sharp": "^0.34.5"
+    "jsdom": "^29.1.1",
+    "sharp": "^0.34.5",
+    "vitest": "^4.1.9"
   }
 }

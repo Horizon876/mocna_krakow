@@ -1,6 +1,6 @@
 import { HOME_SECTION_SCROLL } from "@data/site";
 
-export function getNavOffset(): number {
+function getNavOffset(): number {
   return window.matchMedia("(min-width: 640px)").matches ? 72 : 64;
 }
 
@@ -9,7 +9,7 @@ function getSectionExtraOffset(id: string): number {
   return match?.extraOffset ?? 0;
 }
 
-export function scrollToSectionEl(
+function scrollToSectionEl(
   el: HTMLElement,
   extraOffset = 0,
   behavior: ScrollBehavior = "smooth",

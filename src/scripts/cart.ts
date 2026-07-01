@@ -103,6 +103,3 @@ export function cartTotal(items: CartItem[]) {
   }, 0);
 }
 
-export function isSklepPath(pathname: string) {
-  return pathname === "/sklep" || pathname.startsWith("/sklep/");
-}

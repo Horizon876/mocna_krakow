@@ -25,6 +25,7 @@ import { sendOrderEmail } from "../lib/order-email";
 import { sendTicketPendingEmail } from "../lib/ticket-email";
 import { parseInPostPointAddress } from "../lib/inpost-point";
 import { fulfillPaidTicketOrder } from "../lib/ticket-fulfillment";
+import { isEventPast } from "../lib/event";
 import {
   getReservationExpiresAt,
   releaseExpiredTicketReservations,
@@ -767,6 +768,12 @@ export const server = {
           throw new ActionError({
             code: "BAD_REQUEST",
             message: "To wydarzenie nie jest już dostępne.",
+          });
+        }
+        if (isEventPast(event.eventDate)) {
+          throw new ActionError({
+            code: "BAD_REQUEST",
+            message: "Termin wydarzenia minął — nie można już kupić biletu.",
           });
         }
 
