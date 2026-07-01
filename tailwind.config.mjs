@@ -45,6 +45,12 @@ export default {
         DEFAULT: "#e8afcd",
         soft: "#f4d4e4",
       },
+      // Rzeczywisty pomarańcz marki (tło/akcenty); ink = tekst na jasnym tle
+      "brand-orange": {
+        DEFAULT: "#f39200",
+        ink: "#df7400",
+        hover: "#d97f00",
+      },
     },
     extend: {
       fontFamily: {

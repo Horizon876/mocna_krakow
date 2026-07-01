@@ -8,6 +8,8 @@
 @layer base {
   :root {
     --mocna-orange: #f39200;
+    /* Tekst na jasnym tle — najjaśniejszy pomarańcz bliski #f39200 (WCAG AA 3:1, duży tekst) */
+    --mocna-orange-ink: #df7400;
     --mocna-red: #de3c42;
     --mocna-yellow: #ffde00;
     --mocna-blue: #2c5ea9;

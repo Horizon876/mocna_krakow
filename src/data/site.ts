@@ -45,6 +45,7 @@ export const WEEKDAY_LABELS = [
 // Dokładne kolory marki (z pliku logo)
 export const COLORS = {
   orange: "#f39200",
+  orangeInk: "#df7400",
   red: "#de3c42",
   yellow: "#ffde00",
   blue: "#2c5ea9",
