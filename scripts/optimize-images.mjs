@@ -27,6 +27,7 @@ const LOGO_PATHS = [
   "media/logos/razemztoba.jpg",
   "media/logos/orly.png",
   "media/logos/krakow.png",
+  "media/logos/logo_malopolska.png",
   "photos/integracja.png",
   "photos/logo_tvp.jpg",
 ];

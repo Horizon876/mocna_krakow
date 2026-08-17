@@ -61,11 +61,28 @@ const projekty = [
     finansowanie: "Sfinansowano ze środków Państwowego Funduszu Rehabilitacji Osób Niepełnosprawnych w ramach konkursu „Lokalne Inicjatywy mają MOC!”.",
     link: null,
   },
+  {
+    color: "blue",
+    borderClass: "border-blue",
+    accentClass: "text-blue",
+    title: "MOC głosu, MOC pracy",
+    opis: "Fundacja MOCna! realizuje projekt „MOC głosu, MOC pracy – cykl podcastów aktywizujących osoby z niepełnosprawnościami i ich otoczenie”.",
+    meta: [
+      { label: "Realizator projektu", value: "Fundacja MOCna!" },
+      { label: "Tryb", value: "Małe Granty (pozakonkursowy)" },
+      { label: "Źródło", value: "Województwo Małopolskie" },
+    ],
+    logo: "/media/logos/logo_malopolska.png",
+    logoAlt: "Logo Województwa Małopolskiego",
+    logoClass: "p-6",
+    finansowanie: "Zadanie publiczne realizowane w trybie pozakonkursowym tzw. „Małych Grantów” na podstawie art. 19a ustawy z dnia 24 kwietnia 2003 r. o działalności pożytku publicznego i o wolontariacie oraz zgodnie z Regulaminem określonym w Zarządzeniu Nr 70/2022 Marszałka Województwa Małopolskiego.",
+    link: null,
+  },
 ];
 ---
 
 <BaseLayout title="Projekty — MOCna!">
-  <div class="flex min-h-full flex-1 flex-col">
+  <div class="page-surface flex min-h-full flex-1 flex-col">
 
     <PageHero
       title="<span class='text-blue'>N</span><span class='text-red'>a</span><span class='text-yellow'>s</span><span class='text-green'>ze</span> <span class='text-orange'>Pro</span><span class='text-green'>je</span><span class='text-blue'>kty</span>"
@@ -73,7 +90,7 @@ const projekty = [
       animated={false}
     />
 
-    <section class="relative overflow-hidden py-16 sm:py-24">
+    <section class="page-surface relative overflow-hidden py-16 sm:py-24">
       <BrandBlobs variant="soft" animated={false} />
       <div class="shell relative">
 

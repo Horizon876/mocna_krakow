@@ -324,7 +324,7 @@ export const TEAM: TeamMember[] = [
   {
     slug: "maja",
     name: "Maja",
-    desc: "Lorem ipsum",
+    desc: "Maja to osoba, która udowadnia, że najlepsze rzeczy rodzą się z pasji, otwartości i uważności na drugiego człowieka. Za barem czuje się jak ryba w wodzie – z ogromnym zaangażowaniem przygotowuje kawy, napoje i dba o to, by każdy gość poczuł się u nas mile widziany.",
     photo: "/photos/Maja.jpg",
     photoPosition: "center 14%",
     accent: "green",
@@ -398,6 +398,11 @@ export const MEDIA_LOGOS_HOME: MediaLogo[] = [
     href: "https://www.youtube.com/watch?v=2JFTrlK3lbQ",
   },
   {
+    name: "YouTube",
+    logo: "/media/logos/youtube.svg",
+    href: "https://www.youtube.com/@MOCna-Krak%C3%B3w",
+  },
+  {
     name: "Integracja",
     logo: "/photos/integracja.png",
     href: "https://niepelnosprawni.pl/artykuly/moja-piekna-corka",
@@ -441,6 +446,11 @@ export const MEDIA_LOGOS_HOME: MediaLogo[] = [
     name: "Facebook",
     logo: "/media/logos/facebook.png",
     href: "https://www.facebook.com/watch/?v=1987932185382868",
+  },
+  {
+    name: "Facebook Reels",
+    logo: "/media/logos/facebook.png",
+    href: "https://www.facebook.com/reel/1559165626000991",
   },
   {
     name: "Instagram",
@@ -527,9 +537,21 @@ export const MEDIA: MediaItem[] = [
     accent: "red",
   },
   {
+    outlet: "YouTube",
+    title: "Kanał MOCna! Kraków",
+    href: "https://www.youtube.com/@MOCna-Krak%C3%B3w",
+    accent: "red",
+  },
+  {
     outlet: "Facebook",
     title: "Kraków.pl - materiał wideo",
     href: "https://www.facebook.com/watch/?v=1987932185382868",
+    accent: "blue",
+  },
+  {
+    outlet: "Facebook",
+    title: "Reel o MOCnej",
+    href: "https://www.facebook.com/reel/1559165626000991",
     accent: "blue",
   },
   {

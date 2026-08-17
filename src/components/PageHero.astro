@@ -9,7 +9,7 @@ interface Props {
 }
 const { kicker, title, lead, variant = "soft", animated = true } = Astro.props;
 ---
-<section class="relative overflow-hidden pt-8 pb-4 sm:pt-12 sm:pb-6">
+<section class="page-surface relative overflow-hidden pt-8 pb-4 sm:pt-12 sm:pb-6">
   <BrandBlobs variant={variant} animated={animated} />
   <div class="shell relative">
     {kicker && <span class="kicker">{kicker}</span>}
