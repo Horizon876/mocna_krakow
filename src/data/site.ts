@@ -322,13 +322,6 @@ export const TEAM: TeamMember[] = [
     accent: "red",
   },
   {
-    slug: "kasia-b",
-    name: "Kasia B",
-    desc: "Koordynatorka ds. reintegracji i trenerka pracy. Wspiera pracowników w rozwoju zawodowym.",
-    photo: "/photos/Kasia.jpg",
-    accent: "yellow",
-  },
-  {
     slug: "maja",
     name: "Maja",
     desc: "Lorem ipsum",
