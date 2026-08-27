@@ -64,7 +64,7 @@ const wydarzenia = dbEvents
         <div class="flex flex-col gap-10">
           {wydarzenia.map((e) => (
             <article 
-              class="event-card grid grid-cols-1 md:grid-cols-12 border border-graphite-200 bg-white"
+              class="event-card grid grid-cols-1 md:grid-cols-12 border border-graphite-200 bg-white overflow-hidden"
               style={`--accent: ${COLORS[e.color] || COLORS.orange};`}
             >
               {/* Zdjęcie */}
@@ -79,10 +79,10 @@ const wydarzenia = dbEvents
               </div>
 
               {/* Treść */}
-              <div class="md:col-span-6 lg:col-span-7 flex flex-col justify-between p-6 sm:p-8 lg:p-10 font-sans min-h-[300px] md:min-h-0">
-                <div>
+              <div class="md:col-span-6 lg:col-span-7 flex min-h-[300px] flex-col p-6 sm:p-8 lg:p-10 font-sans md:min-h-0 md:overflow-hidden">
+                <div class="flex min-h-0 flex-1 flex-col">
                   {/* Kategoria i Meta */}
-                  <div class="flex flex-wrap items-center gap-3 mb-4">
+                  <div class="mb-4 flex shrink-0 flex-wrap items-center gap-3">
                     <span 
                       class="text-xs font-bold uppercase tracking-[0.15em] px-3 py-1 text-white border"
                       style={`background-color: var(--accent); border-color: var(--accent);`}
@@ -109,16 +109,20 @@ const wydarzenia = dbEvents
                     </span>
                   </div>
 
-                  <h2 class="text-fluid-xl font-display font-bold leading-tight tracking-tightest text-graphite mb-4">
+                  <h2 class="mb-4 shrink-0 text-fluid-xl font-display font-bold leading-tight tracking-tightest text-graphite">
                     {e.title}
                   </h2>
-                  <p class="text-fluid-sm leading-relaxed text-graphite-soft text-pretty">
-                    {e.opis}
-                  </p>
+                  {e.opis && (
+                    <div class="event-desc min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+                      <p class="text-fluid-sm leading-relaxed text-graphite-soft text-pretty">
+                        {e.opis}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Dolna sekcja: Cena i Przycisk */}
-                <div class="mt-8 pt-6 border-t border-graphite-100 flex flex-wrap items-center justify-between gap-4">
+                <div class="mt-8 flex shrink-0 flex-wrap items-center justify-between gap-4 border-t border-graphite-100 pt-6">
                   <div class="flex flex-col">
                     <span class="text-xs text-graphite-muted uppercase tracking-wider font-semibold">Cena biletu</span>
                     <span class="text-fluid-lg font-display font-extrabold text-graphite">{e.cena}</span>
@@ -161,7 +165,24 @@ const wydarzenia = dbEvents
 <style>
   @media (min-width: 768px) {
     .event-card {
-      height: 400px;
+      height: 480px;
     }
+  }
+
+  .event-desc {
+    scrollbar-gutter: stable;
+  }
+  .event-desc::-webkit-scrollbar {
+    width: 6px;
+  }
+  .event-desc::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .event-desc::-webkit-scrollbar-thumb {
+    background: rgba(44, 44, 44, 0.18);
+    border-radius: 9999px;
+  }
+  .event-desc::-webkit-scrollbar-thumb:hover {
+    background: rgba(44, 44, 44, 0.35);
   }
 </style>
