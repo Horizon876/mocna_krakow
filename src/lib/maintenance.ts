@@ -4,10 +4,7 @@ export const MAINTENANCE_PATH = "/strona-techniczna";
 
 /** Włącz przez MAINTENANCE_MODE=true w .env.local (localhost) lub w Vercel (produkcja). */
 export function isMaintenanceMode(): boolean {
-  const mode = getServerEnv("MAINTENANCE_MODE");
-  if (mode === "false") return false;
-  if (mode === "true") return true;
-  return import.meta.env.PROD;
+  return getServerEnv("MAINTENANCE_MODE") === "true";
 }
 
 /** Trasy dostępne mimo włączonego trybu technicznego. */
