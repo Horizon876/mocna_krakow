@@ -13,6 +13,7 @@ interface ImportMetaEnv {
   readonly INPOST_GEOWIDGET_TOKEN?: string;
   readonly INPOST_GEOWIDGET_SANDBOX?: string;
   readonly SITE?: string;
+  readonly MAINTENANCE_MODE?: string;
 }
 
 interface ImportMeta {

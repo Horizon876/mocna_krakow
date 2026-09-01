@@ -1,8 +1,17 @@
 import type { MiddlewareHandler } from "astro";
+import {
+  isMaintenanceBypass,
+  isMaintenanceMode,
+  MAINTENANCE_PATH,
+} from "./lib/maintenance";
 import { verifySessionToken, COOKIE_NAME_EXPORT } from "./lib/session";
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const { pathname } = context.url;
+
+  if (isMaintenanceMode() && !isMaintenanceBypass(pathname)) {
+    return context.redirect(MAINTENANCE_PATH);
+  }
 
   // Chroń wszystkie trasy /admin/* oprócz strony logowania
   const isAdminRoute = pathname.startsWith("/admin");

@@ -1,0 +1,40 @@
+---
+import MaintenanceLayout from "@layouts/MaintenanceLayout.astro";
+import { BRAND } from "@data/site";
+---
+<MaintenanceLayout>
+  <div class="maintenance">
+    <img
+      src="/brand/logo-kolor.svg"
+      alt={BRAND.name}
+      width="420"
+      height="138"
+      class="logo"
+      fetchpriority="high"
+    />
+    <p class="message">Prace konserwacyjne</p>
+  </div>
+</MaintenanceLayout>
+
+<style>
+  .maintenance {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    text-align: center;
+  }
+
+  .logo {
+    width: min(72vw, 28rem);
+    height: auto;
+  }
+
+  .message {
+    font-size: clamp(1.35rem, 4vw, 2.25rem);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: #6b7280;
+    text-transform: lowercase;
+  }
+</style>

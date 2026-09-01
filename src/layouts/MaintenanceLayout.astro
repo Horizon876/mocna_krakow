@@ -1,0 +1,50 @@
+---
+interface Props {
+  title?: string;
+}
+
+const { title = "Prace konserwacyjne — MOCna!" } = Astro.props;
+---
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#2c5ea9" />
+    <link rel="icon" type="image/svg+xml" href="/brand/logo-kolor.svg" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style is:global>
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+    background: #ffffff;
+    color: #1a1a1a;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  main {
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+</style>
