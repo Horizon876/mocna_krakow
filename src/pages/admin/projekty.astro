@@ -1,0 +1,117 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import ProjectForm from '../../components/admin/ProjectForm.astro';
+import { db } from '../../db';
+import { projects } from '../../db/schema';
+import { asc, eq } from 'drizzle-orm';
+import { actions } from 'astro:actions';
+import { ensureProjectsSeeded } from '../../lib/projects';
+
+const resultDelete = Astro.getActionResult(actions.deleteProject);
+if (resultDelete?.data?.success) {
+  return Astro.redirect('/admin/projekty');
+}
+
+const resultCreate = Astro.getActionResult(actions.createProject);
+if (resultCreate?.data?.success) {
+  return Astro.redirect('/admin/projekty');
+}
+
+const resultUpdate = Astro.getActionResult(actions.updateProject);
+if (resultUpdate?.data?.success) {
+  return Astro.redirect('/admin/projekty');
+}
+
+await ensureProjectsSeeded();
+
+const editId = Astro.url.searchParams.get('edit');
+
+const [allProjects, editResult] = await Promise.all([
+  db.select().from(projects).orderBy(asc(projects.sortOrder), asc(projects.createdAt)),
+  editId
+    ? db.select().from(projects).where(eq(projects.id, editId)).limit(1)
+    : Promise.resolve([]),
+]);
+
+const editProject = editResult.length > 0 ? editResult[0] : undefined;
+---
+
+<AdminLayout title="Projekty - Panel Admina" activeTab="projekty">
+  <div class="admin-crud admin-projekty-layout grid grid-cols-1 items-stretch gap-6 pb-8 lg:grid-cols-12 lg:gap-8">
+    <div class="lg:col-span-8">
+      <div class="admin-panel flex flex-col p-5 md:p-7">
+        <header class="mb-4 shrink-0">
+          <h2 class="text-fluid-lg font-display font-bold leading-tighter tracking-tightest text-graphite">
+            {editProject ? "Edytuj projekt" : "Dodaj projekt"}
+          </h2>
+          <p class="mt-1 text-sm text-graphite-muted">
+            Uzupełnij kartę jak na stronie <a href="/projekty" target="_blank" class="text-blue hover:underline">/projekty</a>.
+          </p>
+        </header>
+        <div class="admin-projekty-form">
+          <ProjectForm project={editProject} />
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-4">
+      <div class="admin-panel flex h-full min-h-0 flex-col p-5 md:p-7">
+        <header class="mb-4 shrink-0">
+          <h2 class="text-fluid-lg font-display font-bold leading-tighter tracking-tightest text-graphite">
+            Lista
+          </h2>
+          <p class="mt-1 text-sm text-graphite-muted invisible select-none" aria-hidden="true">&nbsp;</p>
+        </header>
+        <div class="admin-projekty-list min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-2">
+          {allProjects.length === 0 ? (
+            <div class="border border-dashed border-graphite-200 bg-white/50 p-6 text-center">
+              <p class="text-sm text-graphite-muted italic">Brak projektów.</p>
+            </div>
+          ) : (
+            allProjects.map((project) => (
+              <div class:list={["admin-list-item !flex-col !items-stretch !gap-3 sm:!flex-row sm:!items-center", editId === project.id && "is-active"]}>
+                <div class="flex min-w-0 flex-1 items-center gap-3">
+                  <span
+                    class="h-10 w-10 shrink-0 border border-graphite-200"
+                    style={`background-color: var(--mocna-${project.color});`}
+                  />
+                  <div class="min-w-0">
+                    <h3 class="truncate font-bold text-graphite">{project.title}</h3>
+                    <p class="truncate text-xs text-graphite-muted">{project.description}</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <a href={`/admin/projekty?edit=${project.id}`} class="btn btn-edit px-3 py-1.5 text-[12px]">Edytuj</a>
+                  <form
+                    method="POST"
+                    action={actions.deleteProject}
+                    onsubmit="return confirm('Usunąć ten projekt?');"
+                  >
+                    <input type="hidden" name="id" value={project.id} />
+                    <button type="submit" class="btn btn-delete px-3 py-1.5 text-[12px]">Usuń</button>
+                  </form>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>
+
+<style>
+  .admin-projekty-form :global(#project-form) {
+    margin-bottom: 0;
+  }
+  .admin-projekty-list {
+    scrollbar-gutter: stable;
+  }
+  .admin-projekty-list::-webkit-scrollbar {
+    width: 6px;
+  }
+  .admin-projekty-list::-webkit-scrollbar-thumb {
+    background: rgba(44, 94, 169, 0.15);
+    border-radius: 9999px;
+  }
+</style>

@@ -1,0 +1,592 @@
+---
+import { actions, isInputError } from 'astro:actions';
+import { COLORS } from '@data/site';
+import { parseMetaJson } from '@/lib/projects';
+
+interface Props {
+  project?: {
+    id: string;
+    title: string;
+    description: string;
+    fundingNote: string | null;
+    meta: string;
+    color: string;
+    textColor: string | null;
+    metaTitle: string | null;
+    logoUrl: string | null;
+    link: string | null;
+    linkLabel: string | null;
+  };
+}
+
+const { project } = Astro.props;
+const isEdit = !!project;
+
+const resultCreate = Astro.getActionResult(actions.createProject);
+const resultUpdate = Astro.getActionResult(actions.updateProject);
+const result = isEdit ? resultUpdate : resultCreate;
+const inputError = result?.error && isInputError(result.error) ? result.error : null;
+const action = isEdit ? actions.updateProject : actions.createProject;
+
+const initialMeta = project ? parseMetaJson(project.meta) : [{ label: '', value: '' }];
+const initialColor = project?.color || 'blue';
+const initialText = project?.textColor === 'black' ? 'black' : 'white';
+const initialLogo = project?.logoUrl || '';
+const initialMetaTitle = project?.metaTitle || 'Dofinansowanie';
+const accentHex = COLORS[initialColor as keyof typeof COLORS] || COLORS.blue;
+const colorOptions = [
+  { key: 'blue', label: 'Niebieski' },
+  { key: 'red', label: 'Czerwony' },
+  { key: 'green', label: 'Zielony' },
+  { key: 'orange', label: 'Pomarańczowy' },
+  { key: 'pink', label: 'Różowy' },
+  { key: 'yellow', label: 'Żółty' },
+  { key: 'graphite', label: 'Grafitowy' },
+] as const;
+---
+
+<form
+  method="POST"
+  action={action}
+  enctype="multipart/form-data"
+  class="space-y-5"
+  id="project-form"
+>
+  <script type="application/json" id="project-form-seed" set:html={JSON.stringify({ meta: initialMeta })} />
+  {isEdit && <input type="hidden" name="id" value={project.id} />}
+  {isEdit && project.logoUrl && <input type="hidden" name="existingLogoUrl" value={project.logoUrl} />}
+  <input type="hidden" id="metaText" name="metaText" value="" />
+  <input type="hidden" id="color" name="color" value={initialColor} />
+  <input type="hidden" id="textColor" name="textColor" value={initialText} />
+
+  {result?.error && (
+    <div class="alert-error">
+      <span aria-hidden="true">⚠</span> Nie udało się zapisać. Uzupełnij tytuł i treść.
+    </div>
+  )}
+
+  <!-- Pasek kolorów -->
+  <div class="flex flex-wrap items-center gap-4 rounded-none border border-graphite-200 bg-white px-4 py-3">
+    <div class="space-y-1.5">
+      <p class="text-[11px] font-bold uppercase tracking-wider text-graphite-muted">Kolor tła</p>
+      <div class="flex flex-wrap gap-2" id="color-swatches" role="group" aria-label="Kolor tła">
+        {colorOptions.map((c) => (
+          <button
+            type="button"
+            class:list={['color-swatch', initialColor === c.key && 'is-active']}
+            data-color={c.key}
+            title={c.label}
+            aria-label={c.label}
+            style={`background-color: ${COLORS[c.key]};`}
+          />
+        ))}
+      </div>
+    </div>
+    <div class="hidden h-10 w-px bg-graphite-200 sm:block" aria-hidden="true"></div>
+    <div class="space-y-1.5">
+      <p class="text-[11px] font-bold uppercase tracking-wider text-graphite-muted">Tekst na karcie</p>
+      <div class="flex gap-2" id="text-swatches" role="group" aria-label="Kolor tekstu na karcie">
+        <button
+          type="button"
+          class:list={['ink-choice', initialText === 'white' && 'is-active']}
+          data-text="white"
+          aria-label="Jasny tekst"
+        >
+          <span class="ink-choice-preview" id="ink-preview-white" style={`background-color: ${accentHex}; color: #fff;`}>Aa</span>
+          <span class="ink-choice-label">Jasny</span>
+        </button>
+        <button
+          type="button"
+          class:list={['ink-choice', initialText === 'black' && 'is-active']}
+          data-text="black"
+          aria-label="Ciemny tekst"
+        >
+          <span class="ink-choice-preview" id="ink-preview-black" style={`background-color: ${accentHex}; color: #222;`}>Aa</span>
+          <span class="ink-choice-label">Ciemny</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Widok karty = formularz -->
+  <div
+    id="project-card-editor"
+    class="project-card-editor grid grid-cols-1 gap-6 border-2 p-5 sm:p-8 lg:grid-cols-[1fr_minmax(16rem,22rem)] lg:gap-8"
+    style={`--accent: ${accentHex};`}
+    data-text={initialText}
+  >
+    <div class="flex min-w-0 flex-col gap-4">
+      <input
+        type="text"
+        id="title"
+        name="title"
+        required
+        value={project?.title || ''}
+        class="card-field card-title"
+        placeholder="Tytuł projektu"
+      />
+      {inputError?.fields.title && (
+        <p class="text-xs font-medium" style="color: inherit; opacity: 0.85">{inputError.fields.title[0]}</p>
+      )}
+
+      <textarea
+        id="description"
+        name="description"
+        required
+        rows="5"
+        class="card-field card-body"
+        placeholder="Treść / opis projektu..."
+      >{project?.description || ''}</textarea>
+
+      <div class="card-logo-box">
+        <input type="file" id="imageFile" name="imageFile" accept="image/png,image/jpeg,image/webp,image/gif" class="sr-only" />
+        <button type="button" id="logo-pick-btn" class="card-logo-btn">
+          <img
+            id="logo-preview"
+            src={initialLogo || undefined}
+            alt=""
+            class:list={['card-logo-img', !initialLogo && 'hidden']}
+          />
+          <span id="logo-placeholder" class:list={['card-logo-placeholder', initialLogo && 'hidden']}>
+            + Dodaj logo
+          </span>
+        </button>
+      </div>
+
+      <textarea
+        id="fundingNote"
+        name="fundingNote"
+        rows="2"
+        class="card-field card-funding"
+        placeholder="Sfinansowano ze środków..."
+      >{project?.fundingNote || ''}</textarea>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <div class="card-meta-table">
+        <input
+          type="text"
+          id="metaTitle"
+          name="metaTitle"
+          class="card-meta-title-input"
+          value={initialMetaTitle}
+          placeholder="Tytuł tabeli"
+        />
+        <div class="card-meta-cols" aria-hidden="true">
+          <span>Nazwa</span>
+          <span>Wartość</span>
+          <span></span>
+        </div>
+        <div id="meta-list" class="card-meta-body"></div>
+        <button type="button" id="add-meta" class="card-meta-add">+ Dodaj wiersz</button>
+      </div>
+
+      <div class="space-y-2">
+        <input
+          type="text"
+          id="link"
+          name="link"
+          value={project?.link || ''}
+          class="card-side-input"
+          placeholder="Link przycisku (opcjonalnie)"
+        />
+        <input
+          type="text"
+          id="linkLabel"
+          name="linkLabel"
+          value={project?.linkLabel || ''}
+          class="card-side-input"
+          placeholder="Tekst przycisku (np. Zobacz relację)"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+    <button type="submit" class="btn btn-orange flex-1">
+      {isEdit ? 'Zapisz zmiany' : 'Dodaj projekt'}
+    </button>
+    {isEdit && (
+      <a href="/admin/projekty" class="btn btn-outline flex-1 justify-center text-center">
+        Anuluj
+      </a>
+    )}
+  </div>
+</form>
+
+<style>
+  .color-swatch {
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 2px solid transparent;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+  }
+  .color-swatch.is-active {
+    outline: 2px solid #333;
+    outline-offset: 2px;
+  }
+  .ink-choice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.55rem 0.25rem 0.25rem;
+    border: 1px solid #e5e2dc;
+    background: #fff;
+    cursor: pointer;
+  }
+  .ink-choice.is-active {
+    border-color: #2c5ea9;
+    outline: 2px solid color-mix(in srgb, #2c5ea9 35%, white);
+    outline-offset: 1px;
+  }
+  .ink-choice-preview {
+    display: inline-flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .ink-choice-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .project-card-editor {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .project-card-editor[data-text='white'] {
+    --card-ink: #ffffff;
+    --card-ink-soft: rgba(255, 255, 255, 0.88);
+    --card-line: rgba(255, 255, 255, 0.35);
+    --card-field-bg: rgba(255, 255, 255, 0.12);
+    --card-field-border: rgba(255, 255, 255, 0.35);
+    --card-placeholder: rgba(255, 255, 255, 0.55);
+  }
+  .project-card-editor[data-text='black'] {
+    --card-ink: #222222;
+    --card-ink-soft: rgba(34, 34, 34, 0.88);
+    --card-line: rgba(34, 34, 34, 0.25);
+    --card-field-bg: rgba(255, 255, 255, 0.55);
+    --card-field-border: rgba(34, 34, 34, 0.2);
+    --card-placeholder: rgba(34, 34, 34, 0.45);
+  }
+
+  .card-field {
+    width: 100%;
+    border: 1px dashed var(--card-field-border);
+    background: var(--card-field-bg);
+    color: var(--card-ink);
+    outline: none;
+    font-family: inherit;
+  }
+  .card-field::placeholder {
+    color: var(--card-placeholder);
+  }
+  .card-field:focus {
+    border-style: solid;
+    background: color-mix(in srgb, var(--card-field-bg) 70%, white);
+  }
+  .card-title {
+    font-size: clamp(1.35rem, 2vw, 1.85rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    padding: 0.65rem 0.75rem;
+  }
+  .card-body {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.55;
+    padding: 0.75rem;
+    resize: vertical;
+    min-height: 7rem;
+  }
+  .card-funding {
+    font-size: 0.72rem;
+    font-style: italic;
+    font-weight: 600;
+    line-height: 1.45;
+    padding: 0.6rem 0.75rem;
+    border-top: 1px solid var(--card-line);
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    border-radius: 0;
+    background: transparent;
+    color: var(--card-ink-soft);
+  }
+
+  .card-logo-box {
+    background: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    min-height: 7rem;
+  }
+  .card-logo-btn {
+    display: flex;
+    width: 100%;
+    min-height: 7rem;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0.5rem;
+    background: transparent;
+    border: 0;
+  }
+  .card-logo-img {
+    max-height: 6rem;
+    max-width: 100%;
+    object-fit: contain;
+  }
+  .card-logo-placeholder {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #666;
+  }
+
+  .card-meta-table {
+    --meta-pad-x: 0.75rem;
+    --meta-gap: 0.5rem;
+    --meta-cols: minmax(0, 1fr) minmax(0, 1fr) 2rem;
+    background: #fff;
+    border: 1px solid #e5e2dc;
+    color: #333;
+  }
+  /* :global — wiersze są tworzone w JS i nie dostają scoped atrybutów Astro */
+  .card-meta-table :global(.card-meta-title-input) {
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid #e5e2dc;
+    background: #f5f4f1;
+    padding: 0.75rem var(--meta-pad-x);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #333;
+    box-sizing: border-box;
+  }
+  .card-meta-table :global(.card-meta-title-input:focus) {
+    outline: none;
+    background: #eee;
+  }
+  .card-meta-table :global(.card-meta-cols) {
+    display: grid;
+    grid-template-columns: var(--meta-cols);
+    column-gap: var(--meta-gap);
+    align-items: center;
+    padding: 0.5rem var(--meta-pad-x) 0.3rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #888;
+    box-sizing: border-box;
+  }
+  .card-meta-table :global(.card-meta-body) {
+    display: flex;
+    flex-direction: column;
+  }
+  .card-meta-table :global(.card-meta-row) {
+    display: grid !important;
+    grid-template-columns: var(--meta-cols);
+    column-gap: var(--meta-gap);
+    align-items: center;
+    padding: 0.4rem var(--meta-pad-x);
+    border-bottom: 1px solid #eee;
+    box-sizing: border-box;
+  }
+  .card-meta-table :global(.card-meta-row input) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    height: 2.25rem;
+    box-sizing: border-box;
+    border: 1px solid #e5e2dc;
+    background: #fff;
+    padding: 0 0.6rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    color: #333;
+    margin: 0;
+  }
+  .card-meta-table :global(.card-meta-row input:focus) {
+    outline: 1px solid #2c5ea9;
+  }
+  .card-meta-table :global(.card-meta-remove) {
+    width: 2rem;
+    height: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e5e2dc;
+    background: #fff;
+    color: #de3c42;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .card-meta-table :global(.card-meta-add) {
+    width: 100%;
+    border: 0;
+    border-top: 1px dashed #ddd;
+    background: #fafaf8;
+    padding: 0.7rem var(--meta-pad-x);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #2c5ea9;
+    cursor: pointer;
+    text-align: left;
+    box-sizing: border-box;
+  }
+  .card-meta-table :global(.card-meta-add:hover) {
+    background: #f0f5fb;
+  }
+  .card-side-input {
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.92);
+    padding: 0.55rem 0.65rem;
+    font-size: 0.75rem;
+    color: #333;
+  }
+</style>
+
+<script>
+  const COLORS = {
+    orange: '#f39200',
+    red: '#de3c42',
+    yellow: '#ffde00',
+    blue: '#2c5ea9',
+    green: '#00955e',
+    pink: '#e8afcd',
+    graphite: '#333333',
+  };
+
+  function readSeed() {
+    const el = document.getElementById('project-form-seed');
+    try {
+      const data = JSON.parse(el?.textContent || '{}');
+      if (Array.isArray(data.meta) && data.meta.length) return data.meta;
+    } catch { /* ignore */ }
+    return [{ label: '', value: '' }];
+  }
+
+  function setupProjectForm() {
+    const form = document.getElementById('project-form');
+    if (!form || form.dataset.bound === '1') return;
+    form.dataset.bound = '1';
+
+    const card = document.getElementById('project-card-editor');
+    const colorInput = document.getElementById('color');
+    const textInput = document.getElementById('textColor');
+    const metaList = document.getElementById('meta-list');
+    const metaHidden = document.getElementById('metaText');
+    const addMetaBtn = document.getElementById('add-meta');
+    const fileInput = document.getElementById('imageFile');
+    const logoBtn = document.getElementById('logo-pick-btn');
+    const logoPreview = document.getElementById('logo-preview');
+    const logoPlaceholder = document.getElementById('logo-placeholder');
+
+    if (!card || !colorInput || !textInput || !metaList || !metaHidden) return;
+
+    let objectUrl = null;
+
+    function addMetaRow(label = '', value = '') {
+      const row = document.createElement('div');
+      row.className = 'card-meta-row';
+      row.innerHTML =
+        '<input type="text" class="meta-label" placeholder="Nazwa" />' +
+        '<input type="text" class="meta-value" placeholder="Wartość" />' +
+        '<button type="button" class="card-meta-remove" aria-label="Usuń">&times;</button>';
+      const labelEl = row.querySelector('.meta-label');
+      const valueEl = row.querySelector('.meta-value');
+      if (labelEl) labelEl.value = label;
+      if (valueEl) valueEl.value = value;
+      row.querySelector('.card-meta-remove')?.addEventListener('click', () => {
+        row.remove();
+        if (!metaList.children.length) addMetaRow();
+      });
+      metaList.appendChild(row);
+    }
+
+    readSeed().forEach((m) => addMetaRow(m.label || '', m.value || ''));
+    addMetaBtn?.addEventListener('click', () => addMetaRow());
+
+    document.querySelectorAll('#color-swatches .color-swatch').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-color');
+        if (!key || !COLORS[key]) return;
+        colorInput.value = key;
+        card.style.setProperty('--accent', COLORS[key]);
+        const previewWhite = document.getElementById('ink-preview-white');
+        const previewBlack = document.getElementById('ink-preview-black');
+        if (previewWhite) previewWhite.style.backgroundColor = COLORS[key];
+        if (previewBlack) previewBlack.style.backgroundColor = COLORS[key];
+        document.querySelectorAll('#color-swatches .color-swatch').forEach((b) => {
+          b.classList.toggle('is-active', b === btn);
+        });
+      });
+    });
+
+    document.querySelectorAll('#text-swatches .ink-choice').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-text');
+        if (key !== 'white' && key !== 'black') return;
+        textInput.value = key;
+        card.dataset.text = key;
+        document.querySelectorAll('#text-swatches .ink-choice').forEach((b) => {
+          b.classList.toggle('is-active', b === btn);
+        });
+      });
+    });
+
+    logoBtn?.addEventListener('click', () => fileInput?.click());
+    fileInput?.addEventListener('change', () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      const scrollParent = form.closest('.admin-crud-body');
+      const prevScroll = scrollParent ? scrollParent.scrollTop : 0;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = URL.createObjectURL(file);
+      if (logoPreview) {
+        logoPreview.src = objectUrl;
+        logoPreview.classList.remove('hidden');
+      }
+      logoPlaceholder?.classList.add('hidden');
+      fileInput.blur();
+      requestAnimationFrame(() => {
+        if (scrollParent) scrollParent.scrollTop = prevScroll;
+      });
+    });
+
+    form.addEventListener('submit', () => {
+      const lines = Array.from(metaList.querySelectorAll('.card-meta-row'))
+        .map((row) => {
+          const label = row.querySelector('.meta-label')?.value?.trim() || '';
+          const value = row.querySelector('.meta-value')?.value?.trim() || '';
+          if (!label && !value) return '';
+          return `${label} | ${value}`;
+        })
+        .filter(Boolean);
+      metaHidden.value = lines.join('\n');
+
+      const btn = form.querySelector('button[type="submit"]');
+      if (btn) {
+        btn.innerHTML = '<span class="inline-block mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span> Zapisywanie...';
+        btn.classList.add('opacity-70', 'cursor-not-allowed', 'pointer-events-none');
+      }
+    });
+  }
+
+  setupProjectForm();
+  document.addEventListener('astro:page-load', setupProjectForm);
+</script>

@@ -91,6 +91,46 @@ export const cafePhotos = pgTable("cafe_photos", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/** Kafelki zespołu na /ludziemocnej */
+export const teamMembers = pgTable("team_members", {
+  id: varchar("id", { length: 255 })
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  slug: varchar("slug", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  photoUrl: varchar("photo_url", { length: 1024 }),
+  photoPosition: varchar("photo_position", { length: 100 }),
+  accent: varchar("accent", { length: 50 }).default("blue").notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/** Projekty na /projekty */
+export const projects = pgTable("projects", {
+  id: varchar("id", { length: 255 })
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  bulletPoints: text("bullet_points"), // JSON string[]
+  extraDescription: text("extra_description"),
+  fundingNote: text("funding_note"),
+  meta: text("meta").default("[]").notNull(), // JSON {label,value}[]
+  color: varchar("color", { length: 50 }).default("blue").notNull(),
+  textColor: varchar("text_color", { length: 20 }).default("white").notNull(),
+  metaTitle: varchar("meta_title", { length: 255 }).default("Dofinansowanie").notNull(),
+  logoUrl: varchar("logo_url", { length: 1024 }),
+  logoAlt: varchar("logo_alt", { length: 255 }),
+  logoClass: varchar("logo_class", { length: 255 }),
+  logoPosition: varchar("logo_position", { length: 100 }),
+  logoPdfUrl: varchar("logo_pdf_url", { length: 1024 }),
+  link: varchar("link", { length: 1024 }),
+  linkLabel: varchar("link_label", { length: 255 }),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const ticketOrders = pgTable("ticket_orders", {
   id: varchar("id", { length: 255 })
     .primaryKey()

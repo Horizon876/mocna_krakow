@@ -4,11 +4,32 @@ import tailwind from "@astrojs/tailwind";
 import react from "@astrojs/react";
 import vercel from "@astrojs/vercel/serverless";
 
+const revalidateToken =
+  process.env.REVALIDATE_SECRET || process.env.VERCEL_REVALIDATE_TOKEN || "";
+
 // https://astro.build/config
 export default defineConfig({
   output: "server",
   adapter: vercel({
     maxDuration: 60,
+    ...(revalidateToken.length >= 32
+      ? {
+          isr: {
+            bypassToken: revalidateToken,
+            // Trasy z żywymi danymi — bez cache ISR
+            exclude: [
+              /^\/api(\/|$)/,
+              /^\/admin(\/|$)/,
+              /^\/checkout(\/|$)/,
+              /^\/bilety(\/|$)/,
+              /^\/sklep(\/|$)/,
+              /^\/wydarzenia(\/|$)/,
+              /^\/rezerwacja(\/|$)/,
+              /^\/_actions(\/|$)/,
+            ],
+          },
+        }
+      : {}),
   }),
   site: "https://mocna.org",
   devToolbar: {

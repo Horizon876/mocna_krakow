@@ -33,6 +33,7 @@ const vars = [
   'BLOB_READ_WRITE_TOKEN',
   'RESEND_API_KEY',
   'RESEND_FROM_EMAIL',
+  'REVALIDATE_SECRET',
 ];
 const targets = ['production', 'preview', 'development'];
 

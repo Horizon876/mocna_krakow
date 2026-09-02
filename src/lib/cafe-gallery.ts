@@ -2,6 +2,11 @@ import { asc } from "drizzle-orm";
 import { db } from "../db";
 import { cafePhotos } from "../db/schema";
 import { CAFE_GALLERY } from "../data/site";
+import {
+  CONTENT_CACHE_KEYS,
+  getCachedContent,
+  refreshCachedContent,
+} from "./content-cache";
 
 /** Wstawia domyślne zdjęcia z site.ts, gdy galeria w bazie jest pusta. */
 export async function ensureCafeGallerySeeded(): Promise<void> {
@@ -21,9 +26,9 @@ export async function ensureCafeGallerySeeded(): Promise<void> {
   );
 }
 
-export async function getCafeGalleryPhotos(): Promise<
-  Array<{ src: string; alt: string }>
-> {
+export type CafeGalleryPhoto = { src: string; alt: string };
+
+async function loadCafeFromDb(): Promise<CafeGalleryPhoto[]> {
   await ensureCafeGallerySeeded();
   const rows = await db
     .select()
@@ -33,4 +38,12 @@ export async function getCafeGalleryPhotos(): Promise<
     src: p.imageUrl,
     alt: p.alt || "Zdjęcie z kawiarni MOCna!",
   }));
+}
+
+export async function getCafeGalleryPhotos(): Promise<CafeGalleryPhoto[]> {
+  return getCachedContent(CONTENT_CACHE_KEYS.cafe, loadCafeFromDb);
+}
+
+export async function refreshCafeCache(): Promise<CafeGalleryPhoto[]> {
+  return refreshCachedContent(CONTENT_CACHE_KEYS.cafe, loadCafeFromDb);
 }

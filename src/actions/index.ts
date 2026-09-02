@@ -9,8 +9,12 @@ import {
   ticketOrders,
   tickets,
   cafePhotos,
+  teamMembers,
+  projects,
 } from "../db/schema";
 import { and, eq, lt } from "drizzle-orm";
+import { slugifyName } from "../lib/team";
+import { metaFromFormText } from "../lib/projects";
 import bcrypt from "bcryptjs";
 import Stripe from "stripe";
 import {
@@ -26,6 +30,7 @@ import { sendTicketPendingEmail } from "../lib/ticket-email";
 import { parseInPostPointAddress } from "../lib/inpost-point";
 import { fulfillPaidTicketOrder } from "../lib/ticket-fulfillment";
 import { isEventPast } from "../lib/event";
+import { publishContentChange } from "../lib/publish-content";
 import {
   getReservationExpiresAt,
   releaseExpiredTicketReservations,
@@ -389,7 +394,7 @@ export const server = {
     accept: "form",
     input: z.object({}),
     handler: async (input, context) => {
-      if (context.locals.adminRole !== "admin")
+      if (context.locals.adminRole !== "pracownik")
         throw new ActionError({
           code: "FORBIDDEN",
           message: "Brak uprawnień.",
@@ -705,6 +710,7 @@ export const server = {
             alt: input.alt?.trim() || "Zdjęcie z kawiarni MOCna!",
           })
           .returning();
+        await publishContentChange("cafe", context.request.url);
         return { success: true, photo: result[0] };
       } catch (error) {
         throw new ActionError({
@@ -728,11 +734,323 @@ export const server = {
         });
       try {
         await db.delete(cafePhotos).where(eq(cafePhotos.id, input.id));
+        await publishContentChange("cafe", context.request.url);
         return { success: true };
       } catch (error) {
         throw new ActionError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Błąd podczas usuwania zdjęcia",
+        });
+      }
+    },
+  }),
+
+  // ─── LUDZIE MOCNEJ ──────────────────────────────────────────────────────────
+
+  createTeamMember: defineAction({
+    accept: "form",
+    input: z.object({
+      name: z.string().min(1, "Imię i nazwisko jest wymagane"),
+      description: z.string().min(1, "Opis jest wymagany"),
+      slug: z.string().optional(),
+      photoPosition: z.string().optional(),
+      accent: z
+        .enum(["orange", "red", "yellow", "blue", "green", "pink", "graphite"])
+        .default("blue"),
+      sortOrder: z.coerce.number().int().optional(),
+      imageFile: optionalImageFile,
+    }),
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== "admin")
+        throw new ActionError({
+          code: "FORBIDDEN",
+          message: "Brak uprawnień.",
+        });
+      try {
+        let photoUrl: string | null = null;
+        if (
+          input.imageFile &&
+          input.imageFile instanceof File &&
+          input.imageFile.size > 0
+        ) {
+          photoUrl = await saveImage(input.imageFile);
+        }
+
+        const slug =
+          (input.slug?.trim() && slugifyName(input.slug)) ||
+          slugifyName(input.name);
+
+        let sortOrder = input.sortOrder;
+        if (sortOrder === undefined || Number.isNaN(sortOrder)) {
+          const maxRows = await db
+            .select({ sortOrder: teamMembers.sortOrder })
+            .from(teamMembers);
+          sortOrder =
+            maxRows.length === 0
+              ? 0
+              : Math.max(...maxRows.map((r) => r.sortOrder)) + 1;
+        }
+
+        const result = await db
+          .insert(teamMembers)
+          .values({
+            name: input.name.trim(),
+            description: input.description.trim(),
+            slug,
+            photoUrl,
+            photoPosition: input.photoPosition?.trim() || null,
+            accent: input.accent,
+            sortOrder,
+          })
+          .returning();
+        await publishContentChange("team", context.request.url);
+        return { success: true, member: result[0] };
+      } catch (error) {
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Błąd podczas dodawania osoby",
+        });
+      }
+    },
+  }),
+
+  updateTeamMember: defineAction({
+    accept: "form",
+    input: z.object({
+      id: z.string().min(1),
+      name: z.string().min(1, "Imię i nazwisko jest wymagane"),
+      description: z.string().min(1, "Opis jest wymagany"),
+      slug: z.string().optional(),
+      photoPosition: z.string().optional(),
+      accent: z
+        .enum(["orange", "red", "yellow", "blue", "green", "pink", "graphite"])
+        .default("blue"),
+      sortOrder: z.coerce.number().int().optional(),
+      imageFile: optionalImageFile,
+      existingPhotoUrl: z.string().optional(),
+    }),
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== "admin")
+        throw new ActionError({
+          code: "FORBIDDEN",
+          message: "Brak uprawnień.",
+        });
+      try {
+        let photoUrl = input.existingPhotoUrl || null;
+        if (
+          input.imageFile &&
+          input.imageFile instanceof File &&
+          input.imageFile.size > 0
+        ) {
+          photoUrl = await saveImage(input.imageFile);
+        }
+
+        const slug =
+          (input.slug?.trim() && slugifyName(input.slug)) ||
+          slugifyName(input.name);
+
+        await db
+          .update(teamMembers)
+          .set({
+            name: input.name.trim(),
+            description: input.description.trim(),
+            slug,
+            photoUrl,
+            photoPosition: input.photoPosition?.trim() || null,
+            accent: input.accent,
+            ...(input.sortOrder !== undefined && !Number.isNaN(input.sortOrder)
+              ? { sortOrder: input.sortOrder }
+              : {}),
+          })
+          .where(eq(teamMembers.id, input.id));
+        await publishContentChange("team", context.request.url);
+        return { success: true };
+      } catch (error) {
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Błąd podczas aktualizacji osoby",
+        });
+      }
+    },
+  }),
+
+  deleteTeamMember: defineAction({
+    accept: "form",
+    input: z.object({
+      id: z.string().min(1),
+    }),
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== "admin")
+        throw new ActionError({
+          code: "FORBIDDEN",
+          message: "Brak uprawnień.",
+        });
+      try {
+        await db.delete(teamMembers).where(eq(teamMembers.id, input.id));
+        await publishContentChange("team", context.request.url);
+        return { success: true };
+      } catch (error) {
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Błąd podczas usuwania osoby",
+        });
+      }
+    },
+  }),
+
+  // ─── PROJEKTY ───────────────────────────────────────────────────────────────
+
+  createProject: defineAction({
+    accept: "form",
+    input: z.object({
+      title: z.string().min(1, "Tytuł projektu jest wymagany"),
+      description: z.string().min(1, "Opis jest wymagany"),
+      fundingNote: z.string().optional(),
+      metaText: z.string().optional(),
+      color: z
+        .enum(["orange", "red", "yellow", "blue", "green", "pink", "graphite"])
+        .default("blue"),
+      textColor: z.enum(["white", "black"]).default("white"),
+      metaTitle: z.string().optional(),
+      link: z.string().optional(),
+      linkLabel: z.string().optional(),
+      imageFile: optionalImageFile,
+    }),
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== "admin")
+        throw new ActionError({
+          code: "FORBIDDEN",
+          message: "Brak uprawnień.",
+        });
+      try {
+        let logoUrl: string | null = null;
+        if (
+          input.imageFile &&
+          input.imageFile instanceof File &&
+          input.imageFile.size > 0
+        ) {
+          logoUrl = await saveImage(input.imageFile);
+        }
+
+        const meta = metaFromFormText(input.metaText);
+        const rows = await db
+          .select({ sortOrder: projects.sortOrder })
+          .from(projects);
+        const sortOrder =
+          rows.length === 0
+            ? 0
+            : Math.max(...rows.map((r) => r.sortOrder)) + 1;
+
+        const result = await db
+          .insert(projects)
+          .values({
+            title: input.title.trim(),
+            description: input.description.trim(),
+            fundingNote: input.fundingNote?.trim() || null,
+            meta: JSON.stringify(meta),
+            color: input.color,
+            textColor: input.textColor,
+            metaTitle: input.metaTitle?.trim() || "Dofinansowanie",
+            logoUrl,
+            logoAlt: input.title.trim(),
+            link: input.link?.trim() || null,
+            linkLabel: input.linkLabel?.trim() || null,
+            sortOrder,
+          })
+          .returning();
+        await publishContentChange("projects", context.request.url);
+        return { success: true, project: result[0] };
+      } catch (error) {
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Błąd podczas dodawania projektu",
+        });
+      }
+    },
+  }),
+
+  updateProject: defineAction({
+    accept: "form",
+    input: z.object({
+      id: z.string().min(1),
+      title: z.string().min(1, "Tytuł projektu jest wymagany"),
+      description: z.string().min(1, "Opis jest wymagany"),
+      fundingNote: z.string().optional(),
+      metaText: z.string().optional(),
+      color: z
+        .enum(["orange", "red", "yellow", "blue", "green", "pink", "graphite"])
+        .default("blue"),
+      textColor: z.enum(["white", "black"]).default("white"),
+      metaTitle: z.string().optional(),
+      link: z.string().optional(),
+      linkLabel: z.string().optional(),
+      imageFile: optionalImageFile,
+      existingLogoUrl: z.string().optional(),
+    }),
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== "admin")
+        throw new ActionError({
+          code: "FORBIDDEN",
+          message: "Brak uprawnień.",
+        });
+      try {
+        let logoUrl = input.existingLogoUrl || null;
+        if (
+          input.imageFile &&
+          input.imageFile instanceof File &&
+          input.imageFile.size > 0
+        ) {
+          logoUrl = await saveImage(input.imageFile);
+        }
+
+        const meta = metaFromFormText(input.metaText);
+
+        await db
+          .update(projects)
+          .set({
+            title: input.title.trim(),
+            description: input.description.trim(),
+            fundingNote: input.fundingNote?.trim() || null,
+            meta: JSON.stringify(meta),
+            color: input.color,
+            textColor: input.textColor,
+            metaTitle: input.metaTitle?.trim() || "Dofinansowanie",
+            logoUrl,
+            logoAlt: input.title.trim(),
+            link: input.link?.trim() || null,
+            linkLabel: input.linkLabel?.trim() || null,
+          })
+          .where(eq(projects.id, input.id));
+        await publishContentChange("projects", context.request.url);
+        return { success: true };
+      } catch (error) {
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Błąd podczas aktualizacji projektu",
+        });
+      }
+    },
+  }),
+
+  deleteProject: defineAction({
+    accept: "form",
+    input: z.object({
+      id: z.string().min(1),
+    }),
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== "admin")
+        throw new ActionError({
+          code: "FORBIDDEN",
+          message: "Brak uprawnień.",
+        });
+      try {
+        await db.delete(projects).where(eq(projects.id, input.id));
+        await publishContentChange("projects", context.request.url);
+        return { success: true };
+      } catch (error) {
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Błąd podczas usuwania projektu",
         });
       }
     },
@@ -1059,7 +1377,7 @@ export const server = {
       id: z.string().min(1),
     }),
     handler: async (input, context) => {
-      if (context.locals.adminRole !== "admin")
+      if (context.locals.adminRole !== "pracownik")
         throw new ActionError({
           code: "FORBIDDEN",
           message: "Brak uprawnień.",
@@ -1082,7 +1400,7 @@ export const server = {
       eventId: z.string().min(1),
     }),
     handler: async (input, context) => {
-      if (context.locals.adminRole !== "admin")
+      if (context.locals.adminRole !== "pracownik")
         throw new ActionError({
           code: "FORBIDDEN",
           message: "Brak uprawnień.",

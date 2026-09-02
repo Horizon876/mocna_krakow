@@ -1,7 +1,9 @@
 ---
 import SectionHeading from "@components/SectionHeading.astro";
-import { TEAM, COLORS } from "@data/site";
+import { COLORS } from "@data/site";
+import { getTeamMembers } from "@/lib/team";
 
+const TEAM = await getTeamMembers();
 const TILE_ACCENTS = ["blue", "red", "green", "orange"] as const;
 ---
 <section class="relative scroll-mt-16 pt-10 pb-20 sm:scroll-mt-[4.5rem] sm:pt-12 sm:pb-28">

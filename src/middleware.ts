@@ -38,6 +38,19 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         "/admin/sklep",
         "/admin/wydarzenia",
         "/admin/kawiarnia",
+        "/admin/ludzie",
+        "/admin/projekty",
+      ];
+      if (restrictedRoutes.some((route) => pathname.startsWith(route))) {
+        return context.redirect("/admin/dashboard?forbidden=1");
+      }
+    }
+
+    if (session.role === "admin") {
+      const restrictedRoutes = [
+        "/admin/zamowienia",
+        "/admin/bilety",
+        "/admin/rezerwacje",
       ];
       if (restrictedRoutes.some((route) => pathname.startsWith(route))) {
         return context.redirect("/admin/dashboard?forbidden=1");

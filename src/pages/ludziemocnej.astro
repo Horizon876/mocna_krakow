@@ -1,6 +1,11 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
 import PeopleGrid from "@components/PeopleGrid.astro";
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, s-maxage=86400, stale-while-revalidate=604800",
+);
 ---
 <BaseLayout
   title="Ludzie MOCnej — poznaj zespół"

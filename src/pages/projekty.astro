@@ -3,82 +3,14 @@ import BaseLayout from "@layouts/BaseLayout.astro";
 import PageHero from "@components/PageHero.astro";
 import BrandBlobs from "@components/BrandBlobs.astro";
 import { COLORS } from "@data/site";
+import { getProjects } from "@/lib/projects";
 
-const projekty = [
-  {
-    color: "blue",
-    borderClass: "border-blue",
-    accentClass: "text-blue",
-    title: "Wigilia Pełna MOCy",
-    opis: "Fundacja MOCna! zorganizowała warsztaty tworzenia ozdób i kartek świątecznych oraz przygotowała świąteczne boksy z potrawami wykonanymi przez pracowników Kawiarni Społecznej MOCna! — osoby z niepełnosprawnościami aktywnie uczestniczące w życiu zawodowym i społecznym.",
-    meta: [
-      { label: "Całkowita wartość", value: "16 000,00 zł" },
-      { label: "Dofinansowanie Miasta Krakowa", value: "10 000,00 zł" },
-      { label: "Wkład własny Fundacji", value: "6 000,00 zł" },
-    ],
-    logo: "/media/logos/krakow.png",
-    logoAlt: "Logo Miasta Krakowa",
-    link: "https://www.facebook.com/share/r/1JAkWULoAY/",
-    linkLabel: "Zobacz relację",
-  },
-  {
-    color: "red",
-    borderClass: "border-red",
-    accentClass: "text-red",
-    title: "Mental Fest 2026",
-    opis: "Fundacja MOCna! realizuje działania związane z udziałem w Mental Fest 2026 — wydarzeniu promującym zdrowie psychiczne, integrację społeczną i inkluzywność. Organizacja prowadzi działania edukacyjne, warsztatowe i integracyjne skierowane do mieszkańców Krakowa.",
-    meta: [
-      { label: "Wartość zadania", value: "7 300,00 zł" },
-      { label: "Dofinansowanie", value: "7 300,00 zł" },
-      { label: "Data umowy", value: "07.05.2026 r." },
-      { label: "Źródło", value: "Budżet państwa · PROO 2018–2030" },
-    ],
-    logo: "/media/logos/logo_proo_mental_fest.png",
-    logoAlt: "Logotyp dofinansowania PROO",
-    logoPdf: "/media/logos/PROO_zestawienie_2_plik_edytowalny_KOLOR.pdf",
-  },
-  {
-    color: "green",
-    borderClass: "border-green",
-    accentClass: "text-green",
-    title: "MOC relacji",
-    opis: "Fundacja MOCna! realizuje projekt „MOC relacji – wsparcie osób z niepełnosprawnościami w budowaniu bliskości i samostanowienia” w ramach konkursu grantowego „Lokalne Inicjatywy mają MOC!”. Celem projektu jest wzmacnianie kompetencji społecznych, komunikacyjnych i relacyjnych osób z niepełnosprawnościami, wspieranie ich samostanowienia oraz budowanie większej świadomości wśród rodzin, opiekunów i specjalistów.",
-    punkty: [
-      "warsztaty „Relacje, emocje i komunikacja” dla osób z niepełnosprawnościami,",
-      "warsztaty „Jak wspierać dorosłość i autonomię” dla rodziców i opiekunów,",
-      "szkolenie „Granice, zgoda i sytuacje trudne” dla kadry,",
-      "otwarte spotkanie środowiskowe integrujące osoby z niepełnosprawnościami, rodziny oraz lokalną społeczność."
-    ],
-    dodatkowyOpis: "Projekt odpowiada na potrzebę tworzenia bezpiecznej przestrzeni do rozmowy o relacjach, emocjach, bliskości, prawie do decydowania o sobie oraz budowania satysfakcjonującego życia społecznego osób z niepełnosprawnościami.",
-    meta: [
-      { label: "Wartość dofinansowania", value: "37 840,00 zł" },
-      { label: "Realizator projektu", value: "Fundacja MOCna!" },
-      { label: "Operator konkursu", value: "Fundacja Centrum Rehabilitacji Znowu w Biegu" }
-    ],
-    logo: "/media/logos/logo_moc_relacji.png",
-    logoAlt: "Logotypy partnerów MOC relacji",
-    logoClass: "aspect-[576/128] h-auto",
-    finansowanie: "Sfinansowano ze środków Państwowego Funduszu Rehabilitacji Osób Niepełnosprawnych w ramach konkursu „Lokalne Inicjatywy mają MOC!”.",
-    link: null,
-  },
-  {
-    color: "blue",
-    borderClass: "border-blue",
-    accentClass: "text-blue",
-    title: "MOC głosu, MOC pracy",
-    opis: "Fundacja MOCna! realizuje projekt „MOC głosu, MOC pracy – cykl podcastów aktywizujących osoby z niepełnosprawnościami i ich otoczenie”.",
-    meta: [
-      { label: "Realizator projektu", value: "Fundacja MOCna!" },
-      { label: "Tryb", value: "Małe Granty (pozakonkursowy)" },
-      { label: "Źródło", value: "Województwo Małopolskie" },
-    ],
-    logo: "/media/logos/logo_malopolska.png",
-    logoAlt: "Logo Województwa Małopolskiego",
-    logoClass: "p-6",
-    finansowanie: "Zadanie publiczne realizowane w trybie pozakonkursowym tzw. „Małych Grantów” na podstawie art. 19a ustawy z dnia 24 kwietnia 2003 r. o działalności pożytku publicznego i o wolontariacie oraz zgodnie z Regulaminem określonym w Zarządzeniu Nr 70/2022 Marszałka Województwa Małopolskiego.",
-    link: null,
-  },
-];
+const projekty = await getProjects();
+
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, s-maxage=86400, stale-while-revalidate=604800",
+);
 ---
 
 <BaseLayout title="Projekty — MOCna!">
@@ -95,85 +27,86 @@ const projekty = [
       <div class="shell relative">
 
         <div class="flex flex-col gap-10">
-          {projekty.map((p) => (
-            <article
-              class="project-card flex flex-col lg:flex-row gap-10 lg:gap-16 items-start border-2 p-8 sm:p-12"
-              style={`--accent: ${COLORS[p.color as keyof typeof COLORS]};`}
-            >
-              {/* Treść (lewa strona) */}
-              <div class="flex-1 min-w-0 flex flex-col gap-6 text-white font-sans">
-                <div>
-                  <h2 class="text-fluid-xl font-display font-bold leading-tight tracking-tightest text-balance text-white">
-                    {p.title}
-                  </h2>
-                </div>
+          {projekty.map((p) => {
+            const ink = p.textColor === "black" ? "black" : "white";
+            const textClass = ink === "black" ? "text-graphite" : "text-white";
+            const softClass = ink === "black" ? "text-graphite/80" : "text-white/90";
+            const lineClass = ink === "black" ? "border-graphite/25" : "border-white/30";
+            const markerClass = ink === "black" ? "marker:text-graphite" : "marker:text-white";
+            return (
+              <article
+                class="project-card flex flex-col lg:flex-row gap-10 lg:gap-16 items-start border-2 p-8 sm:p-12"
+                style={`--accent: ${COLORS[p.color] ?? COLORS.blue};`}
+              >
+                <div class:list={["flex-1 min-w-0 flex flex-col gap-6 font-sans", textClass]}>
+                  <div>
+                    <h2 class:list={["text-fluid-xl font-display font-bold leading-tight tracking-tightest text-balance", textClass]}>
+                      {p.title}
+                    </h2>
+                  </div>
 
-                <div class="flex flex-col gap-4">
-                  <p class="text-fluid-sm leading-relaxed text-white text-pretty font-semibold">
-                    {p.opis}
-                  </p>
-
-                  {p.punkty && p.punkty.length > 0 && (
-                    <ul class="list-disc pl-5 text-fluid-sm leading-relaxed text-white text-pretty flex flex-col gap-2 marker:text-white font-semibold">
-                      {p.punkty.map((punkt) => (
-                        <li>{punkt}</li>
-                      ))}
-                    </ul>
-                  )}
-
-                  {p.dodatkowyOpis && (
-                    <p class="text-fluid-sm leading-relaxed text-white text-pretty font-semibold">
-                      {p.dodatkowyOpis}
+                  <div class="flex flex-col gap-4">
+                    <p class:list={["text-fluid-sm leading-relaxed text-pretty font-semibold", textClass]}>
+                      {p.opis}
                     </p>
-                  )}
 
-                  {p.finansowanie && (
-                    <p class="text-[11.5px] leading-relaxed text-white/90 text-pretty border-t border-white/30 pt-3 italic font-semibold">
-                      {p.finansowanie}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Prawy panel (meta, logo, przyciski) */}
-              <div class="shrink-0 lg:w-[24rem] w-full flex flex-col gap-6 justify-between self-stretch">
-                <div class="flex flex-col gap-6 font-sans">
-                  {/* Tabela finansowa */}
-                  {p.meta.length > 0 && (
-                    <div class="border border-graphite-200 bg-white text-graphite">
-                      <div class="border-b border-graphite-200 bg-graphite-50 px-5 py-3">
-                        <span class="text-xs font-bold uppercase tracking-[0.15em] text-graphite">
-                          Dofinansowanie
-                        </span>
-                      </div>
-                      <dl>
-                        {p.meta.map((m) => (
-                          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-4 px-5 py-3.5 border-b border-graphite-100 last:border-b-0">
-                            <dt class="text-[11px] uppercase tracking-wider font-bold text-graphite-muted sm:whitespace-nowrap">{m.label}</dt>
-                            <dd class="text-sm font-extrabold text-graphite sm:text-right">{m.value}</dd>
-                          </div>
+                    {p.punkty && p.punkty.length > 0 && (
+                      <ul class:list={["list-disc pl-5 text-fluid-sm leading-relaxed text-pretty flex flex-col gap-2 font-semibold", textClass, markerClass]}>
+                        {p.punkty.map((punkt) => (
+                          <li>{punkt}</li>
                         ))}
-                      </dl>
-                    </div>
-                  )}
+                      </ul>
+                    )}
 
-                  {/* Logo partnera */}
+                    {p.dodatkowyOpis && (
+                      <p class:list={["text-fluid-sm leading-relaxed text-pretty font-semibold", textClass]}>
+                        {p.dodatkowyOpis}
+                      </p>
+                    )}
+                  </div>
+
                   {p.logo && (
                     <div class="bg-white p-0 border border-white/10 flex items-center justify-center h-32 w-full overflow-hidden">
                       <img
                         src={p.logo}
-                        alt={p.logoAlt}
+                        alt={p.logoAlt || p.title}
                         class:list={["h-full w-full object-contain", p.logoClass]}
+                        style={p.logoPosition ? `object-position: ${p.logoPosition}` : undefined}
                         loading="lazy"
                       />
                     </div>
                   )}
+
+                  {p.finansowanie && (
+                    <p class:list={["text-[11.5px] leading-relaxed text-pretty border-t pt-3 italic font-semibold", softClass, lineClass]}>
+                      {p.finansowanie}
+                    </p>
+                  )}
                 </div>
 
-                {/* Przyciski */}
-                {p.link && (
-                  <div class="flex flex-col gap-3 font-sans">
-                    {p.link && (
+                <div class="shrink-0 lg:w-[24rem] w-full flex flex-col gap-6 justify-between self-stretch">
+                  <div class="flex flex-col gap-6 font-sans">
+                    {p.meta.length > 0 && (
+                      <div class="border border-graphite-200 bg-white text-graphite">
+                        <div class="border-b border-graphite-200 bg-graphite-50 px-5 py-3">
+                          <span class="text-xs font-bold uppercase tracking-[0.15em] text-graphite">
+                            {p.metaTitle || "Dofinansowanie"}
+                          </span>
+                        </div>
+                        <dl>
+                          {p.meta.map((m) => (
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 sm:gap-4 px-5 py-3.5 border-b border-graphite-100 last:border-b-0">
+                              <dt class="text-[11px] uppercase tracking-wider font-bold text-graphite-muted sm:whitespace-nowrap">{m.label}</dt>
+                              <dd class="text-sm font-extrabold text-graphite sm:text-right">{m.value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </div>
+                    )}
+                  </div>
+
+                  {p.link && (
+                    <div class="flex flex-col gap-3 font-sans">
                       <a
                         href={p.link}
                         target="_blank"
@@ -185,12 +118,12 @@ const projekty = [
                           <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
                       </a>
-                    )}
-                  </div>
-                )}
-              </div>
-            </article>
-          ))}
+                    </div>
+                  )}
+                </div>
+              </article>
+            );
+          })}
         </div>
 
       </div>
