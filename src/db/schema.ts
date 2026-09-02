@@ -17,6 +17,7 @@ export const products = pgTable("products", {
   description: text("description"),
   price: integer("price").notNull(), // price in grosze
   imageUrl: varchar("image_url", { length: 1024 }),
+  imagePosition: varchar("image_position", { length: 100 }),
   availabilityStatus: varchar("availability_status", { length: 50 }).default(
     "available",
   ),
@@ -39,9 +40,22 @@ export const events = pgTable("events", {
   enrolledCount: integer("enrolled_count").default(0).notNull(),
   status: varchar("status", { length: 50 }).default("active"),
   imageUrl: varchar("image_url", { length: 1024 }),
+  imagePosition: varchar("image_position", { length: 100 }),
   imageAlt: varchar("image_alt", { length: 255 }),
   color: varchar("color", { length: 50 }).default("orange").notNull(),
   link: varchar("link", { length: 1024 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/** Kafelki „MOCna w mediach” na stronie głównej */
+export const mediaLogos = pgTable("media_logos", {
+  id: varchar("id", { length: 255 })
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: varchar("name", { length: 255 }).notNull(),
+  logoUrl: varchar("logo_url", { length: 1024 }),
+  href: varchar("href", { length: 1024 }),
+  sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

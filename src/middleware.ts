@@ -40,6 +40,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
         "/admin/kawiarnia",
         "/admin/ludzie",
         "/admin/projekty",
+        "/admin/media",
       ];
       if (restrictedRoutes.some((route) => pathname.startsWith(route))) {
         return context.redirect("/admin/dashboard?forbidden=1");

@@ -55,3 +55,7 @@ export async function revalidateProjectsPage(origin: string): Promise<boolean> {
 export async function revalidateCafePage(origin: string): Promise<boolean> {
   return revalidatePaths(origin, ["/kawiarnia"]);
 }
+
+export async function revalidateHomePage(origin: string): Promise<boolean> {
+  return revalidatePaths(origin, ["/"]);
+}

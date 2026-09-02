@@ -38,6 +38,7 @@ const wydarzenia = dbEvents
     cena,
     opis: e.longDescription || e.shortDescription || "",
     image: e.imageUrl || "/media/jan_wojdak_concert.png",
+    imagePosition: e.imagePosition || "50% 50%",
     imageAlt: e.imageAlt || `Plakat wydarzenia: ${e.title}`,
     color: (e.color as keyof typeof COLORS) || "orange",
     link: ticketLink,
@@ -73,6 +74,7 @@ const wydarzenia = dbEvents
                   src={e.image}
                   alt={e.imageAlt}
                   class="absolute inset-0 w-full h-full object-cover"
+                  style={`object-position: ${e.imagePosition};`}
                   loading="eager"
                   decoding="async"
                 />

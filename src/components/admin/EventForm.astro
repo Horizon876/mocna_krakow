@@ -1,5 +1,6 @@
 ---
 import { actions, isInputError } from 'astro:actions';
+import PhotoCropper from './PhotoCropper.astro';
 
 interface Props {
   event?: {
@@ -12,6 +13,7 @@ interface Props {
     seatLimit: number;
     status: string | null;
     imageUrl: string | null;
+    imagePosition: string | null;
     color: string;
   };
 }
@@ -108,16 +110,13 @@ const formatDateTimeLocal = (date: Date | string | null | undefined) => {
     </div>
   </div>
 
-  <div class="space-y-1.5">
-    <label for="imageFile" class="field-label">Plakat / Zdjęcie</label>
-    {event?.imageUrl && (
-      <div class="mb-2 text-xs text-graphite-muted flex items-center gap-2">
-        <span>Aktualne zdjęcie:</span>
-        <a href={event.imageUrl} target="_blank" class="text-blue underline hover:text-blue/80 font-medium">ZOBACZ</a>
-      </div>
-    )}
-    <input type="file" id="imageFile" name="imageFile" accept="image/*" class="field-input" />
-  </div>
+  <PhotoCropper
+    initialSrc={event?.imageUrl || ''}
+    initialPosition={event?.imagePosition || '50% 50%'}
+    positionFieldName="imagePosition"
+    aspect="landscape"
+    label="Plakat / zdjęcie i kadrowanie"
+  />
 
   <button type="submit" class="btn btn-orange mt-8 w-full">
     {isEdit ? 'Zapisz zmiany' : 'Zapisz wydarzenie'}
@@ -132,7 +131,8 @@ const formatDateTimeLocal = (date: Date | string | null | undefined) => {
 <script>
   function setupForm() {
     const eventForm = document.getElementById('event-form');
-    if (!eventForm) return;
+    if (!eventForm || eventForm.dataset.bound === '1') return;
+    eventForm.dataset.bound = '1';
 
     eventForm.addEventListener('submit', () => {
       const btn = eventForm.querySelector('button[type="submit"]') as HTMLButtonElement;

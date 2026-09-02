@@ -11,6 +11,7 @@ import {
   cafePhotos,
   teamMembers,
   projects,
+  mediaLogos,
 } from "../db/schema";
 import { and, eq, lt } from "drizzle-orm";
 import { slugifyName } from "../lib/team";
@@ -63,6 +64,7 @@ export const server = {
             .max(10000000, "Cena jest zbyt wysoka"),
         ),
       imageFile: optionalImageFile,
+      imagePosition: z.string().optional(),
       availabilityStatus: z
         .enum(["available", "unavailable"])
         .default("available"),
@@ -86,6 +88,7 @@ export const server = {
             description: input.description,
             price: Math.round(input.price * 100), // in grosze
             imageUrl: imageUrl,
+            imagePosition: input.imagePosition?.trim() || null,
             availabilityStatus: input.availabilityStatus,
           })
           .returning();
@@ -120,6 +123,7 @@ export const server = {
         ),
       imageFile: optionalImageFile,
       existingImageUrl: z.string().optional(),
+      imagePosition: z.string().optional(),
       availabilityStatus: z
         .enum(["available", "unavailable"])
         .default("available"),
@@ -143,6 +147,7 @@ export const server = {
             description: input.description,
             price: Math.round(input.price * 100),
             imageUrl: imageUrl,
+            imagePosition: input.imagePosition?.trim() || null,
             availabilityStatus: input.availabilityStatus,
           })
           .where(eq(products.id, input.id))
@@ -205,6 +210,7 @@ export const server = {
         .max(10000, "Limit miejsc jest zbyt wysoki"),
       status: z.enum(["active", "cancelled", "completed"]).default("active"),
       imageFile: z.instanceof(File).optional(),
+      imagePosition: z.string().optional(),
       imageAlt: z.string().optional(),
       color: z
         .enum(["orange", "red", "yellow", "blue", "green", "pink", "graphite"])
@@ -239,6 +245,7 @@ export const server = {
             seatLimit: input.seatLimit,
             status: input.status,
             imageUrl: imageUrl,
+            imagePosition: input.imagePosition?.trim() || null,
             imageAlt: input.imageAlt,
             color: input.color,
             link: input.link,
@@ -277,6 +284,7 @@ export const server = {
       status: z.enum(["active", "cancelled", "completed"]).default("active"),
       imageFile: z.instanceof(File).optional(),
       existingImageUrl: z.string().optional(),
+      imagePosition: z.string().optional(),
       imageAlt: z.string().optional(),
       color: z
         .enum(["orange", "red", "yellow", "blue", "green", "pink", "graphite"])
@@ -311,6 +319,7 @@ export const server = {
             seatLimit: input.seatLimit,
             status: input.status,
             imageUrl: imageUrl,
+            imagePosition: input.imagePosition?.trim() || null,
             imageAlt: input.imageAlt,
             color: input.color,
             link: input.link,
@@ -1051,6 +1060,129 @@ export const server = {
         throw new ActionError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Błąd podczas usuwania projektu",
+        });
+      }
+    },
+  }),
+
+  createMediaLogo: defineAction({
+    accept: "form",
+    input: z.object({
+      name: z.string().min(1, "Nazwa jest wymagana"),
+      href: z.string().optional(),
+      sortOrder: z.coerce.number().int().optional(),
+      imageFile: optionalImageFile,
+    }),
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== "admin")
+        throw new ActionError({
+          code: "FORBIDDEN",
+          message: "Brak uprawnień.",
+        });
+      try {
+        let logoUrl: string | null = null;
+        if (
+          input.imageFile &&
+          input.imageFile instanceof File &&
+          input.imageFile.size > 0
+        ) {
+          logoUrl = await saveImage(input.imageFile);
+        }
+
+        let sortOrder = input.sortOrder;
+        if (sortOrder === undefined || Number.isNaN(sortOrder)) {
+          const rows = await db
+            .select({ sortOrder: mediaLogos.sortOrder })
+            .from(mediaLogos);
+          sortOrder =
+            rows.reduce((max, r) => Math.max(max, r.sortOrder ?? 0), -1) + 1;
+        }
+
+        await db.insert(mediaLogos).values({
+          name: input.name.trim(),
+          href: input.href?.trim() || null,
+          logoUrl,
+          sortOrder,
+        });
+        await publishContentChange("media", context.request.url);
+        return { success: true };
+      } catch (error) {
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Błąd podczas dodawania kafelka mediów",
+        });
+      }
+    },
+  }),
+
+  updateMediaLogo: defineAction({
+    accept: "form",
+    input: z.object({
+      id: z.string().min(1),
+      name: z.string().min(1, "Nazwa jest wymagana"),
+      href: z.string().optional(),
+      sortOrder: z.coerce.number().int().optional(),
+      existingLogoUrl: z.string().optional(),
+      imageFile: optionalImageFile,
+    }),
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== "admin")
+        throw new ActionError({
+          code: "FORBIDDEN",
+          message: "Brak uprawnień.",
+        });
+      try {
+        let logoUrl = input.existingLogoUrl || null;
+        if (
+          input.imageFile &&
+          input.imageFile instanceof File &&
+          input.imageFile.size > 0
+        ) {
+          logoUrl = await saveImage(input.imageFile);
+        }
+
+        await db
+          .update(mediaLogos)
+          .set({
+            name: input.name.trim(),
+            href: input.href?.trim() || null,
+            logoUrl,
+            sortOrder:
+              input.sortOrder !== undefined && !Number.isNaN(input.sortOrder)
+                ? input.sortOrder
+                : 0,
+          })
+          .where(eq(mediaLogos.id, input.id));
+        await publishContentChange("media", context.request.url);
+        return { success: true };
+      } catch (error) {
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Błąd podczas aktualizacji kafelka mediów",
+        });
+      }
+    },
+  }),
+
+  deleteMediaLogo: defineAction({
+    accept: "form",
+    input: z.object({
+      id: z.string().min(1),
+    }),
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== "admin")
+        throw new ActionError({
+          code: "FORBIDDEN",
+          message: "Brak uprawnień.",
+        });
+      try {
+        await db.delete(mediaLogos).where(eq(mediaLogos.id, input.id));
+        await publishContentChange("media", context.request.url);
+        return { success: true };
+      } catch (error) {
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Błąd podczas usuwania kafelka mediów",
         });
       }
     },

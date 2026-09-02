@@ -5,7 +5,7 @@ import { BRAND } from "@data/site";
 
 interface Props {
   title?: string;
-  activeTab?: "dashboard" | "sklep" | "zamowienia" | "wydarzenia" | "kawiarnia" | "rezerwacje" | "bilety" | "ludzie" | "projekty";
+  activeTab?: "dashboard" | "sklep" | "zamowienia" | "wydarzenia" | "kawiarnia" | "rezerwacje" | "bilety" | "ludzie" | "projekty" | "media";
   noScroll?: boolean;
   centered?: boolean;
 }
@@ -26,12 +26,13 @@ const allTabs = [
   { id: "bilety" as const, label: "Bilety", href: "/admin/bilety" },
   { id: "ludzie" as const, label: "Ludzie", href: "/admin/ludzie" },
   { id: "projekty" as const, label: "Projekty", href: "/admin/projekty" },
+  { id: "media" as const, label: "Media", href: "/admin/media" },
   { id: "kawiarnia" as const, label: "Kawiarnia", href: "/admin/kawiarnia" },
   { id: "rezerwacje" as const, label: "Rezerwacje", href: "/admin/rezerwacje" },
 ];
 
 const tabs = role === 'pracownik'
-  ? allTabs.filter(t => !['sklep', 'wydarzenia', 'kawiarnia', 'ludzie', 'projekty'].includes(t.id))
+  ? allTabs.filter(t => !['sklep', 'wydarzenia', 'kawiarnia', 'ludzie', 'projekty', 'media'].includes(t.id))
   : allTabs.filter(t => !['zamowienia', 'bilety', 'rezerwacje'].includes(t.id));
 
 const navLinkBase =

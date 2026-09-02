@@ -1,0 +1,350 @@
+---
+interface Props {
+  initialSrc?: string;
+  initialPosition?: string;
+  /** Nazwa pola hidden (photoPosition / imagePosition) */
+  positionFieldName?: string;
+  fileFieldName?: string;
+  /** Kwadrat (ludzie) albo 4:3 (sklep) */
+  aspect?: "square" | "landscape";
+  label?: string;
+  fileHint?: string;
+  required?: boolean;
+}
+
+const {
+  initialSrc = "",
+  initialPosition = "50% 50%",
+  positionFieldName = "photoPosition",
+  fileFieldName = "imageFile",
+  aspect = "square",
+  label = "Zdjęcie i kadrowanie",
+  fileHint = "JPG, PNG, WebP lub GIF",
+  required = false,
+} = Astro.props;
+
+const aspectClass = aspect === "landscape" ? "aspect-[4/3]" : "aspect-square";
+---
+
+<div
+  class="space-y-3 photo-cropper"
+  data-initial-src={initialSrc}
+  data-initial-pos={initialPosition}
+>
+  <div class="flex items-center justify-between gap-3">
+    <label class="field-label mb-0" for={`${fileFieldName}-input`}>{label}</label>
+    <button
+      type="button"
+      class="crop-reset text-xs font-semibold uppercase tracking-wider text-blue hover:text-blue/80 disabled:opacity-40 disabled:pointer-events-none"
+      disabled={!initialSrc}
+    >
+      Resetuj kadr
+    </button>
+  </div>
+
+  <input type="hidden" class="crop-position" name={positionFieldName} value={initialPosition} />
+
+  <div
+    class:list={["photo-crop-stage relative mx-auto w-full max-w-[320px] overflow-hidden border border-graphite-200 bg-graphite-100 select-none", aspectClass]}
+    role="img"
+    aria-label="Podgląd kadrowania zdjęcia. Przeciągnij, aby zmienić kadr."
+  >
+    <img
+      class="crop-preview pointer-events-none absolute inset-0 h-full w-full object-cover"
+      src={initialSrc || undefined}
+      alt=""
+      style={`object-position: ${initialPosition};`}
+      draggable="false"
+    />
+    <div class:list={["crop-empty absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center", initialSrc && "hidden"]}>
+      <svg class="h-10 w-10 text-graphite-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <path d="M21 15l-5-5L5 21" />
+      </svg>
+      <p class="text-sm text-graphite-muted">Wybierz zdjęcie poniżej</p>
+    </div>
+    <div class:list={["crop-hint pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-graphite/70 to-transparent px-3 pb-3 pt-8 text-center text-[11px] font-medium uppercase tracking-wider text-white", !initialSrc && "hidden"]}>
+      Przeciągnij, aby wykadrować
+    </div>
+    <div class:list={["crop-crosshair pointer-events-none absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2", !initialSrc && "hidden"]} aria-hidden="true">
+      <span class="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-white/80"></span>
+      <span class="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-white/80"></span>
+      <span class="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white bg-blue/90 shadow-sm"></span>
+    </div>
+  </div>
+
+  <div class:list={["crop-controls space-y-3", !initialSrc && "opacity-40 pointer-events-none"]}>
+    <div class="grid grid-cols-3 gap-2">
+      <button type="button" data-preset="50% 20%" class="crop-preset btn btn-outline !rounded-none px-2 py-2 text-[12px]">Góra</button>
+      <button type="button" data-preset="50% 50%" class="crop-preset btn btn-outline !rounded-none px-2 py-2 text-[12px]">Środek</button>
+      <button type="button" data-preset="50% 80%" class="crop-preset btn btn-outline !rounded-none px-2 py-2 text-[12px]">Dół</button>
+    </div>
+
+    <div class="space-y-1.5">
+      <div class="flex items-center justify-between">
+        <label class="text-xs font-medium text-graphite-muted">Pion</label>
+        <span class="crop-y-label text-xs tabular-nums text-graphite-muted">50%</span>
+      </div>
+      <input type="range" class="crop-y crop-range w-full" min="0" max="100" step="1" value="50" />
+    </div>
+
+    <div class="space-y-1.5">
+      <div class="flex items-center justify-between">
+        <label class="text-xs font-medium text-graphite-muted">Poziom</label>
+        <span class="crop-x-label text-xs tabular-nums text-graphite-muted">50%</span>
+      </div>
+      <input type="range" class="crop-x crop-range w-full" min="0" max="100" step="1" value="50" />
+    </div>
+  </div>
+
+  <div class="space-y-1.5">
+    <label class="field-label" for={`${fileFieldName}-input`}>Wybierz plik</label>
+    <input
+      type="file"
+      id={`${fileFieldName}-input`}
+      class="crop-file field-input"
+      name={fileFieldName}
+      accept="image/png,image/jpeg,image/webp,image/gif"
+      required={required && !initialSrc}
+    />
+    <p class="crop-file-name text-xs text-graphite-muted">
+      {initialSrc ? "Obecne zdjęcie — możesz wymienić" : fileHint}
+    </p>
+  </div>
+</div>
+
+<style>
+  .photo-crop-stage {
+    cursor: grab;
+    touch-action: none;
+  }
+  .photo-crop-stage.is-dragging {
+    cursor: grabbing;
+  }
+  .photo-crop-stage.is-empty {
+    cursor: default;
+  }
+  .crop-range {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 0;
+    background: #e5e2dc;
+    outline: none;
+  }
+  .crop-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: var(--mocna-blue);
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(51, 51, 51, 0.15);
+    cursor: pointer;
+  }
+  .crop-range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: var(--mocna-blue);
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(51, 51, 51, 0.15);
+    cursor: pointer;
+  }
+  .crop-preset.is-active {
+    border-color: var(--mocna-blue);
+    color: var(--mocna-blue);
+    background: color-mix(in srgb, var(--mocna-blue) 8%, white);
+  }
+</style>
+
+<script>
+  const KEYWORDS = {
+    left: 0,
+    center: 50,
+    right: 100,
+    top: 0,
+    bottom: 100,
+  };
+
+  function parsePos(raw) {
+    if (!raw || !String(raw).trim()) return { x: 50, y: 50 };
+    const parts = String(raw).trim().split(/\s+/);
+    const toNum = (token, fallback) => {
+      if (token.endsWith('%')) {
+        const n = parseFloat(token);
+        return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : fallback;
+      }
+      if (token in KEYWORDS) return KEYWORDS[token];
+      return fallback;
+    };
+    if (parts.length === 1) {
+      return { x: 50, y: toNum(parts[0], 50) };
+    }
+    return { x: toNum(parts[0], 50), y: toNum(parts[1], 50) };
+  }
+
+  function formatPos(pos) {
+    return `${Math.round(pos.x)}% ${Math.round(pos.y)}%`;
+  }
+
+  function setupOne(root) {
+    if (root.dataset.bound === '1') return;
+    root.dataset.bound = '1';
+
+    const stage = root.querySelector('.photo-crop-stage');
+    const preview = root.querySelector('.crop-preview');
+    const empty = root.querySelector('.crop-empty');
+    const hint = root.querySelector('.crop-hint');
+    const crosshair = root.querySelector('.crop-crosshair');
+    const controls = root.querySelector('.crop-controls');
+    const hidden = root.querySelector('.crop-position');
+    const fileInput = root.querySelector('.crop-file');
+    const fileName = root.querySelector('.crop-file-name');
+    const resetBtn = root.querySelector('.crop-reset');
+    const rangeX = root.querySelector('.crop-x');
+    const rangeY = root.querySelector('.crop-y');
+    const labelX = root.querySelector('.crop-x-label');
+    const labelY = root.querySelector('.crop-y-label');
+    const presets = Array.from(root.querySelectorAll('.crop-preset'));
+
+    if (!stage || !preview || !hidden || !fileInput) return;
+
+    let pos = parsePos(root.dataset.initialPos || hidden.value);
+    let hasPhoto = Boolean(root.dataset.initialSrc);
+    let objectUrl = null;
+    let dragging = false;
+    let lastPointer = null;
+
+    function setHasPhoto(next) {
+      hasPhoto = next;
+      empty?.classList.toggle('hidden', next);
+      hint?.classList.toggle('hidden', !next);
+      crosshair?.classList.toggle('hidden', !next);
+      controls?.classList.toggle('opacity-40', !next);
+      controls?.classList.toggle('pointer-events-none', !next);
+      stage.classList.toggle('is-empty', !next);
+      if (resetBtn) resetBtn.disabled = !next;
+    }
+
+    function applyPos(next, syncRanges = true) {
+      pos = {
+        x: Math.min(100, Math.max(0, next.x)),
+        y: Math.min(100, Math.max(0, next.y)),
+      };
+      const formatted = formatPos(pos);
+      hidden.value = formatted;
+      preview.style.objectPosition = formatted;
+      if (syncRanges && rangeX && rangeY) {
+        rangeX.value = String(Math.round(pos.x));
+        rangeY.value = String(Math.round(pos.y));
+      }
+      if (labelX) labelX.textContent = `${Math.round(pos.x)}%`;
+      if (labelY) labelY.textContent = `${Math.round(pos.y)}%`;
+
+      presets.forEach((btn) => {
+        const preset = parsePos(btn.dataset.preset);
+        const active =
+          Math.abs(preset.x - pos.x) < 1 && Math.abs(preset.y - pos.y) < 1;
+        btn.classList.toggle('is-active', active);
+      });
+    }
+
+    function showSrc(src) {
+      if (!src) {
+        preview.removeAttribute('src');
+        setHasPhoto(false);
+        return;
+      }
+      preview.src = src;
+      setHasPhoto(true);
+    }
+
+    applyPos(pos);
+    setHasPhoto(hasPhoto);
+
+    rangeX?.addEventListener('input', () => {
+      applyPos({ x: Number(rangeX.value), y: pos.y }, false);
+      if (labelX) labelX.textContent = `${rangeX.value}%`;
+    });
+    rangeY?.addEventListener('input', () => {
+      applyPos({ x: pos.x, y: Number(rangeY.value) }, false);
+      if (labelY) labelY.textContent = `${rangeY.value}%`;
+    });
+
+    presets.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        applyPos(parsePos(btn.dataset.preset));
+      });
+    });
+
+    resetBtn?.addEventListener('click', () => {
+      applyPos({ x: 50, y: 50 });
+    });
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      const form = root.closest('form');
+      const scrollParent = form?.closest('.admin-crud-body');
+      const prevScroll = scrollParent ? scrollParent.scrollTop : 0;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = URL.createObjectURL(file);
+      showSrc(objectUrl);
+      if (fileName) fileName.textContent = file.name;
+      applyPos({ x: 50, y: 50 });
+      fileInput.blur();
+      requestAnimationFrame(() => {
+        if (scrollParent) scrollParent.scrollTop = prevScroll;
+      });
+    });
+
+    const onPointerDown = (e) => {
+      if (!hasPhoto) return;
+      dragging = true;
+      lastPointer = { x: e.clientX, y: e.clientY };
+      stage.classList.add('is-dragging');
+      stage.setPointerCapture(e.pointerId);
+    };
+
+    const onPointerMove = (e) => {
+      if (!dragging || !lastPointer || !hasPhoto) return;
+      const rect = stage.getBoundingClientRect();
+      const dx = e.clientX - lastPointer.x;
+      const dy = e.clientY - lastPointer.y;
+      lastPointer = { x: e.clientX, y: e.clientY };
+      const sensX = 100 / Math.max(rect.width, 1);
+      const sensY = 100 / Math.max(rect.height, 1);
+      applyPos({
+        x: pos.x - dx * sensX,
+        y: pos.y - dy * sensY,
+      });
+    };
+
+    const onPointerUp = (e) => {
+      if (!dragging) return;
+      dragging = false;
+      lastPointer = null;
+      stage.classList.remove('is-dragging');
+      try {
+        stage.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    };
+
+    stage.addEventListener('pointerdown', onPointerDown);
+    stage.addEventListener('pointermove', onPointerMove);
+    stage.addEventListener('pointerup', onPointerUp);
+    stage.addEventListener('pointercancel', onPointerUp);
+  }
+
+  function setupAll() {
+    document.querySelectorAll('.photo-cropper').forEach(setupOne);
+  }
+
+  setupAll();
+  document.addEventListener('astro:page-load', setupAll);
+</script>

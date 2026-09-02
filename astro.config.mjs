@@ -36,6 +36,7 @@ export default defineConfig({
               "/admin/bilety",
               "/admin/ludzie",
               "/admin/projekty",
+              "/admin/media",
               "/checkout",
               "/checkout/dane",
               "/checkout/podsumowanie",

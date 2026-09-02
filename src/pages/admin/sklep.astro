@@ -69,6 +69,7 @@ const editProduct = editResult.length > 0 ? editResult[0] : undefined;
                       src={product.imageUrl}
                       alt={product.name}
                       class="h-16 w-16 border border-graphite-200/50 bg-white object-cover"
+                      style={product.imagePosition ? `object-position: ${product.imagePosition}` : undefined}
                     />
                   )}
                   <div>

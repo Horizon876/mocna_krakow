@@ -2,8 +2,10 @@
 import SectionHeading from "@components/SectionHeading.astro";
 import OptimizedImage from "@components/OptimizedImage.astro";
 import { LOGO_IMAGE_SIZES, LOGO_IMAGE_WIDTHS } from "@/lib/optimized-image";
-import { MEDIA_LOGOS_HOME, COLORS } from "@data/site";
+import { COLORS } from "@data/site";
+import { getMediaLogos } from "@/lib/media-logos";
 
+const items = await getMediaLogos();
 const TILE_ACCENTS = ["blue", "red", "green", "orange", "pink", "yellow"] as const;
 ---
 <section id="mocna-w-mediach" class="relative scroll-mt-16 py-20 sm:scroll-mt-[4.5rem] sm:py-28">
@@ -14,7 +16,7 @@ const TILE_ACCENTS = ["blue", "red", "green", "orange", "pink", "yellow"] as con
     />
 
     <ul class="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 lg:gap-6" role="list">
-      {MEDIA_LOGOS_HOME.map((item, index) => {
+      {items.map((item, index) => {
         const accentKey = TILE_ACCENTS[index % TILE_ACCENTS.length];
         const color = COLORS[accentKey];
         const hasLogo = !!item.logo;

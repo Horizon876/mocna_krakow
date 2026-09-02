@@ -15,7 +15,13 @@ function stemFromPublic(src: string): string {
 
 /** Czy mamy wygenerowane warianty WebP w public/_optimized/ */
 export function isOptimizableImage(src: string): boolean {
-  return RASTER_EXT.test(src) && !src.startsWith("/_optimized/");
+  if (!RASTER_EXT.test(src)) return false;
+  if (src.startsWith("/_optimized/")) return false;
+  // Uploady z panelu nie mają pregenerowanych wariantów — plain <img>
+  if (src.startsWith("/uploads/")) return false;
+  // Blob / zewnętrzne URL-e też bez _optimized
+  if (/^https?:\/\//i.test(src)) return false;
+  return true;
 }
 
 export function optimizedVariants(src: string, widths: number[]): OptimizedVariant[] {
