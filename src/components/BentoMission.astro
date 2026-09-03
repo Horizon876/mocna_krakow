@@ -3,6 +3,18 @@ import Counter from "@components/Counter.tsx";
 import OptimizedImage from "@components/OptimizedImage.astro";
 import { BENTO_PHOTO_SIZES, PHOTO_IMAGE_WIDTHS } from "@/lib/optimized-image";
 import { STATS } from "@data/site";
+
+interface Props {
+  imageUrl?: string;
+  imagePosition?: string;
+  imageAlt?: string;
+}
+
+const {
+  imageUrl = "/photos/poznaj_mocna.jpeg",
+  imagePosition = "50% 50%",
+  imageAlt = "Zespół kawiarni MOCna! przy pracy",
+} = Astro.props;
 ---
 
 <section id="poznaj-mocna" class="relative">
@@ -38,11 +50,12 @@ import { STATS } from "@data/site";
         <div class="bento-photo absolute inset-0">
           <div class="bento-photo-masked absolute inset-0">
             <OptimizedImage
-              src="/photos/poznaj_mocna.jpeg"
-              alt="Zespół kawiarni MOCna! przy pracy"
+              src={imageUrl}
+              alt={imageAlt}
               widths={PHOTO_IMAGE_WIDTHS}
               sizes={BENTO_PHOTO_SIZES}
               class="bento-photo-img absolute inset-0 h-full w-full object-cover"
+              style={`object-position: ${imagePosition};`}
               loading="lazy"
             />
             <div

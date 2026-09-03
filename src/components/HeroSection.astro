@@ -2,6 +2,18 @@
 import OptimizedImage from "@components/OptimizedImage.astro";
 import { HERO_PHOTO_SIZES, PHOTO_IMAGE_WIDTHS } from "@/lib/optimized-image";
 
+interface Props {
+  imageUrl?: string;
+  imagePosition?: string;
+  imageAlt?: string;
+}
+
+const {
+  imageUrl = "/photos/zespol.jpeg",
+  imagePosition = "58% 50%",
+  imageAlt = "Cały zespół kawiarni MOCna! przy barze",
+} = Astro.props;
+
 const primary = { label: "Zobacz wydarzenia", href: "/wydarzenia" };
 const secondaryAccent = {
   orange: {
@@ -165,11 +177,12 @@ const secondary = [
       </svg>
       <div class="hero-photo-masked absolute inset-0">
         <OptimizedImage
-          src="/photos/zespol.jpeg"
-          alt="Cały zespół kawiarni MOCna! przy barze"
+          src={imageUrl}
+          alt={imageAlt}
           widths={PHOTO_IMAGE_WIDTHS}
           sizes={HERO_PHOTO_SIZES}
-          class="hero-photo-img absolute inset-0 h-full w-full object-cover object-[58%_center] lg:object-[52%_center]"
+          class="hero-photo-img absolute inset-0 h-full w-full object-cover"
+          style={`object-position: ${imagePosition};`}
           loading="eager"
           fetchpriority="high"
         />

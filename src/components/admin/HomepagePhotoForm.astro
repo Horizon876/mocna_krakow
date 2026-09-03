@@ -1,0 +1,74 @@
+---
+import { actions, isInputError } from 'astro:actions';
+import PhotoCropper from './PhotoCropper.astro';
+
+interface Props {
+  photoSlot: 'hero' | 'mission';
+  title: string;
+  description: string;
+  imageUrl: string;
+  imagePosition: string;
+  alt: string;
+}
+
+const { photoSlot, title, description, imageUrl, imagePosition, alt } = Astro.props;
+
+const result = Astro.getActionResult(actions.updateHomepagePhoto);
+const inputError = result?.error && isInputError(result.error) ? result.error : null;
+---
+
+<form method="POST" action={actions.updateHomepagePhoto} enctype="multipart/form-data" class="space-y-5 homepage-photo-form">
+  <input type="hidden" name="slot" value={photoSlot} />
+  <input type="hidden" name="existingImageUrl" value={imageUrl} />
+
+  {result?.error && (
+    <div class="alert-error">
+      <span aria-hidden="true">⚠</span> Nie udało się zapisać zdjęcia. Spróbuj ponownie.
+    </div>
+  )}
+
+  <div>
+    <h3 class="text-fluid-md font-display font-bold text-graphite">{title}</h3>
+    <p class="mt-1 text-sm text-graphite-muted">{description}</p>
+  </div>
+
+  <div class="space-y-1.5">
+    <label for={`alt-${photoSlot}`} class="field-label">Opis zdjęcia (alt)</label>
+    <input type="text" id={`alt-${photoSlot}`} name="alt" value={alt} class="field-input" />
+    {inputError?.fields.alt && (
+      <p class="mt-1 text-xs font-medium text-red">{inputError.fields.alt[0]}</p>
+    )}
+  </div>
+
+  <PhotoCropper
+    initialSrc={imageUrl}
+    initialPosition={imagePosition || '50% 50%'}
+    positionFieldName="imagePosition"
+    aspect="tall"
+    organicMask={photoSlot}
+    idSuffix={photoSlot}
+    label="Zdjęcie i kadrowanie"
+  />
+
+  <button type="submit" class="btn btn-orange w-full">
+    Zapisz zdjęcie
+  </button>
+</form>
+
+<script>
+  function setupHomepageForms() {
+    document.querySelectorAll('.homepage-photo-form').forEach((form) => {
+      if (form.dataset.bound === '1') return;
+      form.dataset.bound = '1';
+      form.addEventListener('submit', () => {
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) {
+          btn.innerHTML = '<span class="inline-block mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span> Zapisywanie...';
+          btn.classList.add('opacity-70', 'cursor-not-allowed', 'pointer-events-none');
+        }
+      });
+    });
+  }
+  setupHomepageForms();
+  document.addEventListener('astro:page-load', setupHomepageForms);
+</script>

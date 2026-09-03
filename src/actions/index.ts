@@ -12,6 +12,7 @@ import {
   teamMembers,
   projects,
   mediaLogos,
+  homepagePhotos,
 } from "../db/schema";
 import { and, eq, lt } from "drizzle-orm";
 import { slugifyName } from "../lib/team";
@@ -1183,6 +1184,68 @@ export const server = {
         throw new ActionError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Błąd podczas usuwania kafelka mediów",
+        });
+      }
+    },
+  }),
+
+  updateHomepagePhoto: defineAction({
+    accept: "form",
+    input: z.object({
+      slot: z.enum(["hero", "mission"]),
+      alt: z.string().optional(),
+      imagePosition: z.string().optional(),
+      existingImageUrl: z.string().optional(),
+      imageFile: optionalImageFile,
+    }),
+    handler: async (input, context) => {
+      if (context.locals.adminRole !== "admin")
+        throw new ActionError({
+          code: "FORBIDDEN",
+          message: "Brak uprawnień.",
+        });
+      try {
+        let imageUrl = input.existingImageUrl || null;
+        if (
+          input.imageFile &&
+          input.imageFile instanceof File &&
+          input.imageFile.size > 0
+        ) {
+          imageUrl = await saveImage(input.imageFile);
+        }
+        if (!imageUrl) {
+          throw new ActionError({
+            code: "BAD_REQUEST",
+            message: "Wybierz zdjęcie.",
+          });
+        }
+
+        await db
+          .insert(homepagePhotos)
+          .values({
+            slot: input.slot,
+            imageUrl,
+            imagePosition: input.imagePosition?.trim() || "50% 50%",
+            alt: input.alt?.trim() || null,
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: homepagePhotos.slot,
+            set: {
+              imageUrl,
+              imagePosition: input.imagePosition?.trim() || "50% 50%",
+              alt: input.alt?.trim() || null,
+              updatedAt: new Date(),
+            },
+          });
+
+        await publishContentChange("home", context.request.url);
+        return { success: true };
+      } catch (error) {
+        if (error instanceof ActionError) throw error;
+        throw new ActionError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Błąd podczas zapisywania zdjęcia strony głównej",
         });
       }
     },

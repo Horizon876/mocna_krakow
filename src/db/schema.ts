@@ -59,6 +59,15 @@ export const mediaLogos = pgTable("media_logos", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/** Zdjęcia strony głównej (hero + sekcja „Poznaj MOCną”) */
+export const homepagePhotos = pgTable("homepage_photos", {
+  slot: varchar("slot", { length: 50 }).primaryKey(), // hero | mission
+  imageUrl: varchar("image_url", { length: 1024 }).notNull(),
+  imagePosition: varchar("image_position", { length: 100 }),
+  alt: varchar("alt", { length: 255 }),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 /**
  * Rezerwacje stolików.
  * Każda rezerwacja trwa 1 godzinę (startsAt → endsAt = startsAt + 1h).

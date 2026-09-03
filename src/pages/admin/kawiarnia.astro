@@ -45,6 +45,9 @@ const allPhotos = await db.select().from(cafePhotos).orderBy(asc(cafePhotos.crea
           <h2 class="text-fluid-lg font-display font-bold leading-tighter tracking-tightest text-graphite">
             Galeria ({allPhotos.length})
           </h2>
+          <p class="mt-1 text-sm text-graphite-muted invisible select-none" aria-hidden="true">
+            &nbsp;
+          </p>
         </header>
         <div class="admin-crud-body">
           {allPhotos.length === 0 ? (

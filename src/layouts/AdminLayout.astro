@@ -5,7 +5,7 @@ import { BRAND } from "@data/site";
 
 interface Props {
   title?: string;
-  activeTab?: "dashboard" | "sklep" | "zamowienia" | "wydarzenia" | "kawiarnia" | "rezerwacje" | "bilety" | "ludzie" | "projekty" | "media";
+  activeTab?: "dashboard" | "sklep" | "zamowienia" | "wydarzenia" | "kawiarnia" | "rezerwacje" | "bilety" | "ludzie" | "projekty" | "media" | "strona";
   noScroll?: boolean;
   centered?: boolean;
 }
@@ -20,6 +20,7 @@ const role = Astro.locals.adminRole;
 
 const allTabs = [
   { id: "dashboard" as const, label: "Pulpit", href: "/admin/dashboard" },
+  { id: "strona" as const, label: "Strona główna zdjęcia", href: "/admin/strona-glowna" },
   { id: "sklep" as const, label: "Sklep", href: "/admin/sklep" },
   { id: "zamowienia" as const, label: "Zamówienia", href: "/admin/zamowienia" },
   { id: "wydarzenia" as const, label: "Wydarzenia", href: "/admin/wydarzenia" },
@@ -32,7 +33,7 @@ const allTabs = [
 ];
 
 const tabs = role === 'pracownik'
-  ? allTabs.filter(t => !['sklep', 'wydarzenia', 'kawiarnia', 'ludzie', 'projekty', 'media'].includes(t.id))
+  ? allTabs.filter(t => !['sklep', 'wydarzenia', 'kawiarnia', 'ludzie', 'projekty', 'media', 'strona'].includes(t.id))
   : allTabs.filter(t => !['zamowienia', 'bilety', 'rezerwacje'].includes(t.id));
 
 const navLinkBase =

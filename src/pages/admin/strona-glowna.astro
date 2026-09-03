@@ -1,0 +1,93 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import HomepagePhotoForm from '../../components/admin/HomepagePhotoForm.astro';
+import { actions } from 'astro:actions';
+import { db } from '../../db';
+import { homepagePhotos } from '../../db/schema';
+import { eq } from 'drizzle-orm';
+import { ensureHomepagePhotosSeeded } from '../../lib/homepage-photos';
+
+const result = Astro.getActionResult(actions.updateHomepagePhoto);
+if (result?.data?.success) {
+  return Astro.redirect('/admin/strona-glowna?saved=1');
+}
+
+await ensureHomepagePhotosSeeded();
+
+const [heroRow] = await db
+  .select()
+  .from(homepagePhotos)
+  .where(eq(homepagePhotos.slot, 'hero'))
+  .limit(1);
+const [missionRow] = await db
+  .select()
+  .from(homepagePhotos)
+  .where(eq(homepagePhotos.slot, 'mission'))
+  .limit(1);
+
+const photos = {
+  hero: {
+    imageUrl: heroRow?.imageUrl || '/photos/zespol.jpeg',
+    imagePosition: heroRow?.imagePosition || '58% 50%',
+    alt: heroRow?.alt || 'Cały zespół kawiarni MOCna! przy barze',
+  },
+  mission: {
+    imageUrl: missionRow?.imageUrl || '/photos/poznaj_mocna.jpeg',
+    imagePosition: missionRow?.imagePosition || '50% 50%',
+    alt: missionRow?.alt || 'Zespół kawiarni MOCna! przy pracy',
+  },
+};
+
+const saved = Astro.url.searchParams.get('saved');
+---
+
+<AdminLayout title="Strona główna zdjęcia - Panel Admina" activeTab="strona" noScroll>
+  <div class="admin-crud grid min-h-0 flex-1 grid-cols-1 gap-6 overflow-hidden lg:grid-cols-12 lg:gap-8">
+    <div class="lg:col-span-6">
+      <div class="admin-panel flex flex-col p-6 md:p-8">
+        <header class="mb-6 shrink-0">
+          <h2 class="text-fluid-lg font-display font-bold leading-tighter tracking-tightest text-graphite">
+            Zdjęcie 1 — Hero
+          </h2>
+          <p class="mt-1 text-sm text-graphite-muted">
+            Prawe zdjęcie na górze strony głównej. Poszarpane boki zostają automatycznie.
+            {saved && <span class="ml-1 font-medium text-green">Zapisano.</span>}
+          </p>
+        </header>
+        <div class="admin-crud-body">
+          <HomepagePhotoForm
+            photoSlot="hero"
+            title="Hero"
+            description="Widoczne na dużych ekranach obok nagłówka MOCna!"
+            imageUrl={photos.hero.imageUrl}
+            imagePosition={photos.hero.imagePosition}
+            alt={photos.hero.alt}
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-6">
+      <div class="admin-panel flex flex-col p-6 md:p-8">
+        <header class="mb-6 shrink-0">
+          <h2 class="text-fluid-lg font-display font-bold leading-tighter tracking-tightest text-graphite">
+            Zdjęcie 2 — Poznaj MOCną
+          </h2>
+          <p class="mt-1 text-sm text-graphite-muted">
+            Zdjęcie w sekcji pod hero. Poszarpane boki zostają automatycznie.
+          </p>
+        </header>
+        <div class="admin-crud-body">
+          <HomepagePhotoForm
+            photoSlot="mission"
+            title="Sekcja editorial"
+            description="Obok cytatu „Nie zaczynamy od stanowiska pracy…”"
+            imageUrl={photos.mission.imageUrl}
+            imagePosition={photos.mission.imagePosition}
+            alt={photos.mission.alt}
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</AdminLayout>

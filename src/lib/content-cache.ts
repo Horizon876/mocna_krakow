@@ -70,4 +70,5 @@ export const CONTENT_CACHE_KEYS = {
   projects: "projects",
   cafe: "cafe",
   media: "media",
+  homepage: "homepage",
 } as const;

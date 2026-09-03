@@ -3,11 +3,22 @@ import BaseLayout from "@layouts/BaseLayout.astro";
 import HeroSection from "@components/HeroSection.astro";
 import BentoMission from "@components/BentoMission.astro";
 import MediaLogosHome from "@components/MediaLogosHome.astro";
+import { getHomepagePhotos } from "@/lib/homepage-photos";
+
+const photos = await getHomepagePhotos();
 ---
 <BaseLayout>
   <div>
-    <HeroSection />
-    <BentoMission />
+    <HeroSection
+      imageUrl={photos.hero.imageUrl}
+      imagePosition={photos.hero.imagePosition}
+      imageAlt={photos.hero.alt}
+    />
+    <BentoMission
+      imageUrl={photos.mission.imageUrl}
+      imagePosition={photos.mission.imagePosition}
+      imageAlt={photos.mission.alt}
+    />
     <MediaLogosHome />
   </div>
 </BaseLayout>
